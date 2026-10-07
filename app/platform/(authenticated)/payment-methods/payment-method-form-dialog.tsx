@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type { CSSProperties, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import {
@@ -133,7 +133,11 @@ export default function PaymentMethodFormDialog({ method, nextSortOrder = 0 }: P
         code: form.code,
         name: form.name,
         type: form.type,
-        logoUrl: form.logoUrl.trim() === '' ? undefined : form.logoUrl.trim(),
+        // Always sent (never omitted) even when blank: upsertPaymentMethodSchema has no
+        // .nullable() for logoUrl, so updatePaymentMethod only touches logo_url when the
+        // key is present — omitting it on edit would make a previously-set logo
+        // un-clearable through this form.
+        logoUrl: form.logoUrl.trim(),
         adminFeeFlat: Number(form.adminFeeFlat),
         adminFeePct: Number(form.adminFeePct),
         isActive: form.isActive,
@@ -314,16 +318,19 @@ export interface SortablePaymentMethodsTableProps {
  */
 export function SortablePaymentMethodsTable({ paymentMethods: initialMethods }: SortablePaymentMethodsTableProps) {
   const [methods, setMethods] = useState(initialMethods);
+  // Adjust state during render rather than in an effect — same reasoning as
+  // plans/plan-form-dialog.tsx's SortablePlansTable.
+  const [prevInitialMethods, setPrevInitialMethods] = useState(initialMethods);
+  if (initialMethods !== prevInitialMethods) {
+    setPrevInitialMethods(initialMethods);
+    setMethods(initialMethods);
+  }
   const router = useRouter();
   const { show } = useToast();
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
-
-  useEffect(() => {
-    setMethods(initialMethods);
-  }, [initialMethods]);
 
   async function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;

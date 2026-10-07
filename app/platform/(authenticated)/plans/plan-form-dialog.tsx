@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type { CSSProperties, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import {
@@ -307,16 +307,21 @@ export interface SortablePlansTableProps {
  */
 export function SortablePlansTable({ plans: initialPlans }: SortablePlansTableProps) {
   const [plans, setPlans] = useState(initialPlans);
+  // Adjust state during render rather than in an effect (React's own documented pattern
+  // for "resync local state when a prop changes") — avoids the extra committed render an
+  // effect-based resync would cause, and setPlans here can't cascade since it only ever
+  // runs while initialPlans is actually different from last render's.
+  const [prevInitialPlans, setPrevInitialPlans] = useState(initialPlans);
+  if (initialPlans !== prevInitialPlans) {
+    setPrevInitialPlans(initialPlans);
+    setPlans(initialPlans);
+  }
   const router = useRouter();
   const { show } = useToast();
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
-
-  useEffect(() => {
-    setPlans(initialPlans);
-  }, [initialPlans]);
 
   async function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
