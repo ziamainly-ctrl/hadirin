@@ -6,11 +6,11 @@
    which only a class (not a media query) can do. */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Design tokens — TRD.md §14. Swap values here, not in components. Every bg-*/text-*
+/* Design tokens — TRD.md §14. Swap values here, not in components. Every bg- or text-
    utility Tailwind generates from these (bg-bg, text-text, bg-surface, bg-primary,
-   bg-status-*, ...) repaints automatically under .dark below — components using only
-   these tokens need no dark: variant of their own. Only hardcoded colors (border-black/N,
-   bg-black/N, or a raw Tailwind palette color used directly) need one. */
+   bg-status-present, ...) repaints automatically under .dark below — components using
+   only these tokens need no dark: variant of their own. Only hardcoded colors
+   (border-black/N, bg-black/N, or a raw Tailwind palette color used directly) need one. */
 @theme {
   --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
 
