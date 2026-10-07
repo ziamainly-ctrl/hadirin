@@ -42,7 +42,7 @@ function TableRow({ className, children, ...rest }: HTMLAttributes<HTMLTableRowE
 
 function TableHeadCell({ className, children, ...rest }: ThHTMLAttributes<HTMLTableCellElement>) {
   return (
-    <th scope="col" className={`px-4 py-3 font-medium ${className ?? ''}`} {...rest}>
+    <th scope="col" className={`px-4 py-3.5 font-medium ${className ?? ''}`} {...rest}>
       {children}
     </th>
   );
@@ -50,7 +50,7 @@ function TableHeadCell({ className, children, ...rest }: ThHTMLAttributes<HTMLTa
 
 function TableCell({ className, children, ...rest }: TdHTMLAttributes<HTMLTableCellElement>) {
   return (
-    <td className={`px-4 py-3 text-text ${className ?? ''}`} {...rest}>
+    <td className={`px-4 py-3.5 text-text ${className ?? ''}`} {...rest}>
       {children}
     </td>
   );

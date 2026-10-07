@@ -38,7 +38,7 @@ export default function StatTile({ label, value, subLabel, trend, icon, onClick,
         <span className="text-sm font-medium text-muted">{label}</span>
         {icon ? <span className="text-primary">{icon}</span> : null}
       </div>
-      <p className="mt-2 text-2xl font-semibold text-text">{value}</p>
+      <p className="mt-2 text-3xl font-bold tabular-nums text-text">{value}</p>
       {subLabel || trend ? (
         <div className="mt-1 flex items-center gap-2 text-xs">
           {trend ? <span className={TREND_CLASSES[trend.direction ?? 'neutral']}>{trend.value}</span> : null}
@@ -53,7 +53,7 @@ export default function StatTile({ label, value, subLabel, trend, icon, onClick,
       <button
         type="button"
         onClick={onClick}
-        className={`rounded-card bg-surface p-4 text-left transition hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${className ?? ''}`}
+        className={`rounded-card border border-black/5 bg-surface p-4 text-left transition hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 dark:border-white/5 ${className ?? ''}`}
       >
         {content}
       </button>

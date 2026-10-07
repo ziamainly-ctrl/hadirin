@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { MapPin, Camera, BellRing, CheckCircle2 } from 'lucide-react';
+import { MapPin, Camera, BellRing, CheckCircle2, Sparkles } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
+import CheckInPreview from './check-in-preview';
 
 export const metadata: Metadata = {
   title: 'Absensi GPS + Selfie untuk UMKM',
@@ -73,42 +74,59 @@ export default function LandingPage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }} />
 
-      <section className="mx-auto max-w-5xl px-4 py-16 text-center sm:py-24">
-        <h1 className="text-3xl font-bold tracking-tight text-text sm:text-5xl">
-          Absensi GPS + Selfie
-          <br />
-          untuk UMKM
-        </h1>
-        <p className="mx-auto mt-4 max-w-xl text-lg text-muted">
-          Siap dalam 5 menit, mulai gratis. Karyawan absen dari HP, kamu pantau dari mana saja.
-        </p>
-        <div className="mt-8 flex justify-center gap-3">
-          <Link href="/register">
-            <Button size="lg">Mulai Gratis</Button>
-          </Link>
-          <Link href="/pricing">
-            <Button size="lg" variant="secondary">
-              Lihat Harga
-            </Button>
-          </Link>
+      <section className="mx-auto max-w-5xl px-4 py-16 sm:py-24">
+        <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+          <div className="text-center lg:text-left">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-surface px-3 py-1 text-xs font-medium text-muted dark:border-white/10">
+              <Sparkles className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+              Siap dipakai dalam 5 menit
+            </span>
+            <h1 className="mt-4 text-3xl font-bold tracking-tight text-text sm:text-5xl">
+              Absensi GPS + Selfie
+              <br />
+              untuk UMKM
+            </h1>
+            <p className="mx-auto mt-4 max-w-xl text-lg text-muted lg:mx-0">
+              Mulai gratis. Karyawan absen dari HP dengan GPS dan selfie, kamu pantau siapa yang hadir dari mana saja,
+              hari ini juga.
+            </p>
+            <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row lg:justify-start">
+              <Link href="/register">
+                <Button size="lg" className="w-full sm:w-auto">
+                  Mulai Gratis
+                </Button>
+              </Link>
+              <Link href="/pricing">
+                <Button size="lg" variant="secondary" className="w-full sm:w-auto">
+                  Lihat Harga
+                </Button>
+              </Link>
+            </div>
+          </div>
+          <CheckInPreview />
         </div>
       </section>
 
-      <section className="mx-auto max-w-5xl px-4 py-12">
-        <div className="grid gap-6 sm:grid-cols-3">
-          {FEATURES.map((feature) => (
-            <Card key={feature.title} shadow>
-              <feature.icon className="h-8 w-8 text-primary" aria-hidden="true" />
-              <h3 className="mt-3 font-semibold text-text">{feature.title}</h3>
-              <p className="mt-1 text-sm text-muted">{feature.description}</p>
-            </Card>
-          ))}
+      <section className="border-y border-black/5 bg-surface py-16 dark:border-white/5">
+        <div className="mx-auto max-w-5xl px-4">
+          <h2 className="text-center text-2xl font-bold text-text">Semua yang dibutuhkan tim lapangan</h2>
+          <div className="mt-10 grid gap-6 sm:grid-cols-3">
+            {FEATURES.map((feature) => (
+              <Card key={feature.title}>
+                <span className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <feature.icon className="h-5 w-5" aria-hidden="true" />
+                </span>
+                <h3 className="mt-4 font-semibold text-text">{feature.title}</h3>
+                <p className="mt-1 text-sm text-muted">{feature.description}</p>
+              </Card>
+            ))}
+          </div>
         </div>
       </section>
 
-      <section className="mx-auto max-w-3xl px-4 py-12">
+      <section className="mx-auto max-w-3xl px-4 py-16">
         <h2 className="text-center text-2xl font-bold text-text">Cara kerja</h2>
-        <ol className="mt-8 space-y-6">
+        <ol className="mt-10 space-y-6">
           {STEPS.map((step, i) => (
             <li key={step.title} className="flex gap-4">
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-fg">
@@ -123,19 +141,21 @@ export default function LandingPage() {
         </ol>
       </section>
 
-      <section className="mx-auto max-w-3xl px-4 py-12">
-        <h2 className="text-center text-2xl font-bold text-text">Pertanyaan umum</h2>
-        <dl className="mt-8 space-y-6">
-          {FAQ.map((item) => (
-            <div key={item.q}>
-              <dt className="flex items-start gap-2 font-semibold text-text">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
-                {item.q}
-              </dt>
-              <dd className="mt-1 pl-7 text-sm text-muted">{item.a}</dd>
-            </div>
-          ))}
-        </dl>
+      <section className="border-t border-black/5 bg-surface py-16 dark:border-white/5">
+        <div className="mx-auto max-w-3xl px-4">
+          <h2 className="text-center text-2xl font-bold text-text">Pertanyaan umum</h2>
+          <dl className="mt-10 space-y-6">
+            {FAQ.map((item) => (
+              <div key={item.q}>
+                <dt className="flex items-start gap-2 font-semibold text-text">
+                  <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+                  {item.q}
+                </dt>
+                <dd className="mt-1 pl-7 text-sm text-muted">{item.a}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
       </section>
     </>
   );

@@ -134,8 +134,8 @@ export default function SelfieCamera({ onCapture, onError, className }: SelfieCa
       ) : null}
 
       {status === 'ready' ? (
-        <Button type="button" variant="primary" onClick={handleCapture} className="gap-2">
-          <Camera className="h-4 w-4" aria-hidden="true" />
+        <Button type="button" variant="primary" size="lg" onClick={handleCapture} className="w-full max-w-xs gap-2">
+          <Camera className="h-5 w-5" aria-hidden="true" />
           Ambil Foto
         </Button>
       ) : null}
@@ -143,8 +143,14 @@ export default function SelfieCamera({ onCapture, onError, className }: SelfieCa
       {status === 'fallback' ? (
         <>
           <p className="text-center text-sm text-muted">Kamera tidak tersedia. Unggah foto selfie dari perangkatmu.</p>
-          <Button type="button" variant="secondary" onClick={() => fileInputRef.current?.click()} className="gap-2">
-            <Upload className="h-4 w-4" aria-hidden="true" />
+          <Button
+            type="button"
+            variant="secondary"
+            size="lg"
+            onClick={() => fileInputRef.current?.click()}
+            className="w-full max-w-xs gap-2"
+          >
+            <Upload className="h-5 w-5" aria-hidden="true" />
             Unggah Foto
           </Button>
         </>

@@ -78,7 +78,7 @@ function LiveClock() {
     return () => clearInterval(id);
   }, []);
 
-  return <p className="text-3xl font-bold tabular-nums text-text">{now ?? '--:--:--'}</p>;
+  return <p className="text-4xl font-bold tabular-nums text-text">{now ?? '--:--:--'}</p>;
 }
 
 /**
@@ -101,19 +101,23 @@ export default function CheckInCard({ log, pendingAction, orgTimezone }: CheckIn
           <h3 className="text-sm font-semibold text-text">Absensi hari ini selesai</h3>
           {log ? <StatusBadge status={log.status} /> : null}
         </div>
-        <dl className="space-y-1 text-sm text-text">
-          <div className="flex justify-between">
+        <dl className="space-y-2 text-sm text-text">
+          <div className="flex items-baseline justify-between">
             <dt className="text-muted">Masuk</dt>
-            <dd className="font-medium">{log?.checkInAt ? formatClockTime(log.checkInAt, orgTimezone) : '-'}</dd>
+            <dd className="text-lg font-semibold tabular-nums">
+              {log?.checkInAt ? formatClockTime(log.checkInAt, orgTimezone) : '-'}
+            </dd>
           </div>
-          <div className="flex justify-between">
+          <div className="flex items-baseline justify-between">
             <dt className="text-muted">Keluar</dt>
-            <dd className="font-medium">{log?.checkOutAt ? formatClockTime(log.checkOutAt, orgTimezone) : '-'}</dd>
+            <dd className="text-lg font-semibold tabular-nums">
+              {log?.checkOutAt ? formatClockTime(log.checkOutAt, orgTimezone) : '-'}
+            </dd>
           </div>
           {log?.workMinutes != null ? (
-            <div className="flex justify-between">
+            <div className="flex items-baseline justify-between">
               <dt className="text-muted">Durasi kerja</dt>
-              <dd className="font-medium">
+              <dd className="text-lg font-semibold tabular-nums">
                 {Math.floor(log.workMinutes / 60)} jam {log.workMinutes % 60} menit
               </dd>
             </div>

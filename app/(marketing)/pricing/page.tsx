@@ -35,7 +35,12 @@ export default async function PricingPage() {
 
       <div className="mt-10 grid gap-6 sm:grid-cols-3">
         {plans.map((plan, i) => (
-          <Card key={plan.id} shadow className={i === 1 ? 'ring-2 ring-primary' : undefined}>
+          <Card key={plan.id} shadow className={`relative ${i === 1 ? 'ring-2 ring-primary' : ''}`}>
+            {i === 1 ? (
+              <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-fg">
+                Paling Populer
+              </span>
+            ) : null}
             <h2 className="text-lg font-semibold text-text">{plan.name}</h2>
             <p className="mt-2 text-3xl font-bold text-text">
               {plan.priceMonthly === 0 ? 'Gratis' : RUPIAH.format(plan.priceMonthly)}
