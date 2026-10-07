@@ -13,6 +13,14 @@ export const metadata: Metadata = {
     title: 'Hadirin — Absensi GPS + Selfie untuk UMKM',
     description: 'Absensi GPS + selfie untuk UMKM, siap dalam 5 menit, mulai gratis.',
     type: 'website',
+    // Every other page has no openGraph field of its own, so Next auto-merges
+    // app/opengraph-image.tsx's output into it for free. This page defines openGraph
+    // explicitly (for its own title/description/type), which opts it out of that
+    // auto-merge — confirmed by comparing this page's head output against /about's
+    // before this line existed. images: ['/opengraph-image'] (the route's own path,
+    // no query hash needed — the hash Next adds elsewhere is just a cache key, the
+    // bare route serves the same image) restores it explicitly.
+    images: ['/opengraph-image'],
   },
 };
 
