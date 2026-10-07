@@ -1,5 +1,4 @@
-import { sql, NotFoundError } from '../db';
-import type { PoolClient } from '@neondatabase/serverless';
+import { sql, NotFoundError, type TxClient } from '../db';
 import type { UserRole } from '../constants/roles';
 import type { UserStatus } from '../constants/statuses';
 
@@ -196,7 +195,7 @@ export async function insertUser(input: InsertUserInput): Promise<UserSummary> {
  * insertOrganizationTx — the owner sets their own password at signup, so (unlike
  * insertUser, used for admin-created employees) must_change_password is FALSE here.
  */
-export async function insertUserTx(client: PoolClient, input: InsertUserInput): Promise<UserSummary> {
+export async function insertUserTx(client: TxClient, input: InsertUserInput): Promise<UserSummary> {
   const result = await client.query(
     `INSERT INTO users (org_id, branch_id, shift_id, manager_id, employee_code, name, email, phone,
                           password_hash, must_change_password, role, position, status, joined_at)

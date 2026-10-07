@@ -1,4 +1,4 @@
-import { sql, NotFoundError } from '../db';
+import { sql, rawSql, NotFoundError } from '../db';
 import { parsePlanFeatures, DEFAULT_PLAN_FEATURES, type PlanFeatures } from '../constants/plan-features';
 
 // plans = Platform CMS, global data with no org_id (ERD.md §1) — only a platform admin
@@ -147,9 +147,11 @@ export async function updatePlan(id: number, input: UpdatePlanInput): Promise<Pl
 /** Platform CMS drag-reorder — sets `sort_order` to each id's position, in one HTTP transaction. */
 export async function reorderPlans(idsInOrder: number[]): Promise<void> {
   if (idsInOrder.length === 0) return;
-  await sql.transaction(
+  // rawSql (not the coercing `sql` wrapper) — .transaction()'s array elements must be
+  // the driver's own lazy query-builder objects; this result is discarded anyway (void).
+  await rawSql.transaction(
     idsInOrder.map((id, position) =>
-      sql.query(`UPDATE plans SET sort_order = $1, updated_at = now() WHERE id = $2`, [position, id]),
+      rawSql.query(`UPDATE plans SET sort_order = $1, updated_at = now() WHERE id = $2`, [position, id]),
     ),
   );
 }

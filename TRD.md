@@ -112,17 +112,34 @@ hadirin/
 
 ## 5. Data access pattern
 
+**Bigint-as-string (critical, read before touching `lib/db.ts`).** `@neondatabase/serverless` returns every `bigint`/`int8` column as a JS **string**, unconditionally — confirmed against a real Neon database (`SELECT 42::bigint` comes back as `"42"`, not `42`; `int4`/`integer` is unaffected). Every BIGSERIAL id and FK in this schema is a bigint (ERD.md: "no UUID"), and every query file's TypeScript interface declares these fields as `number` — so without a fix, the declared and actual runtime types diverge on literally every row, everywhere. This is not a theoretical gap: it is exactly what broke login/registration end-to-end during real-environment smoke testing — `setSessionCookie({ org: organization.id, ... })` signed `org` as the string `"6"`, the JWT round-tripped it as a JSON string, and `lib/session.ts`'s `typeof payload.org === 'number'` check rejected every token, so nobody could log in despite every other part of the flow succeeding (201 Created, row genuinely inserted). `lib/db.ts` fixes this at the one place every query shares — see below — so no query file needs to know about it.
+
 ```ts
 // lib/db.ts
-import { neon, Pool, type PoolClient } from '@neondatabase/serverless';
-export const sql = neon(process.env.DATABASE_URL!); // pooled (-pooler) connection string
+import ws from 'ws';
+import { neon, neonConfig, Pool } from '@neondatabase/serverless';
+neonConfig.webSocketConstructor = ws; // Node has no stable global WebSocket until v22
 
-export async function withTx<T>(fn: (c: PoolClient) => Promise<T>): Promise<T> {
+function coerceNumericStrings<T>(value: T): T { /* walks arrays/plain objects (never Date),
+  turns a string matching /^-?\d+$/ back into a number when it's a safe integer — see the
+  function's own comment in lib/db.ts for why this is safe for this specific schema */ }
+
+export const rawSql = neon(process.env.DATABASE_URL!); // only for sql.transaction() batches — see below
+export const sql = {
+  query: async (text: string, params: unknown[] = []) =>
+    coerceNumericStrings(await rawSql.query(text, params as never[])),
+};
+
+export interface TxClient { query(text: string, params?: unknown[]): Promise<{ rows: any[] }>; }
+export async function withTx<T>(fn: (c: TxClient) => Promise<T>): Promise<T> {
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
   const client = await pool.connect();
+  const txClient: TxClient = {
+    query: async (text, params = []) => ({ rows: coerceNumericStrings((await client.query(text, params as never[])).rows) }),
+  };
   try {
     await client.query('BEGIN');
-    const out = await fn(client);
+    const out = await fn(txClient);
     await client.query('COMMIT');
     return out;
   } catch (e) {
@@ -134,7 +151,8 @@ export async function withTx<T>(fn: (c: PoolClient) => Promise<T>): Promise<T> {
   }
 }
 
-// lib/queries/attendance.ts
+// lib/queries/attendance.ts — unchanged by any of the above; every query file keeps
+// calling sql.query(...) / client.query(...) exactly as before and casting the result.
 export async function insertCheckIn(p: CheckInRow) {
   const rows = await sql.query(
     `INSERT INTO attendance_logs (org_id, user_id, shift_id, work_date, scheduled_in, scheduled_out,
@@ -153,7 +171,7 @@ export async function insertCheckIn(p: CheckInRow) {
 Rules:
 - Function names are verbs on the model: `listUsers`, `getUserById`, `insertCheckIn`, `approveRequest`.
 - Every tenant query takes `orgId` as its first parameter and filters `WHERE org_id = $1`.
-- Fixed multi-statement batches use `sql.transaction([...])` over HTTP. Writes that must read a result and then decide (registration, request approval, invoice settlement) use `withTx(async (client) => …)` from `lib/db.ts`: a `Pool` client created inside the request with `BEGIN … COMMIT`, released in `finally`.
+- Fixed multi-statement batches that discard their result (`reorderPlans`/`reorderPaymentMethods`) use `rawSql.transaction([...rawSql.query(...)])` — the **raw**, uncoerced export, because `.transaction()`'s array elements must be the driver's own lazy query-builder objects, not something already `await`ed. Writes that must read a result and then decide (registration, request approval, invoice settlement) use `withTx(async (client) => …)` from `lib/db.ts`: a `Pool` client created inside the request with `BEGIN … COMMIT`, released in `finally`, exposing a `TxClient` (`{ query(text, params) }`) rather than the full driver `PoolClient` — every `*Tx` function only ever needs `.query()`.
 - Select explicit columns in list queries. `SELECT *` is allowed only for single-row returns.
 - Pagination: keyset (`WHERE (work_date, id) < ($2, $3) ORDER BY work_date DESC, id DESC LIMIT $4`) for logs; offset is fine for small master tables.
 - `updated_at = now()` is set in every UPDATE statement (there is no trigger).

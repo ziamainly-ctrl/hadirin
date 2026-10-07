@@ -1,5 +1,4 @@
-import { sql } from '../db';
-import type { PoolClient } from '@neondatabase/serverless';
+import { sql, type TxClient } from '../db';
 import type { AttendanceStatus, AttendanceSource } from '../constants/statuses';
 
 // Security/correctness-critical (AGENTS.md domain rules #1, #4, #5, #6, #9) — written
@@ -366,8 +365,8 @@ export interface ApplyCorrectionInput {
 }
 
 /** CORRECTION approval (TRD.md §8 step 3). Runs inside the caller's withTx transaction —
- * takes the PoolClient directly rather than the module's `sql` (TRD.md §5). */
-export async function applyCorrectionToLog(client: PoolClient, input: ApplyCorrectionInput): Promise<void> {
+ * takes the withTx TxClient directly rather than the module's `sql` (TRD.md §5). */
+export async function applyCorrectionToLog(client: TxClient, input: ApplyCorrectionInput): Promise<void> {
   await client.query(
     `INSERT INTO attendance_logs (
        org_id, user_id, shift_id, work_date, scheduled_in, scheduled_out,
@@ -407,7 +406,7 @@ export interface ApplyRangeStatusInput {
 
 /** LEAVE/SICK/PERMIT approval over a date range (TRD.md §8 step 3), one row per scheduled
  * work day in range, skipping days the shift doesn't work. Runs inside withTx. */
-export async function applyRangeStatusToLogs(client: PoolClient, input: ApplyRangeStatusInput): Promise<void> {
+export async function applyRangeStatusToLogs(client: TxClient, input: ApplyRangeStatusInput): Promise<void> {
   await client.query(
     `INSERT INTO attendance_logs (org_id, user_id, shift_id, work_date, scheduled_in, scheduled_out, status, request_id, source)
      SELECT $1, $2, $3, d::date, s.time_in, s.time_out, $6, $7, 'REQUEST'

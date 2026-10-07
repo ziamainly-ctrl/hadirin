@@ -1,5 +1,4 @@
-import { sql, NotFoundError } from '../db';
-import type { PoolClient } from '@neondatabase/serverless';
+import { sql, NotFoundError, type TxClient } from '../db';
 import type { RequestType, RequestStatus } from '../constants/statuses';
 
 // Security/correctness-critical (AGENTS.md domain rule #6 "idempotent writes... Approvals
@@ -155,7 +154,7 @@ export async function getRequestWithRequesterInOrg(orgId: number, id: number): P
  * Runs inside the caller's withTx, alongside applyCorrectionToLog/applyRangeStatusToLogs.
  */
 export async function reviewRequestAtomic(
-  client: PoolClient,
+  client: TxClient,
   params: { orgId: number; requestId: number; reviewerId: number; status: 'APPROVED' | 'REJECTED'; note: string | null },
 ): Promise<AttendanceRequestRow | null> {
   const result = await client.query(

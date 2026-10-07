@@ -12,7 +12,7 @@ Hadirin is attendance-only SaaS for Indonesian SMEs: GPS + selfie check-in/out, 
 
 - **Rendering:** Next.js App Router with SSR. Not a SPA. Server Components by default; `"use client"` only for interactive leaves. `.html`/`.jsx` mockups are references only.
 - **Hosting:** one Vercel project for UI + API, region `sin1`.
-- **Database:** Neon Postgres via `@neondatabase/serverless` with **raw parameterized SQL** (`$1, $2…`). No ORM at runtime.
+- **Database:** Neon Postgres via `@neondatabase/serverless` with **raw parameterized SQL** (`$1, $2…`). No ORM at runtime. Always import `sql`/`withTx` from `lib/db.ts`, never call `@neondatabase/serverless` directly — that driver returns every bigint/BIGSERIAL column as a *string* unconditionally, and `lib/db.ts` is the one place that corrects it back to a number (TRD.md §5). Bypassing it silently reintroduces the bug that once broke login/registration end-to-end.
 - **API structure:** one model = one folder `app/api/{model}/route.ts` (+ `[id]/route.ts` and action sub-routes).
 - **Query separation (mandatory):** all SQL lives in `lib/queries/{model}.ts`. No SQL strings in `route.ts`, `page.tsx`, server actions or components.
 - **Drizzle:** only `drizzle-kit generate/migrate` and the idempotent seed. Never import `drizzle-orm` outside `db/` and `scripts/`.

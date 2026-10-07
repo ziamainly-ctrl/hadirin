@@ -1,5 +1,4 @@
-import { sql, NotFoundError } from '../db';
-import type { PoolClient } from '@neondatabase/serverless';
+import { sql, NotFoundError, type TxClient } from '../db';
 import type { OrgStatus, GeofenceMode } from '../constants/statuses';
 import { parsePlanFeatures, type PlanFeatures } from '../constants/plan-features';
 
@@ -55,7 +54,7 @@ export interface InsertOrganizationInput {
  * lib/queries/attendance.ts's applyCorrectionToLog — because this always runs paired with
  * users.ts's insertUserTx inside the same transaction, never alone.
  */
-export async function insertOrganizationTx(client: PoolClient, input: InsertOrganizationInput): Promise<OrganizationRow> {
+export async function insertOrganizationTx(client: TxClient, input: InsertOrganizationInput): Promise<OrganizationRow> {
   const result = await client.query(
     `INSERT INTO organizations (plan_id, name, slug, status, geofence_mode, selfie_required, trial_ends_at)
      VALUES ($1, $2, $3, 'TRIAL', 'STRICT', TRUE, $4)
