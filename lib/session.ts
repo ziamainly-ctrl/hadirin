@@ -43,15 +43,27 @@ export async function signSession(payload: SessionPayload): Promise<string> {
     .sign(getSecret());
 }
 
+/** Neon returns bigint ids as strings. Accept both so a signed session still passes the proxy. */
+function asId(value: unknown): number {
+  if (typeof value === 'number' && Number.isSafeInteger(value)) return value;
+  if (typeof value === 'string' && /^-?\d+$/.test(value)) {
+    const n = Number(value);
+    if (Number.isSafeInteger(n)) return n;
+  }
+  return NaN;
+}
+
 /** Verifies signature and shape only — no DB lookup. */
 export async function verifySessionToken(token: string): Promise<SessionPayload | null> {
   try {
     const { payload } = await jwtVerify(token, getSecret());
-    const sub = typeof payload.sub === 'string' ? Number(payload.sub) : NaN;
+    const sub = asId(payload.sub);
     if (!Number.isFinite(sub)) return null;
 
-    if (payload.kind === 'user' && typeof payload.org === 'number') {
-      return { kind: 'user', sub, org: payload.org, role: payload.role as UserRole };
+    if (payload.kind === 'user') {
+      const org = asId(payload.org);
+      if (!Number.isFinite(org)) return null;
+      return { kind: 'user', sub, org, role: payload.role as UserRole };
     }
     if (payload.kind === 'platform') {
       return { kind: 'platform', sub, role: payload.role as 'SUPERADMIN' | 'SUPPORT' };
