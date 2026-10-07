@@ -29,7 +29,7 @@ export default async function MarketingLayout({ children }: { children: React.Re
           <MarketingNav dashboardHref={dashboardHref} />
         </div>
       </header>
-      <main className="flex-1">{children}</main>
+      <main className="bg-dot-grid flex-1">{children}</main>
       <footer className="border-t border-black/5 bg-surface py-8 text-center text-sm text-muted dark:border-white/10">
         © {new Date().getFullYear()} Hadirin. Absensi GPS + selfie untuk UMKM Indonesia.
       </footer>

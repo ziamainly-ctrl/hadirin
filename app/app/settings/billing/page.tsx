@@ -53,7 +53,7 @@ export default async function BillingSettingsPage() {
   const [invoices, methods] = await Promise.all([listInvoicesForOrg(orgId), listActivePaymentMethods()]);
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-4xl">
       <h1 className="text-xl font-semibold text-text">Billing</h1>
       <p className="mt-1 text-sm text-muted">Riwayat tagihan dan pembayaran paket.</p>
 

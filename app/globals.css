@@ -34,6 +34,17 @@
   --radius-input: 10px;
 }
 
+/* Plain custom property, not a @theme color: this backs .bg-dot-grid below (a one-off
+   decorative value), not a Tailwind-generated bg- or text- utility, so it stays outside
+   @theme on purpose. Declared before .dark below, light-mode default first — :root and
+   .dark are equal specificity, so source order decides which wins, same as every token
+   above (light value from @theme, which compiles to :root, always precedes its .dark
+   override). Getting that backwards here would make dark mode silently keep the light
+   dot color, the kind of bug that only shows up by actually toggling the theme. */
+:root {
+  --dot-color: rgba(15, 23, 42, 0.05);
+}
+
 /* Same token names, dark values — accents brightened a step since a saturated
    light-mode color loses contrast on a dark surface. */
 .dark {
@@ -52,6 +63,8 @@
   --color-status-permit: #22d3ee;
   --color-status-holiday: #94a3b8;
   --color-status-off: #cbd5e1;
+
+  --dot-color: rgba(255, 255, 255, 0.06);
 }
 
 @layer base {
@@ -59,4 +72,16 @@
     background-color: var(--color-bg);
     color: var(--color-text);
   }
+}
+
+/* Subtle full-bleed texture for sparse, narrow-column marketing pages (pricing, about,
+   the hero) — on a very wide/4K monitor a flat bg-bg either side of a centered max-w-5xl
+   column reads as empty dead space, almost like something's misaligned, even though the
+   column itself is centered exactly. A faint dot grid fills that space on purpose instead
+   of leaving it blank, the same role Apple Developer's full-bleed hero band and tile
+   grid play around its own equally-narrow (1024px, confirmed by measuring their nav)
+   centered nav content. */
+.bg-dot-grid {
+  background-image: radial-gradient(circle, var(--dot-color) 1px, transparent 1px);
+  background-size: 28px 28px;
 }

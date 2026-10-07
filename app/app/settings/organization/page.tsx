@@ -16,7 +16,7 @@ export default async function OrganizationSettingsPage() {
   if (!org) throw new Error('Organization not found');
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-3xl">
       <h1 className="text-xl font-semibold text-text">Organisasi</h1>
       <p className="mt-1 text-sm text-muted">Nama, zona waktu, dan aturan presensi untuk seluruh organisasi.</p>
 
