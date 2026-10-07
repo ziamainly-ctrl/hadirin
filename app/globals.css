@@ -1,0 +1,32 @@
+@import 'tailwindcss';
+
+/* Design tokens — TRD.md §14. Swap values here, not in components. */
+@theme {
+  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+
+  --color-primary: #0e7c66;
+  --color-primary-fg: #ffffff;
+  --color-bg: #f7f8fa;
+  --color-surface: #ffffff;
+  --color-text: #0f172a;
+  --color-muted: #64748b;
+
+  --color-status-present: #16a34a;
+  --color-status-late: #d97706;
+  --color-status-absent: #dc2626;
+  --color-status-leave: #2563eb;
+  --color-status-sick: #7c3aed;
+  --color-status-permit: #0891b2;
+  --color-status-holiday: #64748b;
+  --color-status-off: #94a3b8;
+
+  --radius-card: 12px;
+  --radius-input: 10px;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+  }
+}
