@@ -26,7 +26,7 @@ export default function ConfirmDialog({
   open,
   title,
   description,
-  confirmLabel = 'Ya, lanjutkan',
+  confirmLabel = 'Ya, Lanjutkan',
   cancelLabel = 'Batal',
   variant = 'danger',
   isLoading = false,

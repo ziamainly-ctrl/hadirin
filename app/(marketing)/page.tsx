@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
-import { MapPin, Camera, BellRing, CheckCircle2, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import ButtonLink from '@/components/ui/ButtonLink';
-import Card from '@/components/ui/Card';
 import CheckInPreview from './check-in-preview';
 
 export const metadata: Metadata = {
@@ -23,49 +22,6 @@ export const metadata: Metadata = {
   },
 };
 
-const FEATURES = [
-  {
-    icon: MapPin,
-    title: 'Geofence otomatis',
-    description: 'Karyawan hanya bisa absen di radius kantor/cabang yang kamu tentukan — tanpa perangkat tambahan.',
-  },
-  {
-    icon: Camera,
-    title: 'Selfie wajib',
-    description: 'Setiap absen disertai foto selfie, jadi tidak ada lagi titip absen.',
-  },
-  {
-    icon: BellRing,
-    title: 'Dashboard & notifikasi langsung',
-    description: 'Pantau siapa yang sudah/belum hadir hari ini, dan dapat notifikasi saat ada yang terlambat.',
-  },
-];
-
-const STEPS = [
-  { title: 'Daftar', description: 'Buat akun perusahaan dalam 1 menit, gratis tanpa kartu kredit.' },
-  { title: 'Atur cabang & shift', description: 'Tambah lokasi kantor (gunakan lokasi GPS kamu) dan jam kerja.' },
-  { title: 'Undang karyawan', description: 'Tambahkan karyawan, mereka langsung bisa absen dari HP masing-masing.' },
-];
-
-const FAQ = [
-  {
-    q: 'Apakah karyawan perlu install aplikasi?',
-    a: 'Tidak. Absensi dibuka lewat browser HP (bisa dipasang sebagai PWA), tidak perlu download dari app store.',
-  },
-  {
-    q: 'Bagaimana jika sinyal GPS lemah?',
-    a: 'Sistem akan memberi tahu jika akurasi GPS terlalu lemah dan meminta karyawan pindah ke tempat terbuka.',
-  },
-  {
-    q: 'Bisa dipakai untuk banyak cabang?',
-    a: 'Ya, setiap cabang punya titik lokasi dan radius sendiri. Jumlah cabang mengikuti paket yang dipilih.',
-  },
-  {
-    q: 'Apa yang terjadi kalau masa coba gratis habis?',
-    a: 'Jika belum membayar, akun otomatis turun ke paket Gratis jika masih sesuai batasnya, atau perlu upgrade jika sudah melebihi.',
-  },
-];
-
 const JSON_LD = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
@@ -81,83 +37,37 @@ export default function LandingPage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }} />
 
-      <section className="mx-auto max-w-5xl px-4 py-16 sm:py-24">
-        <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+      {/* The home page is a single screen: the hero only. Features, pricing, the story, check-in
+          and help each have their own page in the header menu. The column is the header's own
+          (max-w-6xl, px-4), so the headline lines up under the logo and the phone under Sign up.
+          Type and spacing are clamp()s of the viewport's width AND height, capped at what the
+          1152px column holds: still inside the window at 1024x600 (the page never scrolls on desktop). */}
+      <section className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-4 py-8 lg:py-[clamp(1rem,3vh,3rem)]">
+        <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:gap-[clamp(2rem,5vw,6rem)]">
           <div className="text-center lg:text-left">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1 text-xs font-medium text-muted">
-              <Sparkles className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1 text-xs font-medium text-muted lg:text-[length:clamp(0.75rem,min(0.9vw,1.7vh),0.875rem)]">
+              <Sparkles className="h-[1.1667em] w-[1.1667em] text-text" aria-hidden="true" />
               Siap dipakai dalam 5 menit
             </span>
-            <h1 className="mt-4 text-3xl font-bold tracking-tight text-text sm:text-5xl">
-              Absensi GPS + Selfie
+            <h1 className="mt-4 text-balance text-3xl font-bold leading-[1.1] tracking-tight text-text sm:text-5xl lg:mt-[clamp(0.75rem,2.4vh,1.5rem)] lg:text-[length:clamp(2.5rem,min(4.4vw,7.6vh),3.5rem)]">
+              Absensi GPS + Selfie{' '}
               <br />
               untuk UMKM
             </h1>
-            <p className="mx-auto mt-4 max-w-xl text-lg text-muted lg:mx-0">
-              Mulai gratis. Karyawan absen dari HP dengan GPS dan selfie, kamu pantau siapa yang hadir dari mana saja,
-              hari ini juga.
+            <p className="mx-auto mt-4 max-w-[30em] text-pretty text-base text-muted sm:text-lg lg:mx-0 lg:mt-[clamp(0.75rem,2.4vh,1.5rem)] lg:text-[length:clamp(1rem,min(1.3vw,2.4vh),1.25rem)]">
+              Karyawan absen lewat HP dengan GPS dan selfie. Anda memantau kehadiran tim dari mana saja, tanpa mesin
+              absen.
             </p>
-            <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row lg:justify-start">
+            <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row lg:mt-[clamp(1.25rem,4vh,2.5rem)] lg:justify-start">
               <ButtonLink href="/register" size="lg" className="w-full sm:w-auto">
                 Mulai Gratis
               </ButtonLink>
-              <ButtonLink href="/pricing" size="lg" variant="outline" className="w-full sm:w-auto">
-                Lihat Harga
+              <ButtonLink href="/fitur" size="lg" variant="outline" className="w-full sm:w-auto">
+                Lihat Fitur
               </ButtonLink>
             </div>
           </div>
           <CheckInPreview />
-        </div>
-      </section>
-
-      <section id="fitur" className="scroll-mt-20 border-y border-border bg-surface py-16">
-        <div className="mx-auto max-w-5xl px-4">
-          <h2 className="text-center text-2xl font-bold text-text">Semua yang dibutuhkan tim lapangan</h2>
-          <div className="mt-10 grid gap-6 sm:grid-cols-3">
-            {FEATURES.map((feature) => (
-              <Card key={feature.title}>
-                <span className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <feature.icon className="h-5 w-5" aria-hidden="true" />
-                </span>
-                <h3 className="mt-4 font-semibold text-text">{feature.title}</h3>
-                <p className="mt-1 text-sm text-muted">{feature.description}</p>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-3xl px-4 py-16">
-        <h2 className="text-center text-2xl font-bold text-text">Cara kerja</h2>
-        <ol className="mt-10 space-y-6">
-          {STEPS.map((step, i) => (
-            <li key={step.title} className="flex gap-4">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-fg">
-                {i + 1}
-              </span>
-              <div>
-                <h3 className="font-semibold text-text">{step.title}</h3>
-                <p className="text-sm text-muted">{step.description}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
-      </section>
-
-      <section className="border-t border-border bg-surface py-16">
-        <div className="mx-auto max-w-3xl px-4">
-          <h2 className="text-center text-2xl font-bold text-text">Pertanyaan umum</h2>
-          <dl className="mt-10 space-y-6">
-            {FAQ.map((item) => (
-              <div key={item.q}>
-                <dt className="flex items-start gap-2 font-semibold text-text">
-                  <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
-                  {item.q}
-                </dt>
-                <dd className="mt-1 pl-7 text-sm text-muted">{item.a}</dd>
-              </div>
-            ))}
-          </dl>
         </div>
       </section>
     </>

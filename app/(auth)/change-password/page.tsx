@@ -4,8 +4,15 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
+import { AUTH_FORM_CLASS, AuthHeading } from '../auth-ui';
 
 const ADMIN_ROLES = new Set(['OWNER', 'ADMIN', 'MANAGER']);
+
+// The route answers in English; the one failure a person can fix here is worded by code.
+const ERROR_COPY: Record<string, string> = {
+  INVALID_CURRENT_PASSWORD:
+    'Kata sandi sementara tidak cocok. Periksa lagi, atau minta admin perusahaan Anda membuatkan yang baru.',
+};
 
 // Reachable even while must_change_password is true (TRD.md §11) — this is a first-login
 // (admin-issued temporary password) flow, not a "forgot password" flow.
@@ -13,12 +20,21 @@ export default function ChangePasswordPage() {
   const router = useRouter();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [mismatch, setMismatch] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    // Client-side only: the API takes just the new password, the repeat field exists so a
+    // typo in a password nobody can see isn't saved as the only way back into the account.
+    if (newPassword !== confirmPassword) {
+      setMismatch(true);
+      return;
+    }
+    setMismatch(false);
     setIsLoading(true);
     try {
       const res = await fetch('/api/auth/change-password', {
@@ -28,7 +44,7 @@ export default function ChangePasswordPage() {
       });
       const json = await res.json();
       if (!res.ok) {
-        setError(json.error?.message ?? 'Gagal mengubah kata sandi.');
+        setError(ERROR_COPY[json.error?.code] ?? json.error?.message ?? 'Gagal mengubah kata sandi.');
         return;
       }
       const me = await fetch('/api/me').then((r) => r.json());
@@ -41,9 +57,11 @@ export default function ChangePasswordPage() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <h1 className="text-lg font-semibold text-text">Buat Kata Sandi Baru</h1>
-      <p className="text-sm text-muted">Ini login pertama kamu. Silakan ganti kata sandi sementara.</p>
+    <form onSubmit={handleSubmit} className={AUTH_FORM_CLASS}>
+      <AuthHeading
+        title="Buat Kata Sandi Baru"
+        description="Ini login pertama Anda. Ganti kata sandi sementara dari admin dengan kata sandi milik Anda sendiri."
+      />
       <Input
         label="Kata Sandi Sementara"
         type="password"
@@ -58,10 +76,29 @@ export default function ChangePasswordPage() {
         value={newPassword}
         onChange={(e) => setNewPassword(e.target.value)}
         autoComplete="new-password"
+        hint="Minimal 8 karakter."
         minLength={8}
+        maxLength={72}
         required
       />
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      <Input
+        label="Ulangi Kata Sandi Baru"
+        type="password"
+        value={confirmPassword}
+        onChange={(e) => {
+          setConfirmPassword(e.target.value);
+          setMismatch(false);
+        }}
+        autoComplete="new-password"
+        error={mismatch ? 'Kata sandi tidak sama. Ketik ulang kata sandi baru Anda.' : undefined}
+        maxLength={72}
+        required
+      />
+      {error ? (
+        <p role="alert" className="text-sm text-destructive">
+          {error}
+        </p>
+      ) : null}
       <Button type="submit" isLoading={isLoading} className="mt-2 w-full">
         Simpan & Lanjutkan
       </Button>

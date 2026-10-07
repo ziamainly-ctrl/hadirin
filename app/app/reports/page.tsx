@@ -3,6 +3,7 @@ import { FileBarChart } from 'lucide-react';
 import { requireSession } from '@/lib/auth';
 import { getMonthlyRecap } from '@/lib/queries/reports';
 import { getOrganizationPlanContext } from '@/lib/queries/organizations';
+import { listBranches } from '@/lib/queries/branches';
 import { getLocalParts, pad2 } from '@/lib/tz';
 import { idParam } from '@/lib/validators/common';
 import Card from '@/components/ui/Card';
@@ -10,7 +11,10 @@ import Table from '@/components/ui/Table';
 import BarList from '@/components/shared/BarList';
 import DonutChart from '@/components/shared/DonutChart';
 import EmptyState from '@/components/shared/EmptyState';
+import Page from '@/components/shared/Page';
 import ExportButtons from './export-buttons';
+import ReportFilters from './filters';
+import { formatMinutes } from '../attendance/format';
 
 export const metadata: Metadata = { title: 'Laporan' };
 
@@ -24,11 +28,24 @@ function firstValue(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
 }
 
-/** "YYYY-MM" for right now, in the org's default display timezone (TRD.md §14/organizations.timezone default). */
-function currentMonthJakarta(): string {
-  const { year, month } = getLocalParts(new Date(), 'Asia/Jakarta');
+/** "YYYY-MM" for right now in the org's own timezone (organizations.timezone, TRD.md §5). */
+function currentMonthIn(timeZone: string): string {
+  const { year, month } = getLocalParts(new Date(), timeZone);
   return `${year}-${pad2(month)}`;
 }
+
+// "2026-10" → "Oktober 2026", used in the card titles and empty state so a past month
+// never reads as "bulan ini".
+const MONTH_FORMATTER = new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+function monthLabel(value: string): string {
+  const year = Number(value.slice(0, 4));
+  const month = Number(value.slice(5, 7));
+  return MONTH_FORMATTER.format(new Date(Date.UTC(year, month - 1, 1)));
+}
+
+// Numeric columns: right-aligned with tabular figures so digits line up down the column
+// (standard data-table practice for quantities).
+const NUM = 'text-right tabular-nums';
 
 /**
  * Monthly recap (PRD.md US-05, TRD.md §6/§13 `GET /api/reports/monthly`). Server
@@ -42,19 +59,19 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
   const { orgId } = await requireSession(['OWNER', 'ADMIN']);
   const params = await searchParams;
 
-  const monthRaw = firstValue(params.month);
-  const month = monthRaw && MONTH_PATTERN.test(monthRaw) ? monthRaw : currentMonthJakarta();
-
   const branchIdRaw = firstValue(params.branchId);
   const branchIdResult = branchIdRaw ? idParam.safeParse(branchIdRaw) : undefined;
   const branchId = branchIdResult?.success ? branchIdResult.data : undefined;
 
-  const [recap, org] = await Promise.all([
-    getMonthlyRecap(orgId, { month, branchId }),
-    getOrganizationPlanContext(orgId),
-  ]);
+  // The org's timezone decides which month is "this month", so it is read before the recap.
+  const [org, branches] = await Promise.all([getOrganizationPlanContext(orgId), listBranches(orgId, { activeOnly: true })]);
+  const currentMonth = currentMonthIn(org?.timezone ?? 'Asia/Jakarta');
+  const monthRaw = firstValue(params.month);
+  const month = monthRaw && MONTH_PATTERN.test(monthRaw) ? monthRaw : currentMonth;
+  const recap = await getMonthlyRecap(orgId, { month, branchId });
 
   const canExportPdf = org?.features.export_pdf ?? false;
+  const periodLabel = month === currentMonth ? 'Bulan Ini' : monthLabel(month);
 
   const totals = recap.reduce(
     (acc, row) => ({
@@ -65,96 +82,206 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
     }),
     { present: 0, late: 0, absent: 0, leaveSickPermit: 0 },
   );
+  const hasData =
+    totals.present + totals.late + totals.absent + totals.leaveSickPermit > 0 ||
+    recap.some((row) => row.totalWorkMinutes > 0);
   const topLate = recap
     .filter((row) => row.totalLateMinutes > 0)
     .sort((a, b) => b.totalLateMinutes - a.totalLateMinutes)
     .slice(0, 5)
-    .map((row) => ({ label: row.name, value: row.totalLateMinutes }));
+    // One series, ranked by length alone: the bars stay neutral (BarList's default) instead of
+    // borrowing the amber of the "Terlambat" status.
+    .map((row) => ({ id: row.userId, label: row.name, value: row.totalLateMinutes }));
 
+  // Desktop: header, exports and the month/branch pickers stay put; the two charts keep their
+  // height and the per-employee table takes the rest, scrolling inside its own box with the
+  // column head pinned (ui/TableFrame). Below lg the page just scrolls.
   return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-xl font-semibold text-text">Laporan</h1>
-        <p className="text-sm text-muted">Rekap kehadiran bulanan per karyawan.</p>
-      </div>
-
-      <ExportButtons
-        month={month}
-        branchId={branchId !== undefined ? String(branchId) : undefined}
-        canExportPdf={canExportPdf}
+    <Page>
+      <Page.Header
+        title="Laporan"
+        description="Rekap kehadiran bulanan per karyawan, siap diunduh."
+        actions={
+          <ExportButtons
+            month={month}
+            branchId={branchId !== undefined ? String(branchId) : undefined}
+            canExportPdf={canExportPdf}
+          />
+        }
       />
 
-      {recap.length === 0 ? (
-        <EmptyState icon={FileBarChart} message="Belum ada data untuk bulan ini." />
-      ) : (
-        <>
-          <div className="grid gap-4 lg:grid-cols-2">
-            <Card shadow>
-              <Card.Header>
-                <h2 className="text-sm font-semibold text-text">Ringkasan Bulan Ini</h2>
-              </Card.Header>
-              <Card.Body>
-                <DonutChart
-                  centerValue={String(totals.present + totals.late)}
-                  centerLabel="Hari Hadir"
-                  segments={[
-                    { label: 'Tepat Waktu', value: totals.present, color: 'var(--color-status-present)' },
-                    { label: 'Terlambat', value: totals.late, color: 'var(--color-status-late)' },
-                    { label: 'Tidak Hadir', value: totals.absent, color: 'var(--color-status-absent)' },
-                    { label: 'Cuti/Sakit/Izin', value: totals.leaveSickPermit, color: 'var(--color-status-leave)' },
-                  ]}
-                />
-              </Card.Body>
-            </Card>
+      <ReportFilters
+        month={month}
+        currentMonth={currentMonth}
+        branches={branches.map((b) => ({ id: b.id, name: b.name }))}
+        branchId={branchId !== undefined ? String(branchId) : undefined}
+      />
 
-            <Card shadow>
-              <Card.Header>
-                <h2 className="text-sm font-semibold text-text">Keterlambatan Terbanyak</h2>
-              </Card.Header>
-              <Card.Body>
-                {topLate.length === 0 ? (
-                  <p className="text-sm text-muted">Tidak ada keterlambatan bulan ini.</p>
-                ) : (
-                  <BarList items={topLate} formatValue={(v) => `${v}m`} />
-                )}
-              </Card.Body>
-            </Card>
-          </div>
+      <Page.Body>
+        {/* The recap lists every employee even in a month with no attendance at all (all
+            zeros), so "empty" means no recorded day and no work time, not zero rows. */}
+        {!hasData ? (
+          <EmptyState
+            icon={FileBarChart}
+            message={`Belum ada data kehadiran untuk ${monthLabel(month)}. Pilih bulan atau cabang lain di atas.`}
+          />
+        ) : (
+          <>
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <Card className="flex flex-col">
+                <Card.Header>
+                  <h2 className="text-sm font-semibold text-text">Ringkasan {periodLabel}</h2>
+                </Card.Header>
+                <Card.Body className="flex flex-1 items-center">
+                  <DonutChart
+                    size={112}
+                    className="w-full"
+                    centerValue={String(totals.present + totals.late)}
+                    centerLabel="Hari Hadir"
+                    segments={[
+                      { label: 'Tepat Waktu', value: totals.present, color: 'var(--color-status-present)' },
+                      { label: 'Terlambat', value: totals.late, color: 'var(--color-status-late)' },
+                      { label: 'Tidak Hadir', value: totals.absent, color: 'var(--color-status-absent)' },
+                      { label: 'Cuti/Sakit/Izin', value: totals.leaveSickPermit, color: 'var(--color-status-leave)' },
+                    ]}
+                  />
+                </Card.Body>
+              </Card>
 
-          <Table>
-          <Table.Head>
-            <Table.Row>
-              <Table.HeadCell>Nama</Table.HeadCell>
-              <Table.HeadCell>Cabang</Table.HeadCell>
-              <Table.HeadCell>Hadir</Table.HeadCell>
-              <Table.HeadCell>Terlambat</Table.HeadCell>
-              <Table.HeadCell>Tidak Hadir</Table.HeadCell>
-              <Table.HeadCell>Cuti</Table.HeadCell>
-              <Table.HeadCell>Sakit</Table.HeadCell>
-              <Table.HeadCell>Izin</Table.HeadCell>
-              <Table.HeadCell>Total Menit Terlambat</Table.HeadCell>
-              <Table.HeadCell>Total Jam Kerja</Table.HeadCell>
-            </Table.Row>
-          </Table.Head>
-          <Table.Body>
-            {recap.map((row) => (
-              <Table.Row key={row.userId}>
-                <Table.Cell>{row.name}</Table.Cell>
-                <Table.Cell>{row.branchName ?? '-'}</Table.Cell>
-                <Table.Cell>{row.presentCount}</Table.Cell>
-                <Table.Cell>{row.lateCount}</Table.Cell>
-                <Table.Cell>{row.absentCount}</Table.Cell>
-                <Table.Cell>{row.leaveCount}</Table.Cell>
-                <Table.Cell>{row.sickCount}</Table.Cell>
-                <Table.Cell>{row.permitCount}</Table.Cell>
-                <Table.Cell>{row.totalLateMinutes}</Table.Cell>
-                <Table.Cell>{(row.totalWorkMinutes / 60).toFixed(1)}</Table.Cell>
-              </Table.Row>
-            ))}
-          </Table.Body>
-          </Table>
-        </>
-      )}
-    </div>
+              <Card className="flex flex-col">
+                <Card.Header>
+                  <h2 className="text-sm font-semibold text-text">Keterlambatan Terbanyak</h2>
+                </Card.Header>
+                <Card.Body className="flex flex-1 items-center">
+                  {topLate.length === 0 ? (
+                    <p className="text-sm text-muted">Tidak ada karyawan yang terlambat pada {monthLabel(month)}.</p>
+                  ) : (
+                    <BarList className="w-full" items={topLate} formatValue={formatMinutes} />
+                  )}
+                </Card.Body>
+              </Card>
+            </div>
+
+            {/* lg:min-h-48: on a very short window the charts are kept whole and the table keeps a
+                usable few rows, so the page body (not the table) is what scrolls then. */}
+            <section className="flex flex-col gap-3 lg:min-h-48 lg:flex-1" aria-labelledby="report-recap-heading">
+              {/* Title and caption share a line from lg up: a stacked caption cost 16px of table. */}
+              <div className="flex flex-col gap-0.5 lg:flex-row lg:flex-wrap lg:items-baseline lg:gap-x-4">
+                <h2 id="report-recap-heading" className="text-base font-semibold text-text">
+                  Rekap per Karyawan
+                </h2>
+                <p className="text-xs text-muted">
+                  Jumlah hari per status, lalu total keterlambatan dan jam kerja selama {monthLabel(month)}.
+                </p>
+              </div>
+              {/* The branch is a second line under the name instead of its own column: ten
+                  columns overflowed a 1280px laptop. On a phone even nine columns showed only the name
+                  and the first count without scrolling sideways, so below sm each person is a small card.
+                  Day counts are in days; the two duration columns use the same "8 jam 2 mnt"
+                  format as the attendance table (formatMinutes). */}
+              <RecapList rows={recap} />
+              {/* A flex column so ui/Table's frame can shrink to the space the section has left and
+                  scroll its rows inside (header pinned); phones get RecapList above instead. */}
+              <div className="hidden min-h-0 flex-col sm:flex">
+                <Table aria-label="Rekap kehadiran per karyawan">
+                  <Table.Head>
+                    <Table.Row>
+                      <Table.HeadCell>Karyawan</Table.HeadCell>
+                      <Table.HeadCell className={NUM}>Tepat Waktu</Table.HeadCell>
+                      <Table.HeadCell className={NUM}>Terlambat</Table.HeadCell>
+                      <Table.HeadCell className={NUM}>Tidak Hadir</Table.HeadCell>
+                      <Table.HeadCell className={NUM}>Cuti</Table.HeadCell>
+                      <Table.HeadCell className={NUM}>Sakit</Table.HeadCell>
+                      <Table.HeadCell className={NUM}>Izin</Table.HeadCell>
+                      <Table.HeadCell className={NUM}>Total Keterlambatan</Table.HeadCell>
+                      <Table.HeadCell className={NUM}>Total Jam Kerja</Table.HeadCell>
+                    </Table.Row>
+                  </Table.Head>
+                  <Table.Body>
+                    {recap.map((row) => (
+                      <Table.Row key={row.userId}>
+                        <Table.Cell>
+                          <span className="block max-w-56 truncate font-medium" title={row.name}>
+                            {row.name}
+                          </span>
+                          <span className="block max-w-56 truncate text-xs text-muted">{row.branchName ?? 'Tanpa cabang'}</span>
+                        </Table.Cell>
+                        <DayCountCell value={row.presentCount} />
+                        <DayCountCell value={row.lateCount} />
+                        <DayCountCell value={row.absentCount} />
+                        <DayCountCell value={row.leaveCount} />
+                        <DayCountCell value={row.sickCount} />
+                        <DayCountCell value={row.permitCount} />
+                        <Table.Cell className={NUM}>{row.totalLateMinutes > 0 ? formatMinutes(row.totalLateMinutes) : '—'}</Table.Cell>
+                        <Table.Cell className={NUM}>{row.totalWorkMinutes > 0 ? formatMinutes(row.totalWorkMinutes) : '—'}</Table.Cell>
+                      </Table.Row>
+                    ))}
+                  </Table.Body>
+                </Table>
+              </div>
+            </section>
+          </>
+        )}
+      </Page.Body>
+    </Page>
+  );
+}
+
+// A zero is printed (it is a real count) but muted, so the days that did happen stand out
+// in a grid that is mostly zeros.
+function DayCountCell({ value }: { value: number }) {
+  return (
+    <Table.Cell className={NUM}>
+      <span className={value === 0 ? 'text-muted' : undefined}>{value}</span>
+    </Table.Cell>
+  );
+}
+
+type RecapRow = Awaited<ReturnType<typeof getMonthlyRecap>>[number];
+
+// Phones: the per-employee table has nine columns, and at 360px only the name and the first count
+// were visible without scrolling sideways. Below sm each person is a card (name, branch, the six
+// day counts in a 3 x 2 grid, then the two totals), the same pattern as the dashboard and
+// attendance lists. From sm up the table (above) has the room.
+function RecapList({ rows }: { rows: RecapRow[] }) {
+  return (
+    <ul className="divide-y divide-border rounded-card border border-border bg-surface sm:hidden" aria-label="Rekap kehadiran per karyawan">
+      {rows.map((row) => {
+        const counts: ReadonlyArray<readonly [string, number]> = [
+          ['Tepat Waktu', row.presentCount],
+          ['Terlambat', row.lateCount],
+          ['Tidak Hadir', row.absentCount],
+          ['Cuti', row.leaveCount],
+          ['Sakit', row.sickCount],
+          ['Izin', row.permitCount],
+        ];
+        return (
+          <li key={row.userId} className="flex flex-col gap-3 px-4 py-3 text-sm">
+            <div className="min-w-0">
+              <p className="line-clamp-2 break-words font-medium text-text">{row.name}</p>
+              <p className="truncate text-xs text-muted">{row.branchName ?? 'Tanpa cabang'}</p>
+            </div>
+            <dl className="grid grid-cols-3 gap-x-3 gap-y-2 tabular-nums">
+              {counts.map(([label, value]) => (
+                <div key={label}>
+                  <dt className="text-xs text-muted">{label}</dt>
+                  <dd className={value === 0 ? 'text-muted' : 'font-medium text-text'}>{value}</dd>
+                </div>
+              ))}
+            </dl>
+            <dl className="grid grid-cols-2 gap-x-3 border-t border-border pt-2 tabular-nums">
+              <div>
+                <dt className="text-xs text-muted">Total Keterlambatan</dt>
+                <dd className="text-text">{row.totalLateMinutes > 0 ? formatMinutes(row.totalLateMinutes) : '—'}</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted">Total Jam Kerja</dt>
+                <dd className="text-text">{row.totalWorkMinutes > 0 ? formatMinutes(row.totalWorkMinutes) : '—'}</dd>
+              </div>
+            </dl>
+          </li>
+        );
+      })}
+    </ul>
   );
 }

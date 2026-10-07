@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Badge from '@/components/ui/Badge';
@@ -26,13 +26,15 @@ export interface TemplateFormProps {
   existingTemplates: GlobalTemplateSummary[];
 }
 
+// Same wording as the tenant editor (app/app/settings/notifications/template-editor.tsx),
+// so an event has one name on both sides; "Pengajuan Direview" also mixed in English.
 const EVENT_LABELS: Record<NotificationEventTrigger, string> = {
-  LATE_CHECK_IN: 'Keterlambatan',
-  MISSING_CHECK_OUT: 'Lupa Check-out',
-  REQUEST_SUBMITTED: 'Pengajuan Baru',
-  REQUEST_REVIEWED: 'Pengajuan Direview',
-  INVOICE_CREATED: 'Tagihan Baru',
-  INVOICE_PAID: 'Pembayaran Diterima',
+  LATE_CHECK_IN: 'Karyawan terlambat',
+  MISSING_CHECK_OUT: 'Lupa check-out',
+  REQUEST_SUBMITTED: 'Pengajuan baru masuk',
+  REQUEST_REVIEWED: 'Pengajuan disetujui/ditolak',
+  INVOICE_CREATED: 'Tagihan baru',
+  INVOICE_PAID: 'Pembayaran diterima',
 };
 
 const CHANNEL_LABELS: Record<NotificationChannel, string> = {
@@ -52,6 +54,15 @@ interface FormState {
 
 const EMPTY_FORM: FormState = { eventTrigger: 'LATE_CHECK_IN', channel: 'EMAIL', subject: '', body: '' };
 
+function toFormState(template: GlobalTemplateSummary): FormState {
+  return {
+    eventTrigger: template.eventTrigger,
+    channel: template.channel,
+    subject: template.subject ?? '',
+    body: template.body,
+  };
+}
+
 /**
  * Platform CMS counterpart of app/app/settings/notifications/template-editor.tsx — same
  * shape (pick a saved template below to load it, or start from EMPTY_FORM; one
@@ -61,22 +72,49 @@ const EMPTY_FORM: FormState = { eventTrigger: 'LATE_CHECK_IN', channel: 'EMAIL',
  * defaults every org without its own override falls back to
  * (lib/queries/notification-templates.ts, PRD.md P4).
  */
-export default function TemplateForm({ existingTemplates }: TemplateFormProps) {
+// The list follows the event order of the Kejadian select (then Email before WhatsApp)
+// instead of DB insertion order, so both channels of one event sit next to each other.
+function sortTemplates(templates: GlobalTemplateSummary[]): GlobalTemplateSummary[] {
+  const rank = (t: GlobalTemplateSummary) =>
+    NOTIFICATION_EVENT_TRIGGERS.indexOf(t.eventTrigger) * 10 + NOTIFICATION_CHANNELS.indexOf(t.channel);
+  return [...templates].sort((a, b) => rank(a) - rank(b));
+}
+
+export default function TemplateForm({ existingTemplates: unsortedTemplates }: TemplateFormProps) {
+  const existingTemplates = sortTemplates(unsortedTemplates);
   const router = useRouter();
   const { show } = useToast();
-  const [form, setForm] = useState<FormState>(EMPTY_FORM);
+  // Start on the first saved template, not a blank form: EMPTY_FORM's event+channel pair
+  // (Keterlambatan · Email) already exists, so a blank start showed that row as selected
+  // while its subject and body looked empty.
+  const [form, setForm] = useState<FormState>(() => (existingTemplates[0] ? toFormState(existingTemplates[0]) : EMPTY_FORM));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const editorRef = useRef<HTMLDivElement>(null);
 
-  function loadForEdit(template: GlobalTemplateSummary) {
-    setForm({
-      eventTrigger: template.eventTrigger,
-      channel: template.channel,
-      subject: template.subject ?? '',
-      body: template.body,
-    });
+  // Picking an event or channel that already has a template loads its saved text, so the
+  // form always shows what "Simpan" is about to overwrite. A new pair keeps whatever has
+  // been typed, to start the new template from it.
+  function selectPair(eventTrigger: NotificationEventTrigger, channel: NotificationChannel) {
+    const existing = existingTemplates.find((t) => t.eventTrigger === eventTrigger && t.channel === channel);
+    setForm((f) => (existing ? toFormState(existing) : { ...f, eventTrigger, channel }));
     setFieldErrors({});
   }
+
+  function loadForEdit(template: GlobalTemplateSummary) {
+    setForm(toFormState(template));
+    setFieldErrors({});
+    // Below lg the editor sits under the list: without this, tapping a template changed
+    // a form that was off-screen and nothing on screen seemed to happen.
+    if (window.matchMedia('(max-width: 1023px)').matches) {
+      editorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
+  // The list item whose event+channel the form currently points at — saving upserts on
+  // exactly that pair, so this is the row that will be overwritten.
+  const selectedKey = `${form.eventTrigger}:${form.channel}`;
+  const existsAlready = existingTemplates.some((t) => `${t.eventTrigger}:${t.channel}` === selectedKey);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -109,63 +147,98 @@ export default function TemplateForm({ existingTemplates }: TemplateFormProps) {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      {existingTemplates.length > 0 ? (
-        <div className="flex flex-col gap-2">
-          <h2 className="text-sm font-semibold text-text">Template Tersimpan</h2>
-          {existingTemplates.map((template) => (
-            <button
-              key={`${template.eventTrigger}:${template.channel}`}
-              type="button"
-              onClick={() => loadForEdit(template)}
-              className="flex items-center justify-between gap-2 rounded-input border border-border bg-surface px-3 py-2 text-left text-sm text-text transition hover:bg-accent"
-            >
-              <span>{EVENT_LABELS[template.eventTrigger]}</span>
-              <Badge className="bg-primary/10 text-primary">{CHANNEL_LABELS[template.channel]}</Badge>
-            </button>
-          ))}
-        </div>
-      ) : null}
+    // Two panes from lg, both bound to the page body's height: the saved list on the left
+    // scrolls inside itself, the editor card on the right keeps its Save button in view (its
+    // textarea gives up height first). Stacked on smaller screens, where the page scrolls.
+    <div className="grid gap-6 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:grid-rows-[minmax(0,1fr)]">
+      <section className="flex min-w-0 flex-col gap-2 lg:min-h-0" aria-labelledby="saved-templates-heading">
+        <h2 id="saved-templates-heading" className="text-base font-semibold text-text">
+          Template Tersimpan
+        </h2>
+        {existingTemplates.length > 0 ? (
+          <>
+            <p className="text-sm text-muted">Pilih salah satu untuk mengubahnya.</p>
+            {/* -m-1 + p-1: the list is its own scroll box on desktop, which would clip the
+                focus ring of the first/last/edge items. */}
+            <ul className="flex flex-col gap-2 lg:-m-1 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:p-1">
+              {existingTemplates.map((template) => {
+                const key = `${template.eventTrigger}:${template.channel}`;
+                const selected = key === selectedKey;
+                return (
+                  <li key={key}>
+                    <button
+                      type="button"
+                      onClick={() => loadForEdit(template)}
+                      aria-pressed={selected}
+                      className={`flex min-h-11 w-full items-center justify-between lg:min-h-10 lg:pointer-coarse:min-h-11 gap-2 rounded-input border px-3 py-2 text-left text-sm text-text transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 ${
+                        selected ? 'border-primary bg-accent font-medium' : 'border-border bg-surface hover:bg-accent'
+                      }`}
+                    >
+                      <span className="min-w-0 truncate">{EVENT_LABELS[template.eventTrigger]}</span>
+                      <Badge tone="neutral" dot={false} className="shrink-0">
+                        {CHANNEL_LABELS[template.channel]}
+                      </Badge>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </>
+        ) : (
+          <p className="text-sm text-muted">Belum ada template. Buat yang pertama lewat formulir ini.</p>
+        )}
+      </section>
 
-      <Card>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <Select
-            label="Kejadian"
-            value={form.eventTrigger}
-            onChange={(e) => setForm((f) => ({ ...f, eventTrigger: e.target.value as NotificationEventTrigger }))}
-            options={EVENT_OPTIONS}
-            error={fieldErrors.eventTrigger}
-          />
-          <Select
-            label="Kanal"
-            value={form.channel}
-            onChange={(e) => setForm((f) => ({ ...f, channel: e.target.value as NotificationChannel }))}
-            options={CHANNEL_OPTIONS}
-            error={fieldErrors.channel}
-          />
-          {form.channel === 'EMAIL' ? (
-            <Input
-              label="Subjek"
-              value={form.subject}
-              onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))}
-              error={fieldErrors.subject}
-              maxLength={200}
+      <div ref={editorRef} className="flex min-w-0 scroll-mt-20 flex-col lg:min-h-0">
+        <Card className="flex min-h-0 flex-col lg:max-h-full lg:overflow-y-auto">
+          <Card.Header>
+            <h2 className="text-base font-semibold text-text">{existsAlready ? 'Ubah Template' : 'Template Baru'}</h2>
+          </Card.Header>
+          <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col gap-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Select
+                label="Kejadian"
+                value={form.eventTrigger}
+                onChange={(e) => selectPair(e.target.value as NotificationEventTrigger, form.channel)}
+                options={EVENT_OPTIONS}
+                error={fieldErrors.eventTrigger}
+              />
+              <Select
+                label="Kanal"
+                value={form.channel}
+                onChange={(e) => selectPair(form.eventTrigger, e.target.value as NotificationChannel)}
+                options={CHANNEL_OPTIONS}
+                error={fieldErrors.channel}
+              />
+            </div>
+            {form.channel === 'EMAIL' ? (
+              <Input
+                label="Subjek"
+                value={form.subject}
+                onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))}
+                error={fieldErrors.subject}
+                maxLength={200}
+              />
+            ) : null}
+            <Textarea
+              label="Isi Pesan"
+              value={form.body}
+              onChange={(e) => setForm((f) => ({ ...f, body: e.target.value }))}
+              error={fieldErrors.body}
+              // The old hint named {{nama}}, which no template actually uses — the real
+              // placeholders are English snake_case keys (db/seed.sql, lib/notify.ts).
+              hint="Teks dalam {{...}}, misalnya {{employee_name}}, otomatis diganti dengan data asli saat pesan dikirim."
+              rows={8}
+              wrapperClassName="lg:min-h-0 lg:flex-auto"
+              className="min-h-28 font-mono leading-relaxed lg:flex-auto"
+              required
             />
-          ) : null}
-          <Textarea
-            label="Isi Pesan"
-            value={form.body}
-            onChange={(e) => setForm((f) => ({ ...f, body: e.target.value }))}
-            error={fieldErrors.body}
-            hint="Placeholder {{nama}} dan sejenisnya didukung."
-            rows={6}
-            required
-          />
-          <Button type="submit" isLoading={isSubmitting} className="self-start">
-            Simpan Template
-          </Button>
-        </form>
-      </Card>
+            <Button type="submit" isLoading={isSubmitting} className="self-start">
+              Simpan Template
+            </Button>
+          </form>
+        </Card>
+      </div>
     </div>
   );
 }

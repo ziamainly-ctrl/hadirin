@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { listGlobalTemplates } from '@/lib/queries/notification-templates';
+import Page from '@/components/shared/Page';
 import TemplateForm from './template-form';
 
 export const metadata: Metadata = { title: 'Template Notifikasi' };
@@ -11,21 +12,24 @@ export const metadata: Metadata = { title: 'Template Notifikasi' };
  * (lib/queries/notification-templates.ts), so unlike the tenant-side editor
  * (app/app/settings/notifications), there is no features.template_override gate here —
  * this page is what defines that global default (PRD.md P4).
+ *
+ * Same left-aligned header as every other /platform page (it used to be a centered
+ * max-w-2xl column, the only page whose title didn't line up with the rest).
  */
 export default async function NotificationTemplatesPage() {
   const templates = await listGlobalTemplates();
 
   return (
-    <div className="mx-auto max-w-2xl">
-      <h1 className="text-xl font-semibold text-text">Template Notifikasi</h1>
-      <p className="mt-1 text-sm text-muted">
-        Kelola template notifikasi default untuk seluruh organisasi. Organisasi dengan paket yang mendukung
-        kustomisasi dapat menimpa template ini dengan template mereka sendiri.
-      </p>
-
-      <div className="mt-6">
+    <Page>
+      <Page.Header
+        title="Template Notifikasi"
+        description="Template default untuk seluruh organisasi. Organisasi yang paketnya mendukung kustomisasi dapat menggantinya dengan template mereka sendiri."
+      />
+      {/* The saved list and the editor are two independently scrolling panes inside the body
+          (see template-form.tsx), so neither the page nor the Save button ever scrolls away. */}
+      <Page.Body>
         <TemplateForm existingTemplates={templates} />
-      </div>
-    </div>
+      </Page.Body>
+    </Page>
   );
 }

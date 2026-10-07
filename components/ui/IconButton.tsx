@@ -22,6 +22,13 @@ const VARIANT_CLASSES: Record<IconButtonVariant, string> = {
   outline: 'border border-input bg-surface text-text shadow-xs hover:bg-accent',
 };
 
+// On a touch screen every size gets an invisible 44px hit area (Apple HIG 44pt; WCAG 2.5.5
+// AAA is 44 CSS px, 2.5.8 AA is 24) via a centered ::before, so a 32px dialog close or drag
+// handle stays visually compact on desktop yet is easy to hit with a thumb. Mouse users
+// keep the drawn box as the target.
+const TOUCH_TARGET =
+  "relative before:absolute before:left-1/2 before:top-1/2 before:h-11 before:w-11 before:-translate-x-1/2 before:-translate-y-1/2 before:content-[''] pointer-fine:before:hidden";
+
 /**
  * Square icon-only button (theme toggle, sidebar collapse, dialog close, menu toggles).
  * One shape and one set of states, so the header, sidebar and dialogs can't each invent
@@ -40,7 +47,7 @@ export default function IconButton({
     <button
       type={type}
       aria-label={label}
-      className={`inline-flex shrink-0 items-center justify-center rounded-input transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 ${SIZE_CLASSES[size]} ${VARIANT_CLASSES[variant]} ${className ?? ''}`}
+      className={`${TOUCH_TARGET} inline-flex shrink-0 items-center justify-center rounded-input transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 ${SIZE_CLASSES[size]} ${VARIANT_CLASSES[variant]} ${className ?? ''}`}
       {...rest}
     >
       {children}

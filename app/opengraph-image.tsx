@@ -5,15 +5,15 @@ import { mascotDataUri } from '@/lib/brand/mascot';
 // define its own openGraph.images — before this, sharing a Hadirin link showed no
 // preview image at all. 1200x630 is the standard OG image size. Colors are the dark
 // neutral tokens from app/globals.css written out as hex, since next/og can't read CSS
-// variables.
+// variables. The backdrop is neutral gray to black like the app's own dark page gradient.
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 export const alt = 'Hadirin — absensi GPS + selfie untuk UMKM';
 
-const CHIPS = ['GPS geofence', 'Selfie wajib', 'Mulai gratis'];
+const CHIPS = ['Geofence GPS', 'Selfie wajib', 'Mulai gratis'];
 
 export default function OpengraphImage() {
-  const mark = mascotDataUri({ framing: 'full', rounded: true, idPrefix: 'ho' });
+  const mark = mascotDataUri({ framing: 'full', idPrefix: 'ho' });
   return new ImageResponse(
     (
       <div
@@ -23,7 +23,7 @@ export default function OpengraphImage() {
           display: 'flex',
           alignItems: 'center',
           padding: '0 80px',
-          background: 'radial-gradient(circle at 24% 50%, #1d3340 0%, #0a0a0a 58%)',
+          background: 'radial-gradient(circle at 24% 50%, #3a3a3a 0%, #0a0a0a 62%)',
           color: '#fafafa',
         }}
       >

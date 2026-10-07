@@ -24,10 +24,10 @@ export async function GET(_request: Request, { params }: { params: Promise<{ nam
   const icon = ICONS[name as IconName];
   if (!icon) return new Response('Not found', { status: 404 });
 
-  // Maskable art is full-bleed (no rounded tile): the OS applies its own mask, and the
-  // face sits well inside the central 80% safe zone. The regular icon keeps the rounded
-  // tile with transparent corners.
-  const art = mascotDataUri({ framing: 'tight', rounded: !icon.maskable, idPrefix: `hp${icon.px}` });
+  // Maskable art is full-bleed (neutral gradient square): the OS applies its own mask,
+  // and the face sits well inside the central 80% safe zone. The regular icon is
+  // transparent like the favicon.
+  const art = mascotDataUri({ framing: 'tight', background: icon.maskable ? 'neutral' : 'none', idPrefix: `hp${icon.px}` });
   return new ImageResponse(
     // eslint-disable-next-line @next/next/no-img-element
     <img src={art} width={icon.px} height={icon.px} alt="" />,

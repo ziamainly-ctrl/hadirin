@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { MapPin, Camera, Rocket } from 'lucide-react';
 import ButtonLink from '@/components/ui/ButtonLink';
 import Card from '@/components/ui/Card';
+import { IconCard, PageHead, PageSection } from '../marketing-page';
 
 export const metadata: Metadata = {
   title: 'Tentang Kami',
@@ -17,55 +18,48 @@ const VALUES = [
   {
     icon: Camera,
     title: 'Anti titip absen',
-    description: 'Selfie wajib di setiap check-in/out membuat kehadiran sulit diwakilkan orang lain.',
+    description: 'Selfie wajib di setiap absen masuk dan pulang, jadi kehadiran tidak bisa diwakilkan orang lain.',
   },
   {
     icon: Rocket,
     title: 'Cepat dipakai',
-    description: 'Tanpa perangkat fingerprint, tanpa instalasi IT. Daftar, atur cabang dan shift, langsung jalan.',
+    description: 'Tanpa mesin sidik jari dan tanpa tim IT. Daftar, atur cabang dan shift, langsung jalan.',
   },
 ];
 
 export default function AboutPage() {
   return (
-    <section className="mx-auto max-w-3xl px-4 py-16">
-      <h1 className="text-center text-3xl font-bold text-text">Tentang Hadirin</h1>
-      <p className="mx-auto mt-4 max-w-xl text-center text-muted">
-        Hadirin adalah absensi GPS + selfie untuk UMKM dan bisnis dengan karyawan lapangan di Indonesia — dibangun
-        supaya pemilik usaha tahu persis siapa yang hadir, kapan, dan di mana, tanpa perlu perangkat tambahan atau
-        tim IT.
-      </p>
+    <PageSection>
+      <PageHead
+        title="Tentang Hadirin"
+        description="Hadirin adalah absensi GPS + selfie untuk UMKM dan bisnis dengan karyawan lapangan di Indonesia. Kami membangunnya supaya pemilik usaha tahu persis siapa yang hadir, kapan, dan di mana, tanpa perangkat tambahan atau tim IT."
+        actions={
+          <>
+            <ButtonLink href="/register" className="w-full sm:w-auto">
+              Mulai Gratis
+            </ButtonLink>
+            <ButtonLink href="/pricing" variant="outline" className="w-full sm:w-auto">
+              Lihat Harga
+            </ButtonLink>
+          </>
+        }
+      />
 
-      <div className="mt-10 grid gap-6 sm:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-3 lg:gap-[clamp(0.5rem,calc(3vh-0.5rem),1rem)]">
         {VALUES.map((value) => (
-          <Card key={value.title}>
-            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary">
-              <value.icon className="h-5 w-5" aria-hidden="true" />
-            </span>
-            <h2 className="mt-4 font-semibold text-text">{value.title}</h2>
-            <p className="mt-1 text-sm text-muted">{value.description}</p>
-          </Card>
+          <IconCard key={value.title} icon={value.icon} title={value.title} description={value.description} />
         ))}
       </div>
 
-      <Card shadow className="mt-10">
-        <h2 className="font-semibold text-text">Kenapa kami membangun ini</h2>
-        <p className="mt-2 text-sm text-muted">
+      <Card shadow className="p-5 lg:p-6">
+        <h2 className="text-lg font-semibold text-text">Kenapa kami membangun ini</h2>
+        <p className="mt-2 text-pretty text-sm text-muted">
           Banyak usaha kecil di Indonesia masih mencatat kehadiran lewat kertas, grup WhatsApp, atau mesin sidik jari
           yang mahal dan sering rusak. Semuanya sama-sama mudah dititipkan ke orang lain dan sulit direkap. Hadirin
-          memindahkan proses itu ke HP karyawan sendiri, dengan verifikasi lokasi dan wajah yang tervalidasi di
-          server — supaya pemilik usaha bisa percaya datanya tanpa harus mengawasi secara manual.
+          memindahkan proses itu ke HP karyawan sendiri, dengan lokasi dan foto yang dicek di server, supaya pemilik
+          usaha bisa percaya datanya tanpa harus mengawasi secara manual.
         </p>
       </Card>
-
-      <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-        <ButtonLink href="/register" size="lg">
-          Mulai Gratis
-        </ButtonLink>
-        <ButtonLink href="/pricing" size="lg" variant="outline">
-          Lihat Harga
-        </ButtonLink>
-      </div>
-    </section>
+    </PageSection>
   );
 }

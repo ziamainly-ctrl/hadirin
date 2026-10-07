@@ -7,7 +7,7 @@ import { pngsToIco } from '@/lib/brand/ico';
 const SIZES = [48, 32, 16];
 
 async function renderPng(size: number): Promise<Uint8Array> {
-  const src = mascotDataUri({ framing: 'tight', rounded: true, idPrefix: `hi${size}` });
+  const src = mascotDataUri({ framing: 'tight', idPrefix: `hi${size}` });
   const res = new ImageResponse(createElement('img', { src, width: size, height: size, alt: '' }), {
     width: size,
     height: size,

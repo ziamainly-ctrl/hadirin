@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Pencil, Plus } from 'lucide-react';
 import Button from '@/components/ui/Button';
+import type { ButtonSize } from '@/components/ui/Button';
 import Checkbox from '@/components/ui/Checkbox';
 import Dialog from '@/components/ui/Dialog';
 import Input from '@/components/ui/Input';
@@ -13,6 +14,8 @@ import type { ShiftSummary } from '@/lib/queries/shifts';
 export interface ShiftFormDialogProps {
   /** Present → PATCHes /api/shifts/[id] (edit). Absent → POSTs /api/shifts (create). */
   shift?: ShiftSummary;
+  /** Edit trigger size: sm inside a table row (default), md in the phone card list. */
+  size?: ButtonSize;
 }
 
 interface Weekday {
@@ -84,10 +87,11 @@ function toFormState(shift?: ShiftSummary): ShiftFormState {
  * (lib/validators/shifts.ts) — workDays is built/parsed here from the seven
  * checkboxes below and never shown to the admin as its raw comma string.
  */
-export default function ShiftFormDialog({ shift }: ShiftFormDialogProps) {
+export default function ShiftFormDialog({ shift, size = 'sm' }: ShiftFormDialogProps) {
   const isEdit = Boolean(shift);
   const router = useRouter();
   const { show } = useToast();
+  const toleranceHintId = useId();
 
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<ShiftFormState>(() => toFormState(shift));
@@ -101,6 +105,11 @@ export default function ShiftFormDialog({ shift }: ShiftFormDialogProps) {
   // checked here so unchecking every box is caught immediately, not only after a
   // failed submit.
   const workDaysError = workDays.size === 0 ? 'Pilih minimal satu hari kerja.' : fieldErrors.workDays;
+
+  // "HH:MM" strings compare correctly as text. A clock-out at or before clock-in only
+  // makes sense for a night shift, so nudge the admin toward the cross-day box instead
+  // of letting them save a shift that looks like it ends before it starts.
+  const looksCrossDay = form.timeIn !== '' && form.timeOut !== '' && form.timeOut <= form.timeIn;
 
   function openDialog() {
     setForm(toFormState(shift));
@@ -171,9 +180,9 @@ export default function ShiftFormDialog({ shift }: ShiftFormDialogProps) {
       <Button
         type="button"
         variant={isEdit ? 'secondary' : 'primary'}
-        size={isEdit ? 'sm' : 'md'}
+        size={isEdit ? size : 'md'}
         onClick={openDialog}
-        className="gap-1.5"
+        aria-label={isEdit ? `Edit ${shift?.name}` : undefined}
       >
         {isEdit ? <Pencil className="h-4 w-4" aria-hidden="true" /> : <Plus className="h-4 w-4" aria-hidden="true" />}
         {isEdit ? 'Edit' : 'Tambah Shift'}
@@ -208,10 +217,17 @@ export default function ShiftFormDialog({ shift }: ShiftFormDialogProps) {
                 required
               />
             </div>
+            {looksCrossDay && !form.isCrossDay ? (
+              <p className="-mt-2 text-sm text-muted">
+                Jam keluar lebih awal dari jam masuk. Jika shift ini melewati tengah malam, centang{' '}
+                <span className="font-medium text-text">Shift lintas hari</span> di bawah.
+              </p>
+            ) : null}
             <div className="grid grid-cols-2 gap-3">
               <Input
                 label="Istirahat (menit)"
                 type="number"
+                inputMode="numeric"
                 min={0}
                 value={form.breakMinutes}
                 onChange={(e) => setForm((f) => ({ ...f, breakMinutes: e.target.value }))}
@@ -219,14 +235,22 @@ export default function ShiftFormDialog({ shift }: ShiftFormDialogProps) {
                 required
               />
               <Input
-                label="Toleransi Terlambat (menit)"
+                label="Toleransi (menit)"
                 type="number"
+                inputMode="numeric"
                 min={0}
                 value={form.lateToleranceMinutes}
                 onChange={(e) => setForm((f) => ({ ...f, lateToleranceMinutes: e.target.value }))}
                 error={fieldErrors.lateToleranceMinutes}
+                // The hint sits under both fields (below) instead of wrapping to two lines inside this
+                // narrow column and leaving a hole under "Istirahat"; an error keeps the field's own
+                // aria-describedby (the spread would otherwise replace it).
+                {...(fieldErrors.lateToleranceMinutes ? {} : { 'aria-describedby': toleranceHintId })}
                 required
               />
+              <p id={toleranceHintId} className="col-span-2 -mt-1 text-sm text-muted">
+                Telat dalam batas toleransi tetap dihitung hadir.
+              </p>
             </div>
 
             <fieldset className="flex flex-col gap-1.5 border-0 p-0">
@@ -241,7 +265,7 @@ export default function ShiftFormDialog({ shift }: ShiftFormDialogProps) {
                       aria-label={day.label}
                       className="peer sr-only"
                     />
-                    <span className="flex h-9 items-center justify-center rounded-input border border-input text-xs font-medium text-muted transition-colors hover:bg-accent peer-checked:border-primary peer-checked:bg-primary peer-checked:text-primary-fg peer-focus-visible:ring-[3px] peer-focus-visible:ring-ring/50">
+                    <span className="flex h-10 items-center justify-center rounded-input border border-input text-xs font-medium text-muted sm:text-sm transition-colors hover:bg-accent peer-checked:border-primary peer-checked:bg-primary peer-checked:text-primary-fg peer-focus-visible:ring-[3px] peer-focus-visible:ring-ring/50">
                       {day.short}
                     </span>
                   </label>
@@ -252,7 +276,8 @@ export default function ShiftFormDialog({ shift }: ShiftFormDialogProps) {
 
             <Checkbox
               label="Shift lintas hari"
-              description="Aktifkan jika jam keluar melewati tengah malam."
+              description="Jam keluar jatuh di hari berikutnya, misalnya 22:00–06:00."
+              className="pointer-coarse:min-h-11 pointer-coarse:items-center"
               checked={form.isCrossDay}
               onChange={(e) => setForm((f) => ({ ...f, isCrossDay: e.target.checked }))}
             />
@@ -262,7 +287,7 @@ export default function ShiftFormDialog({ shift }: ShiftFormDialogProps) {
               Batal
             </Button>
             <Button type="submit" isLoading={isSubmitting} disabled={Boolean(workDaysError)}>
-              {isEdit ? 'Simpan' : 'Tambah'}
+              {isEdit ? 'Simpan' : 'Tambah Shift'}
             </Button>
           </Dialog.Footer>
         </form>

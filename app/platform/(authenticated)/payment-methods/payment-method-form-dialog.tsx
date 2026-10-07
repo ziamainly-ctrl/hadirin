@@ -60,10 +60,13 @@ const TYPE_LABELS: Record<PaymentMethodType, string> = {
 const CODE_OPTIONS = PAYMENT_METHOD_CODES.map((value) => ({ value, label: CODE_LABELS[value] }));
 const TYPE_OPTIONS = PAYMENT_METHOD_TYPES.map((value) => ({ value, label: TYPE_LABELS[value] }));
 
+// id-ID decimal comma ("0,7%"), not the raw "0.70%" the numeric column used to print.
+const PERCENT = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 2 });
+
 function formatFee(adminFeeFlat: number, adminFeePct: number): string {
   const parts: string[] = [];
   if (adminFeeFlat > 0) parts.push(RUPIAH.format(adminFeeFlat));
-  if (adminFeePct > 0) parts.push(`${adminFeePct}%`);
+  if (Number(adminFeePct) > 0) parts.push(`${PERCENT.format(Number(adminFeePct))}%`);
   return parts.length > 0 ? parts.join(' + ') : 'Gratis';
 }
 
@@ -181,7 +184,8 @@ export default function PaymentMethodFormDialog({ method, nextSortOrder = 0 }: P
         variant={isEdit ? 'secondary' : 'primary'}
         size={isEdit ? 'sm' : 'md'}
         onClick={openDialog}
-        className="gap-1.5"
+        // Every row says "Edit": the name tells a screen-reader user which method this changes.
+        aria-label={isEdit ? `Edit metode ${method?.name}` : undefined}
       >
         {isEdit ? <Pencil className="h-4 w-4" aria-hidden="true" /> : <Plus className="h-4 w-4" aria-hidden="true" />}
         {isEdit ? 'Edit' : 'Tambah Metode'}
@@ -189,10 +193,13 @@ export default function PaymentMethodFormDialog({ method, nextSortOrder = 0 }: P
 
       <Dialog open={open} onClose={closeDialog} title={isEdit ? 'Edit Metode Pembayaran' : 'Tambah Metode Pembayaran'}>
         <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+          {/* Pairs go side by side only from sm: at phone width "BCA Virtual Account" was
+              clipped inside a half-width select and "Biaya Admin Tetap (Rp)" wrapped to two
+              lines, knocking its input out of line with the one beside it. */}
           <Dialog.Body className="flex flex-col gap-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-4 sm:grid-cols-2 sm:gap-3">
               <Select
-                label="Kode"
+                label="Kode Midtrans"
                 value={form.code}
                 onChange={(e) => setForm((f) => ({ ...f, code: e.target.value as PaymentMethodCode }))}
                 options={CODE_OPTIONS}
@@ -213,6 +220,7 @@ export default function PaymentMethodFormDialog({ method, nextSortOrder = 0 }: P
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               error={fieldErrors.name}
               maxLength={80}
+              hint="Nama yang dilihat pelanggan saat memilih metode pembayaran."
               required
             />
 
@@ -225,9 +233,9 @@ export default function PaymentMethodFormDialog({ method, nextSortOrder = 0 }: P
               placeholder="https://..."
             />
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-4 sm:grid-cols-2 sm:gap-3">
               <Input
-                label="Biaya Admin Tetap (Rp)"
+                label="Biaya Tetap (Rp)"
                 type="number"
                 min={0}
                 value={form.adminFeeFlat}
@@ -236,7 +244,7 @@ export default function PaymentMethodFormDialog({ method, nextSortOrder = 0 }: P
                 required
               />
               <Input
-                label="Biaya Admin (%)"
+                label="Biaya Persentase (%)"
                 type="number"
                 min={0}
                 max={100}
@@ -250,6 +258,7 @@ export default function PaymentMethodFormDialog({ method, nextSortOrder = 0 }: P
 
             <Checkbox
               label="Aktif"
+              description="Hanya metode aktif yang muncul di halaman pembayaran pelanggan."
               checked={form.isActive}
               onChange={(e) => setForm((f) => ({ ...f, isActive: e.target.checked }))}
             />
@@ -277,10 +286,10 @@ function SortablePaymentMethodRow({ method }: { method: PaymentMethod }) {
   };
 
   return (
-    // Same reason as plans/plan-form-dialog.tsx's SortablePlanRow: Table.Row cannot take
-    // the ref useSortable needs, so this is a plain <tr> with Table.Row's hover class.
-    <tr ref={setNodeRef} style={style} className="hover:bg-accent/50">
-      <Table.Cell className="w-8">
+    // Table.Row takes the ref useSortable needs (React 19 passes ref as a prop), so the row
+    // keeps the shared hover state instead of a copy of it.
+    <Table.Row ref={setNodeRef} style={style}>
+      <Table.Cell narrow>
         <IconButton
           label="Seret untuk mengurutkan"
           size="sm"
@@ -291,19 +300,22 @@ function SortablePaymentMethodRow({ method }: { method: PaymentMethod }) {
           <GripVertical className="h-4 w-4" aria-hidden="true" />
         </IconButton>
       </Table.Cell>
-      <Table.Cell className="font-medium text-text">{CODE_LABELS[method.code]}</Table.Cell>
-      <Table.Cell>{method.name}</Table.Cell>
-      <Table.Cell className="text-muted">{TYPE_LABELS[method.type]}</Table.Cell>
-      <Table.Cell>{formatFee(method.adminFeeFlat, method.adminFeePct)}</Table.Cell>
+      {/* The customer-facing name with the Midtrans code under it: the old separate Kode
+          column mostly repeated the name ("QRIS" / "QRIS") and pushed Status and Aksi off
+          a tablet screen. */}
       <Table.Cell>
-        <Badge className={method.isActive ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-accent text-muted'}>
-          {method.isActive ? 'Aktif' : 'Nonaktif'}
-        </Badge>
+        <span className="block font-medium text-text">{method.name}</span>
+        <span className="mt-0.5 block font-mono text-xs text-muted">{method.code}</span>
+      </Table.Cell>
+      <Table.Cell className="text-muted">{TYPE_LABELS[method.type]}</Table.Cell>
+      <Table.Cell className="text-right">{formatFee(method.adminFeeFlat, method.adminFeePct)}</Table.Cell>
+      <Table.Cell>
+        <Badge tone={method.isActive ? 'success' : 'neutral'}>{method.isActive ? 'Aktif' : 'Nonaktif'}</Badge>
       </Table.Cell>
       <Table.Cell className="text-right">
         <PaymentMethodFormDialog method={method} />
       </Table.Cell>
-    </tr>
+    </Table.Row>
   );
 }
 
@@ -363,14 +375,15 @@ export function SortablePaymentMethodsTable({ paymentMethods: initialMethods }: 
     // Fixed id: dnd-kit numbers its accessibility ids from a module-level counter, which
     // differs between the server render and hydration (a mismatch logged on every load).
     <DndContext id="payment-methods-dnd" sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-      <Table>
+      <Table aria-label="Daftar metode pembayaran">
         <Table.Head>
           <Table.Row>
-            <Table.HeadCell className="w-8" />
-            <Table.HeadCell>Kode</Table.HeadCell>
-            <Table.HeadCell>Nama</Table.HeadCell>
+            <Table.HeadCell narrow>
+              <span className="sr-only">Urutan</span>
+            </Table.HeadCell>
+            <Table.HeadCell>Metode</Table.HeadCell>
             <Table.HeadCell>Jenis</Table.HeadCell>
-            <Table.HeadCell>Biaya Admin</Table.HeadCell>
+            <Table.HeadCell className="text-right">Biaya Admin</Table.HeadCell>
             <Table.HeadCell>Status</Table.HeadCell>
             <Table.HeadCell className="text-right">Aksi</Table.HeadCell>
           </Table.Row>

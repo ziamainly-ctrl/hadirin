@@ -1,10 +1,15 @@
+import type { Metadata } from 'next';
 import { Building2 } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
+import type { BadgeTone } from '@/components/ui/Badge';
 import Table from '@/components/ui/Table';
 import EmptyState from '@/components/shared/EmptyState';
+import Page from '@/components/shared/Page';
 import { listOrganizationsForPlatform } from '@/lib/queries/organizations';
 import type { PlatformOrganizationRow } from '@/lib/queries/organizations';
 import type { OrgStatus } from '@/lib/constants/statuses';
+
+export const metadata: Metadata = { title: 'Organisasi' };
 
 const STATUS_LABELS: Record<OrgStatus, string> = {
   TRIAL: 'Percobaan',
@@ -13,22 +18,23 @@ const STATUS_LABELS: Record<OrgStatus, string> = {
   SUSPENDED: 'Ditangguhkan',
 };
 
-const STATUS_BADGE_CLASSES: Record<OrgStatus, string> = {
-  TRIAL: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300',
-  ACTIVE: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
-  PAST_DUE: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
-  SUSPENDED: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
+// Neutral chip + a small colored dot (Badge tone): the owner wants no tinted panels.
+const STATUS_BADGE_TONES: Record<OrgStatus, BadgeTone> = {
+  TRIAL: 'info',
+  ACTIVE: 'success',
+  PAST_DUE: 'warning',
+  SUSPENDED: 'danger',
 };
 
 // Pure calendar display for a TIMESTAMPTZ column — day-level precision is enough here,
 // and this list spans orgs in different timezones, so no single org timezone applies.
 const DATE_FORMATTER = new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
 
+// Date only: the Status badge right next to it already says "Percobaan", so repeating
+// "Percobaan s/d" here made the widest column in the table say the same thing twice.
 function formatExpiry(org: PlatformOrganizationRow): string {
-  if (org.status === 'TRIAL') {
-    return org.trialEndsAt ? `Percobaan s/d ${DATE_FORMATTER.format(new Date(org.trialEndsAt))}` : '—';
-  }
-  return org.planExpiresAt ? DATE_FORMATTER.format(new Date(org.planExpiresAt)) : '—';
+  const date = org.status === 'TRIAL' ? org.trialEndsAt : org.planExpiresAt;
+  return date ? DATE_FORMATTER.format(new Date(date)) : '—';
 }
 
 /**
@@ -43,44 +49,48 @@ export default async function OrganizationsPage() {
   const organizations = await listOrganizationsForPlatform();
 
   return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-xl font-semibold text-text">Organisasi</h1>
-        <p className="text-sm text-muted">Daftar seluruh organisasi yang terdaftar di Hadirin.</p>
-      </div>
+    <Page>
+      <Page.Header title="Organisasi" description="Daftar seluruh organisasi yang terdaftar di Hadirin." />
 
-      {organizations.length === 0 ? (
-        <EmptyState icon={Building2} message="Belum ada organisasi yang terdaftar." />
-      ) : (
-        <Table>
-          <Table.Head>
-            <Table.Row>
-              <Table.HeadCell>Nama</Table.HeadCell>
-              <Table.HeadCell>Slug</Table.HeadCell>
-              <Table.HeadCell>Paket</Table.HeadCell>
-              <Table.HeadCell>Status</Table.HeadCell>
-              <Table.HeadCell>Kursi Terpakai</Table.HeadCell>
-              <Table.HeadCell>Berakhir</Table.HeadCell>
-            </Table.Row>
-          </Table.Head>
-          <Table.Body>
-            {organizations.map((org) => (
-              <Table.Row key={org.id}>
-                <Table.Cell className="font-medium text-text">{org.name}</Table.Cell>
-                <Table.Cell className="text-muted">{org.slug}</Table.Cell>
-                <Table.Cell>{org.planName}</Table.Cell>
-                <Table.Cell>
-                  <Badge className={STATUS_BADGE_CLASSES[org.status]}>{STATUS_LABELS[org.status]}</Badge>
-                </Table.Cell>
-                <Table.Cell>
-                  {org.seatsUsed} / {org.maxEmployees}
-                </Table.Cell>
-                <Table.Cell className="text-muted">{formatExpiry(org)}</Table.Cell>
+      <Page.Body>
+        {organizations.length === 0 ? (
+          <EmptyState icon={Building2} message="Belum ada organisasi yang terdaftar." />
+        ) : (
+          <Table aria-label="Daftar organisasi">
+            <Table.Head>
+              <Table.Row>
+                <Table.HeadCell>Organisasi</Table.HeadCell>
+                <Table.HeadCell>Paket</Table.HeadCell>
+                <Table.HeadCell>Status</Table.HeadCell>
+                <Table.HeadCell className="text-right">Kursi Terpakai</Table.HeadCell>
+                <Table.HeadCell>Berlaku Sampai</Table.HeadCell>
               </Table.Row>
-            ))}
-          </Table.Body>
-        </Table>
-      )}
-    </div>
+            </Table.Head>
+            <Table.Body>
+              {organizations.map((org) => (
+                <Table.Row key={org.id}>
+                  {/* Slug as a muted second line under the name rather than its own column:
+                      one column fewer lets the whole table fit a 768px tablet without the
+                      last column scrolling out of view (NN/g "Mobile Tables": cut columns,
+                      stack secondary data under the primary one). */}
+                  <Table.Cell>
+                    <span className="block font-medium text-text">{org.name}</span>
+                    <span className="mt-0.5 block text-xs text-muted">{org.slug}</span>
+                  </Table.Cell>
+                  <Table.Cell>{org.planName}</Table.Cell>
+                  <Table.Cell>
+                    <Badge tone={STATUS_BADGE_TONES[org.status]}>{STATUS_LABELS[org.status]}</Badge>
+                  </Table.Cell>
+                  <Table.Cell className="text-right">
+                    {org.seatsUsed} / {org.maxEmployees}
+                  </Table.Cell>
+                  <Table.Cell className="text-muted">{formatExpiry(org)}</Table.Cell>
+                </Table.Row>
+              ))}
+            </Table.Body>
+          </Table>
+        )}
+      </Page.Body>
+    </Page>
   );
 }

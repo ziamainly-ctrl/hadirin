@@ -3,23 +3,28 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { Trash2 } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Checkbox from '@/components/ui/Checkbox';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
-import Card from '@/components/ui/Card';
+import Dialog from '@/components/ui/Dialog';
 import Input from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
 
 /**
- * Add-holiday form for the platform CMS (national holidays only, org_id always NULL —
- * app/api/platform/holidays/route.ts, PRD.md P5). There is no edit endpoint for
- * holidays, only create (this form) and delete (DeleteHolidayButton below) — both live
+ * Add-holiday trigger + dialog for the platform CMS (national holidays only, org_id always
+ * NULL — app/api/platform/holidays/route.ts, PRD.md P5). There is no edit endpoint for
+ * holidays, only create (this dialog) and delete (DeleteHolidayButton below) — both live
  * in this one file since this CMS section only gets a single client file.
+ *
+ * A dialog opened from the page header, same as "Tambah Paket" / "Tambah Metode": the old
+ * always-open side card stretched to the full content width below lg (a 700px-wide
+ * "Tambah" button on a tablet) and squeezed the table next to it on a laptop.
  */
 export default function HolidayForm() {
   const router = useRouter();
   const { show } = useToast();
+  const [open, setOpen] = useState(false);
 
   const [holidayDate, setHolidayDate] = useState('');
   const [name, setName] = useState('');
@@ -29,6 +34,12 @@ export default function HolidayForm() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    // An empty date would come back from the API as "Gunakan format TTTT-BB-HH." — a format
+    // the picker (dd/mm/yyyy on most devices) never shows, so say what is actually missing.
+    if (!holidayDate) {
+      setFieldErrors({ holidayDate: 'Pilih tanggal hari libur.' });
+      return;
+    }
     setFieldErrors({});
     setIsSubmitting(true);
     try {
@@ -44,9 +55,7 @@ export default function HolidayForm() {
         return;
       }
       show('Hari libur berhasil ditambahkan.', 'success');
-      setHolidayDate('');
-      setName('');
-      setIsCollectiveLeave(false);
+      setOpen(false);
       router.refresh();
     } catch {
       show('Tidak bisa terhubung ke server. Coba lagi.', 'error');
@@ -55,39 +64,59 @@ export default function HolidayForm() {
     }
   }
 
+  function openDialog() {
+    setHolidayDate('');
+    setName('');
+    setIsCollectiveLeave(false);
+    setFieldErrors({});
+    setOpen(true);
+  }
+
   return (
-    <Card shadow>
-      <Card.Header>
-        <h2 className="text-sm font-semibold text-text">Tambah Hari Libur</h2>
-      </Card.Header>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-        <Input
-          label="Tanggal"
-          type="date"
-          value={holidayDate}
-          onChange={(e) => setHolidayDate(e.target.value)}
-          error={fieldErrors.holidayDate}
-          required
-        />
-        <Input
-          label="Nama"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          error={fieldErrors.name}
-          maxLength={120}
-          placeholder="Contoh: Hari Kemerdekaan RI"
-          required
-        />
-        <Checkbox
-          label="Cuti bersama"
-          checked={isCollectiveLeave}
-          onChange={(e) => setIsCollectiveLeave(e.target.checked)}
-        />
-        <Button type="submit" isLoading={isSubmitting} className="w-full">
-          Tambah
-        </Button>
-      </form>
-    </Card>
+    <>
+      <Button type="button" onClick={openDialog}>
+        <Plus className="h-4 w-4" aria-hidden="true" />
+        Tambah Hari Libur
+      </Button>
+
+      <Dialog open={open} onClose={() => setOpen(false)} title="Tambah Hari Libur">
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+          <Dialog.Body className="flex flex-col gap-4">
+            <Input
+              label="Tanggal"
+              type="date"
+              value={holidayDate}
+              onChange={(e) => setHolidayDate(e.target.value)}
+              error={fieldErrors.holidayDate}
+              required
+            />
+            <Input
+              label="Nama Hari Libur"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              error={fieldErrors.name}
+              maxLength={120}
+              placeholder="Contoh: Hari Kemerdekaan RI"
+              required
+            />
+            <Checkbox
+              label="Cuti bersama"
+              description="Centang untuk cuti bersama yang ditetapkan pemerintah (SKB 3 Menteri)."
+              checked={isCollectiveLeave}
+              onChange={(e) => setIsCollectiveLeave(e.target.checked)}
+            />
+          </Dialog.Body>
+          <Dialog.Footer>
+            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+              Batal
+            </Button>
+            <Button type="submit" isLoading={isSubmitting}>
+              Tambah
+            </Button>
+          </Dialog.Footer>
+        </form>
+      </Dialog>
+    </>
   );
 }
 
@@ -126,10 +155,10 @@ export function DeleteHolidayButton({ holidayId, holidayName }: DeleteHolidayBut
     <>
       <Button
         type="button"
-        variant="ghost"
+        variant="danger-ghost"
         size="sm"
         onClick={() => setConfirmOpen(true)}
-        className="gap-1.5 text-destructive"
+        aria-label={`Hapus ${holidayName}`}
       >
         <Trash2 className="h-4 w-4" aria-hidden="true" />
         Hapus
@@ -137,7 +166,9 @@ export function DeleteHolidayButton({ holidayId, holidayName }: DeleteHolidayBut
       <ConfirmDialog
         open={confirmOpen}
         title="Hapus hari libur?"
-        description={`Hapus hari libur "${holidayName}"? Tindakan ini tidak bisa dibatalkan.`}
+        // The title already asks the question; the body says what it affects instead of
+        // repeating it.
+        description={`"${holidayName}" akan dihapus dari kalender libur semua organisasi. Tindakan ini tidak bisa dibatalkan.`}
         confirmLabel="Hapus"
         isLoading={isDeleting}
         onConfirm={handleDelete}

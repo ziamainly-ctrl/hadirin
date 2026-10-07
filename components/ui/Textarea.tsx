@@ -8,6 +8,8 @@ export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElemen
   label?: string;
   error?: string;
   hint?: string;
+  /** Classes for the outer wrapper (label + control + message), e.g. to make it flex-fill a column. */
+  wrapperClassName?: string;
 }
 
 /**
@@ -15,7 +17,7 @@ export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElemen
  * need a client render tree.
  */
 const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textarea(
-  { label, error, hint, id, className, rows = 4, ...rest },
+  { label, error, hint, wrapperClassName, id, className, rows = 4, ...rest },
   ref,
 ) {
   const autoId = useId();
@@ -23,7 +25,7 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textare
   const describedById = error ? `${textareaId}-error` : hint ? `${textareaId}-hint` : undefined;
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className={`flex flex-col gap-1.5 ${wrapperClassName ?? ''}`}>
       {label ? (
         <label htmlFor={textareaId} className="text-sm font-medium text-text">
           {label}

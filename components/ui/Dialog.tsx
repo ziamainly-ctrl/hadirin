@@ -12,8 +12,9 @@ export interface DialogProps {
   title?: string;
   children: ReactNode;
   className?: string;
-  /** Max width: sm for confirmations, md (default) for most forms, lg for two-column forms. */
-  size?: 'sm' | 'md' | 'lg';
+  /** Max width: sm for confirmations, md (default) for most forms, lg for two-column forms, xl
+   * for a form with a wide second column (employee) so a short desktop screen needs less height. */
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   /** False for a one-time reveal (a generated password): Escape, a backdrop click and the
    * close button are all disabled, so only an explicit button inside can end it. */
   dismissible?: boolean;
@@ -28,7 +29,13 @@ export interface DialogProps {
  * into <Dialog.Body> (scrolls when the screen is short) and <Dialog.Footer> (stays pinned
  * at the bottom, so the submit button never scrolls out of reach on a phone).
  */
-const SIZE_CLASSES = { sm: 'max-w-sm', md: 'max-w-md', lg: 'max-w-xl' } as const;
+const SIZE_CLASSES = { sm: 'max-w-sm', md: 'max-w-md', lg: 'max-w-xl', xl: 'max-w-2xl' } as const;
+
+// On a short desktop window (1024x600 is common) a dialog is capped at the viewport height, and
+// 12px of padding top and bottom on each of header, body and footer is ~48px of a 568px box.
+// Below 640px of height the chrome tightens (the [@media(max-height:640px)]: variants below) so
+// the form needs less inner scrolling. Written out in full in each class string: Tailwind only
+// generates classes it can read as literal text, never ones built by string interpolation.
 
 // Nothing to subscribe to: "are we past hydration" only ever goes false -> true once.
 const subscribeNever = () => () => {};
@@ -83,7 +90,7 @@ function Dialog({ open, onClose, title, children, className, size = 'md', dismis
         if (dismissible && e.target === ref.current) onClose();
       }}
     >
-      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border px-4 py-3">
+      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border px-4 py-3 [@media(max-height:640px)]:py-2">
         {title ? (
           <h2 id={titleId} className="text-base font-semibold">
             {title}
@@ -105,7 +112,7 @@ function Dialog({ open, onClose, title, children, className, size = 'md', dismis
 
 function DialogBody({ className, children, ...rest }: HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={`min-h-0 flex-1 overflow-y-auto p-4 ${className ?? ''}`} {...rest}>
+    <div className={`min-h-0 flex-1 overflow-y-auto p-4 [@media(max-height:640px)]:py-3 ${className ?? ''}`} {...rest}>
       {children}
     </div>
   );
@@ -114,7 +121,7 @@ function DialogBody({ className, children, ...rest }: HTMLAttributes<HTMLDivElem
 function DialogFooter({ className, children, ...rest }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={`flex shrink-0 flex-col-reverse gap-2 border-t border-border px-4 py-3 sm:flex-row sm:justify-end ${className ?? ''}`}
+      className={`flex shrink-0 flex-col-reverse gap-2 border-t border-border px-4 py-3 sm:flex-row sm:justify-end [@media(max-height:640px)]:py-2 ${className ?? ''}`}
       {...rest}
     >
       {children}

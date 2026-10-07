@@ -22,7 +22,10 @@
   --color-bg: oklch(0.985 0 0);
   --color-surface: oklch(1 0 0);
   --color-text: oklch(0.145 0 0);
-  --color-muted: oklch(0.556 0 0);
+  /* 0.5, not shadcn's 0.556: muted text sits straight on the page gradient (descriptions,
+     empty states), whose bottom is oklch(0.93). 0.556 on 0.93 is 3.9:1 and on the table header
+     fill 4.3:1, both under AA; 0.5 is 4.9:1 and 5.5:1. */
+  --color-muted: oklch(0.5 0 0);
 
   --color-primary: oklch(0.205 0 0);
   --color-primary-fg: oklch(0.985 0 0);
@@ -32,8 +35,22 @@
 
   --color-border: oklch(0.922 0 0);
   --color-input: oklch(0.922 0 0);
-  --color-ring: oklch(0.708 0 0);
+  /* Boundary of a form control that has no fill of its own (text input, select, textarea,
+     checkbox, radio). WCAG 1.4.11 asks 3:1 against the surface it sits on (the W3C example of a
+     passing field is #767676 on white): shadcn's --color-input is 1.26:1, so a field read as a
+     faint smudge on the card gradient. 0.64 is 3.4:1 on white and 3.1:1 at the bottom of the
+     card gradient. Outline buttons keep the lighter --color-input (their label identifies them). */
+  --color-field: oklch(0.64 0 0);
+  /* Focus indicator: 3:1 against white and the page gradient (WCAG 1.4.11). The old 0.708 was
+     2.6:1 before the 50% alpha the ring utility applies on top. */
+  --color-ring: oklch(0.6 0 0);
   --color-destructive: oklch(0.577 0.245 27.325);
+  /* Semantic accents for small icons and dots only (toast icon, badge dot). Never a
+     background: the product owner wants every panel neutral gray. Same hues as the
+     attendance status colors below, so "green" means one thing everywhere. */
+  --color-success: #16a34a;
+  --color-warning: #d97706;
+  --color-info: #2563eb;
 
   --color-status-present: #16a34a;
   --color-status-late: #d97706;
@@ -57,6 +74,19 @@
    dot color, the kind of bug that only shows up by actually toggling the theme. */
 :root {
   --dot-color: oklch(0.145 0 0 / 6%);
+  --scroll-shadow: oklch(0 0 0 / 14%);
+  /* Neutral gradients (the owner asked for white-to-gray in light, black-to-gray in dark).
+     Page = the canvas behind everything; surface = cards, sidebar, dialogs; primary and
+     secondary = filled buttons and selected chips. Flat --color-* tokens stay the source
+     for text/border/ring math; these only paint backgrounds. */
+  --gradient-page: linear-gradient(180deg, oklch(0.995 0 0) 0%, oklch(0.93 0 0) 100%);
+  --gradient-surface: linear-gradient(180deg, oklch(1 0 0) 0%, oklch(0.975 0 0) 100%);
+  --gradient-primary: linear-gradient(180deg, oklch(0.38 0 0) 0%, oklch(0.16 0 0) 100%);
+  --gradient-secondary: linear-gradient(180deg, oklch(0.985 0 0) 0%, oklch(0.925 0 0) 100%);
+  /* Hover states. A gradient is a background-image, and image paints over any hover:bg-*
+     color, so every filled control that wants a hover look needs its own gradient. */
+  --gradient-primary-hover: linear-gradient(180deg, oklch(0.46 0 0) 0%, oklch(0.24 0 0) 100%);
+  --gradient-secondary-hover: linear-gradient(180deg, oklch(0.96 0 0) 0%, oklch(0.89 0 0) 100%);
   /* Tells the browser which scheme native controls (date/time pickers, scrollbars,
      select popups, autofill) should draw in; without it a time input's clock icon stays
      black on a dark surface. */
@@ -78,8 +108,14 @@
 
   --color-border: oklch(1 0 0 / 10%);
   --color-input: oklch(1 0 0 / 15%);
-  --color-ring: oklch(0.556 0 0);
+  /* 40% white over the dark surface is 3.5-4:1 (see --color-field in :root). The field FILL
+     stays dark:bg-input/30, so only the outline gets stronger. */
+  --color-field: oklch(1 0 0 / 40%);
+  --color-ring: oklch(0.62 0 0);
   --color-destructive: oklch(0.704 0.191 22.216);
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-info: #3b82f6;
 
   --color-status-present: #22c55e;
   --color-status-late: #f59e0b;
@@ -91,6 +127,16 @@
   --color-status-off: #cbd5e1;
 
   --dot-color: oklch(1 0 0 / 7%);
+  --scroll-shadow: oklch(0 0 0 / 60%);
+  /* Page is the darkest layer and surfaces sit above it (Material: elevation = lighter in
+     dark mode), so the page top is kept below the surface top; at 0.27 vs 0.265 a card was
+     indistinguishable from the canvas behind it. */
+  --gradient-page: linear-gradient(180deg, oklch(0.225 0 0) 0%, oklch(0.15 0 0) 45%, oklch(0.085 0 0) 100%);
+  --gradient-surface: linear-gradient(180deg, oklch(0.285 0 0) 0%, oklch(0.225 0 0) 100%);
+  --gradient-primary: linear-gradient(180deg, oklch(0.99 0 0) 0%, oklch(0.84 0 0) 100%);
+  --gradient-secondary: linear-gradient(180deg, oklch(0.36 0 0) 0%, oklch(0.28 0 0) 100%);
+  --gradient-primary-hover: linear-gradient(180deg, oklch(0.94 0 0) 0%, oklch(0.78 0 0) 100%);
+  --gradient-secondary-hover: linear-gradient(180deg, oklch(0.41 0 0) 0%, oklch(0.33 0 0) 100%);
   color-scheme: dark;
 }
 
@@ -119,7 +165,78 @@
 
   body {
     background-color: var(--color-bg);
+    background-image: var(--gradient-page);
+    background-attachment: fixed;
+    background-repeat: no-repeat;
     color: var(--color-text);
+  }
+}
+
+/* Every filled surface/primary/secondary picks up its gradient from here, so no component
+   needs its own gradient classes and a theme change stays in this file. Translucent
+   variants (bg-surface/90, bg-primary/10) are different class names and stay flat. */
+@layer utilities {
+  .bg-surface {
+    background-image: var(--gradient-surface);
+  }
+  .bg-primary {
+    background-image: var(--gradient-primary);
+  }
+  .bg-secondary {
+    background-image: var(--gradient-secondary);
+  }
+}
+
+/* A surface that also declares a hover:bg-* color (outline button, pagination arrow, filter
+   chip, list row) would otherwise keep its gradient on hover and never show the new color.
+   Drop the image while hovered so the hover color paints. Filled primary/secondary buttons
+   set their own hover gradient (components/ui/Button.tsx) instead. */
+@media (hover: hover) {
+  .bg-surface[class*='hover:bg-']:hover {
+    background-image: none;
+  }
+}
+
+/* Keyboard focus indicator. Components draw a soft 3px halo (ring-ring/50), which is about
+   1.5:1 against the page, far under the 3:1 WCAG 1.4.11 asks of a focus indicator. This crisp
+   2px outline sits on top of it. It is deliberately UNLAYERED: an unlayered rule beats every
+   @layer (so the `focus-visible:outline-none` the components carry cannot remove it) without
+   anyone having to edit those class strings. Form fields hug their border (offset 0); everything
+   else floats 2px off the control. :where() keeps the specificity at zero so a one-off
+   `focus-visible:outline-*` in a component is the only thing that could still beat it. */
+:where(a, button, summary, [role='button'], [role='tab'], [tabindex]:not([tabindex='-1'])):focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
+}
+
+:where(input, select, textarea):focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 0;
+}
+
+/* A focusable scroll region (components/ui/TableFrame.tsx) sits inside an overflow-hidden card:
+   its outline is drawn inward so the card doesn't clip it. */
+[data-scroll-region]:focus-visible {
+  outline-offset: -2px;
+}
+
+/* Slim scrollbars for the inner scroll regions (Page.Body, tables, lists): the window never
+   scrolls on desktop, so on Windows these are the only scrollbars a person sees, and the
+   default 15px classic bar would eat a visible slice of every table. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-ring) transparent;
+}
+
+/* Desktop pages are exactly one viewport tall and never scroll. Each layout (marketing, app,
+   platform, auth) fills the height and owns an inner scroll region as a safety net, so
+   nothing is ever unreachable; below 1024px (or on a very short window) the page scrolls
+   normally. */
+@media (min-width: 1024px) and (min-height: 560px) {
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
   }
 }
 
@@ -136,6 +253,19 @@ body:has(dialog[open]) {
   }
   dialog[open]::backdrop {
     animation: dialog-backdrop-in 160ms ease-out;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .toast-in {
+    animation: toast-in 140ms ease-out;
+  }
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
   }
 }
 
@@ -162,4 +292,24 @@ body:has(dialog[open]) {
 .bg-dot-grid {
   background-image: radial-gradient(circle, var(--dot-color) 1px, transparent 1px);
   background-size: 28px 28px;
+}
+
+/* Mobile nav drawer (components/shared/Sidebar.tsx) is a modal <dialog> that slides in from the
+   left instead of popping in; skipped for reduced motion like the dialog animation above.
+   dialog.drawer-in[open] is more specific than the generic dialog[open] fade-and-scale, so the
+   drawer gets the slide, not the centered-dialog entrance. */
+@media (prefers-reduced-motion: no-preference) {
+  dialog.drawer-in[open],
+  .drawer-in:not(dialog) {
+    animation: drawer-in 180ms ease-out;
+  }
+  .drawer-backdrop-in {
+    animation: dialog-backdrop-in 180ms ease-out;
+  }
+}
+
+@keyframes drawer-in {
+  from {
+    transform: translateX(-100%);
+  }
 }

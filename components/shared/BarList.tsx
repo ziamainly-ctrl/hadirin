@@ -1,4 +1,6 @@
 export interface BarListItem {
+  /** Stable React key when labels can repeat (two employees with the same name). */
+  id?: string | number;
   label: string;
   value: number;
   color?: string;
@@ -19,14 +21,20 @@ export default function BarList({ items, formatValue, className }: BarListProps)
   const max = Math.max(1, ...items.map((item) => item.value));
   const format = formatValue ?? ((value: number) => String(value));
 
+  // One grid for the whole list (each <li> is a subgrid row): the label column is as wide as the
+  // longest label (capped, then truncated) and the value column as wide as the longest value, so
+  // every bar starts and ends at the same x and bar lengths stay comparable, and the bar still
+  // gets the rest of a narrow card instead of a 40px sliver.
   return (
-    <ul className={`flex flex-col gap-3 ${className ?? ''}`}>
+    <ul className={`grid grid-cols-[auto_minmax(3rem,1fr)_auto] gap-x-3 gap-y-3 text-sm ${className ?? ''}`}>
       {items.map((item) => (
-        <li key={item.label} className="flex items-center gap-3 text-sm">
-          <span className="w-28 shrink-0 truncate text-muted" title={item.label}>
+        <li key={item.id ?? item.label} className="col-span-3 grid grid-cols-subgrid items-center">
+          <span className="max-w-32 truncate text-muted sm:max-w-44" title={item.label}>
             {item.label}
           </span>
-          <span className="h-2 flex-1 overflow-hidden rounded-full bg-accent">
+          {/* bg-muted/20, not bg-accent: accent is almost the card color in light mode, so the
+              track vanished and a short bar looked like a stray line. */}
+          <span className="h-2 overflow-hidden rounded-full bg-muted/20">
             <span
               className="block h-full rounded-full"
               style={{
@@ -35,7 +43,7 @@ export default function BarList({ items, formatValue, className }: BarListProps)
               }}
             />
           </span>
-          <span className="w-12 shrink-0 text-right font-semibold tabular-nums text-text">{format(item.value)}</span>
+          <span className="whitespace-nowrap text-right font-semibold tabular-nums text-text">{format(item.value)}</span>
         </li>
       ))}
     </ul>

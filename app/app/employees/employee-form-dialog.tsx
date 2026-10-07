@@ -9,8 +9,11 @@ import Dialog from '@/components/ui/Dialog';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import { useToast } from '@/components/ui/Toast';
+import { USER_ROLES } from '@/lib/constants/roles';
 import type { UserRole } from '@/lib/constants/roles';
 import type { UserSummary } from '@/lib/queries/users';
+import { ROLE_LABELS } from './employee-labels';
+import TemporaryPasswordNotice from './temporary-password-notice';
 
 export interface EmployeeFormBranchOption {
   id: number;
@@ -31,12 +34,7 @@ export interface EmployeeFormDialogProps {
   existingUser?: UserSummary;
 }
 
-const ROLE_OPTIONS: { value: UserRole; label: string }[] = [
-  { value: 'OWNER', label: 'Pemilik' },
-  { value: 'ADMIN', label: 'Admin' },
-  { value: 'MANAGER', label: 'Manajer' },
-  { value: 'EMPLOYEE', label: 'Karyawan' },
-];
+const ROLE_OPTIONS: { value: UserRole; label: string }[] = USER_ROLES.map((value) => ({ value, label: ROLE_LABELS[value] }));
 
 interface FormState {
   name: string;
@@ -138,7 +136,14 @@ export default function EmployeeFormDialog({ branches, shifts, existingUser }: E
 
       if (!res.ok) {
         if (json.error?.fields) setFieldErrors(json.error.fields);
-        show(json.error?.message ?? 'Gagal menyimpan data karyawan.', 'error');
+        // The server's SEAT_LIMIT_REACHED text is English ("This plan allows up to N employees."),
+        // which does not belong in an Indonesian toast.
+        show(
+          json.error?.code === 'SEAT_LIMIT_REACHED'
+            ? 'Jumlah karyawan sudah mencapai batas paket Anda. Naikkan paket untuk menambah karyawan lagi.'
+            : (json.error?.message ?? 'Gagal menyimpan data karyawan.'),
+          'error',
+        );
         return;
       }
 
@@ -159,7 +164,7 @@ export default function EmployeeFormDialog({ branches, shifts, existingUser }: E
 
   return (
     <>
-      <Button type="button" variant={isEdit ? 'secondary' : 'primary'} onClick={openDialog} className="gap-2">
+      <Button type="button" variant={isEdit ? 'secondary' : 'primary'} onClick={openDialog}>
         {isEdit ? <Pencil className="h-4 w-4" aria-hidden="true" /> : <Plus className="h-4 w-4" aria-hidden="true" />}
         {isEdit ? 'Edit' : 'Tambah Karyawan'}
       </Button>
@@ -171,19 +176,13 @@ export default function EmployeeFormDialog({ branches, shifts, existingUser }: E
         // (handleAcknowledgeTemporaryPassword) may close the dialog at that point.
         onClose={temporaryPassword ? handleAcknowledgeTemporaryPassword : closeDialog}
         dismissible={!temporaryPassword}
-        title={isEdit ? 'Edit Karyawan' : 'Tambah Karyawan'}
+        title={temporaryPassword ? 'Karyawan Ditambahkan' : isEdit ? 'Edit Karyawan' : 'Tambah Karyawan'}
         size="lg"
       >
         {temporaryPassword ? (
           <>
             <Dialog.Body>
-              <div className="rounded-input border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 p-3 text-sm text-amber-800 dark:text-amber-300">
-                <p className="font-medium">Kata sandi sementara:</p>
-                <p className="mt-1 select-all break-all font-mono text-base">{temporaryPassword}</p>
-                <p className="mt-2 text-amber-700 dark:text-amber-300">
-                  Catat kata sandi ini sekarang. Kata sandi ini tidak akan ditampilkan lagi setelah dialog ini ditutup.
-                </p>
-              </div>
+              <TemporaryPasswordNotice password={temporaryPassword} employeeName={form.name.trim()} />
             </Dialog.Body>
             <Dialog.Footer>
               <Button type="button" onClick={handleAcknowledgeTemporaryPassword}>
@@ -193,7 +192,7 @@ export default function EmployeeFormDialog({ branches, shifts, existingUser }: E
           </>
         ) : (
           <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
-            <Dialog.Body className="flex flex-col gap-4">
+            <Dialog.Body className="flex flex-col gap-3">
               <Input
                 label="Nama"
                 value={form.name}
@@ -202,7 +201,7 @@ export default function EmployeeFormDialog({ branches, shifts, existingUser }: E
                 maxLength={100}
                 required
               />
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <Select
                   label="Peran"
                   value={form.role}
@@ -225,7 +224,7 @@ export default function EmployeeFormDialog({ branches, shifts, existingUser }: E
                   ))}
                 </Select>
               </div>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <Input
                   label="Email"
                   type="email"
@@ -233,7 +232,6 @@ export default function EmployeeFormDialog({ branches, shifts, existingUser }: E
                   onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
                   error={fieldErrors.email}
                   maxLength={150}
-                  hint={!isEdit ? 'Isi email atau nomor telepon.' : undefined}
                 />
                 <Input
                   label="Telepon"
@@ -243,14 +241,24 @@ export default function EmployeeFormDialog({ branches, shifts, existingUser }: E
                   error={fieldErrors.phone}
                   maxLength={20}
                 />
+                {/* One line under both fields instead of a hint wrapped into the narrow
+                    Email column: it is a rule about the pair, and it saves a row of height
+                    in the dialog on short laptop screens. */}
+                {!isEdit ? (
+                  <p className="-mt-1 text-sm text-muted sm:col-span-2">
+                    Isi email atau telepon (minimal salah satu) untuk masuk.
+                  </p>
+                ) : null}
               </div>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <Select
                   label="Shift"
                   value={form.shiftId}
                   onChange={(e) => setForm((f) => ({ ...f, shiftId: e.target.value }))}
                   error={fieldErrors.shiftId}
-                  hint="Tanpa shift berarti karyawan ini tidak absen."
+                  // Only while "Tanpa Shift" is picked: under a real shift the sentence contradicted
+                  // the field it sat beneath.
+                  hint={form.shiftId === '' ? 'Tanpa shift, karyawan tidak perlu absen.' : undefined}
                 >
                   <option value="">Tanpa Shift</option>
                   {shifts.map((shift) => (
@@ -268,7 +276,7 @@ export default function EmployeeFormDialog({ branches, shifts, existingUser }: E
                   maxLength={30}
                 />
               </div>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <Input
                   label="Posisi"
                   value={form.position}
@@ -290,7 +298,7 @@ export default function EmployeeFormDialog({ branches, shifts, existingUser }: E
                 Batal
               </Button>
               <Button type="submit" isLoading={isSubmitting}>
-                {isEdit ? 'Simpan' : 'Tambah'}
+                {isEdit ? 'Simpan' : 'Tambah Karyawan'}
               </Button>
             </Dialog.Footer>
           </form>

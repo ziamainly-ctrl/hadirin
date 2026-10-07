@@ -13,6 +13,8 @@ export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   label?: string;
   error?: string;
   hint?: string;
+  /** Classes for the outer wrapper (label + control + message). */
+  wrapperClassName?: string;
   /** Convenience prop: when given, renders these as <option> instead of children. */
   options?: SelectOption[];
 }
@@ -22,7 +24,7 @@ export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
  * 'use client': uses useId() and forwardRef, both client-only concerns.
  */
 const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
-  { label, error, hint, options, id, className, children, ...rest },
+  { label, error, hint, wrapperClassName, options, id, className, children, ...rest },
   ref,
 ) {
   const autoId = useId();
@@ -30,7 +32,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
   const describedById = error ? `${selectId}-error` : hint ? `${selectId}-hint` : undefined;
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className={`flex flex-col gap-1.5 ${wrapperClassName ?? ''}`}>
       {label ? (
         <label htmlFor={selectId} className="text-sm font-medium text-text">
           {label}

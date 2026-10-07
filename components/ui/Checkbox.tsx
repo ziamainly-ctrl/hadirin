@@ -8,7 +8,7 @@ export interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement
 }
 
 const BOX_CLASSES =
-  'peer h-4 w-4 cursor-[inherit] appearance-none rounded-[5px] border border-input bg-transparent shadow-xs transition-colors checked:border-primary checked:bg-primary focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed dark:bg-input/30 dark:checked:bg-primary';
+  'peer h-4 w-4 cursor-[inherit] appearance-none rounded-[5px] border border-field bg-transparent shadow-xs transition-colors checked:border-primary checked:bg-primary focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed dark:bg-input/30 dark:checked:bg-primary';
 
 /**
  * Styled native checkbox (appearance-none + a Lucide check on top), so the box looks the
@@ -31,7 +31,7 @@ export default function Checkbox({ label, description, className, ...rest }: Che
 
   return (
     <label
-      className={`flex items-start gap-2.5 text-sm text-text ${rest.disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'} ${className ?? ''}`}
+      className={`flex items-start gap-2.5 text-sm text-text pointer-coarse:min-h-11 pointer-coarse:py-3 ${rest.disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'} ${className ?? ''}`}
     >
       {control}
       <span>

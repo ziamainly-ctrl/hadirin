@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
 
 export type GeoStatus = 'loading' | 'ok' | 'denied' | 'weak-signal' | 'error';
@@ -12,7 +12,9 @@ export interface GeoCoords {
 }
 
 export interface GeoPermissionGateProps {
-  children: (coords: GeoCoords | null, status: GeoStatus) => ReactNode;
+  /** `retry` asks for the position again — the "Coba Lagi" after 'denied' (once the user
+   * re-enables the permission; browsers then answer without a reload) or 'error'. */
+  children: (coords: GeoCoords | null, status: GeoStatus, retry: () => void) => ReactNode;
   /** PRD.md US-01: accuracy worse than 100 m is a weak signal. */
   weakSignalThresholdM?: number;
 }
@@ -45,6 +47,8 @@ export default function GeoPermissionGate({
   const supported = useSyncExternalStore(subscribeNever, hasGeolocation, () => true);
   const [geoStatus, setStatus] = useState<GeoStatus>('loading');
   const [coords, setCoords] = useState<GeoCoords | null>(null);
+  // Bumped by retry() to re-run the effect below, which is the one place that asks.
+  const [attempt, setAttempt] = useState(0);
   const status: GeoStatus = supported ? geoStatus : 'error';
 
   useEffect(() => {
@@ -74,7 +78,12 @@ export default function GeoPermissionGate({
     return () => {
       cancelled = true;
     };
-  }, [supported, weakSignalThresholdM]);
+  }, [supported, weakSignalThresholdM, attempt]);
 
-  return children(coords, status);
+  const retry = useCallback(() => {
+    setStatus('loading');
+    setAttempt((n) => n + 1);
+  }, []);
+
+  return children(coords, status, retry);
 }

@@ -1,7 +1,11 @@
+import type { Metadata } from 'next';
 import { CreditCard } from 'lucide-react';
 import EmptyState from '@/components/shared/EmptyState';
+import Page from '@/components/shared/Page';
 import { listAllPaymentMethods } from '@/lib/queries/payment-methods';
 import PaymentMethodFormDialog, { SortablePaymentMethodsTable } from './payment-method-form-dialog';
+
+export const metadata: Metadata = { title: 'Metode Pembayaran' };
 
 /**
  * Server Component: calls listAllPaymentMethods() directly (TRD.md §5) — the same call
@@ -14,20 +18,20 @@ export default async function PaymentMethodsPage() {
   const paymentMethods = await listAllPaymentMethods();
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-text">Metode Pembayaran</h1>
-          <p className="text-sm text-muted">Kelola metode pembayaran, biaya admin, dan urutan tampil saat checkout.</p>
-        </div>
-        <PaymentMethodFormDialog nextSortOrder={paymentMethods.length} />
-      </div>
+    <Page>
+      <Page.Header
+        title="Metode Pembayaran"
+        description="Kelola metode pembayaran, biaya admin, dan urutan tampil saat checkout."
+        actions={<PaymentMethodFormDialog nextSortOrder={paymentMethods.length} />}
+      />
 
-      {paymentMethods.length === 0 ? (
-        <EmptyState icon={CreditCard} message="Belum ada metode pembayaran." />
-      ) : (
-        <SortablePaymentMethodsTable paymentMethods={paymentMethods} />
-      )}
-    </div>
+      <Page.Body>
+        {paymentMethods.length === 0 ? (
+          <EmptyState icon={CreditCard} message="Belum ada metode pembayaran." />
+        ) : (
+          <SortablePaymentMethodsTable paymentMethods={paymentMethods} />
+        )}
+      </Page.Body>
+    </Page>
   );
 }

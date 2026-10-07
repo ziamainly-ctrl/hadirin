@@ -26,6 +26,9 @@ function hrefForPage(
 }
 
 /**
+ * Prev/next are 32px for a mouse and 40px on a touch screen (pointer-coarse): 32px was the
+ * smallest target on every list page on a phone.
+ *
  * Server Component: list pages in this app read `?page=` via searchParams, so
  * pagination is plain <Link> navigation rather than an onClick handler.
  */
@@ -42,39 +45,39 @@ export default function Pagination({ page, pageSize, total, basePath, searchPara
       aria-label="Navigasi halaman"
       className={`flex flex-wrap items-center justify-between gap-3 text-sm text-muted ${className ?? ''}`}
     >
-      <p>{total === 0 ? 'Tidak ada data' : `${from}–${to} dari ${total}`}</p>
+      <p className="tabular-nums">{total === 0 ? 'Tidak ada data' : `${from}–${to} dari ${total}`}</p>
       <div className="flex items-center gap-2">
         {hasPrev ? (
           <Link
             href={hrefForPage(basePath, searchParams, current - 1)}
             aria-label="Halaman sebelumnya"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-input border border-border text-text hover:bg-accent"
+            className="inline-flex h-8 w-8 items-center pointer-coarse:h-10 pointer-coarse:w-10 justify-center rounded-input border border-border bg-surface text-text transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
           >
             <ChevronLeft className="h-4 w-4" />
           </Link>
         ) : (
           <span
             aria-hidden="true"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-input border border-border text-muted/40"
+            className="inline-flex h-8 w-8 items-center pointer-coarse:h-10 pointer-coarse:w-10 justify-center rounded-input border border-border text-muted/40"
           >
             <ChevronLeft className="h-4 w-4" />
           </span>
         )}
-        <span className="px-1 text-text">
+        <span className="px-1 tabular-nums text-text">
           Halaman {current} dari {totalPages}
         </span>
         {hasNext ? (
           <Link
             href={hrefForPage(basePath, searchParams, current + 1)}
             aria-label="Halaman berikutnya"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-input border border-border text-text hover:bg-accent"
+            className="inline-flex h-8 w-8 items-center pointer-coarse:h-10 pointer-coarse:w-10 justify-center rounded-input border border-border bg-surface text-text transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
           >
             <ChevronRight className="h-4 w-4" />
           </Link>
         ) : (
           <span
             aria-hidden="true"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-input border border-border text-muted/40"
+            className="inline-flex h-8 w-8 items-center pointer-coarse:h-10 pointer-coarse:w-10 justify-center rounded-input border border-border text-muted/40"
           >
             <ChevronRight className="h-4 w-4" />
           </span>

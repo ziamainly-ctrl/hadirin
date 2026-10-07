@@ -7,6 +7,7 @@ import Button from '@/components/ui/Button';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import Dialog from '@/components/ui/Dialog';
 import { useToast } from '@/components/ui/Toast';
+import TemporaryPasswordNotice from './temporary-password-notice';
 
 export interface ResetPasswordButtonProps {
   userId: number;
@@ -61,7 +62,9 @@ export default function ResetPasswordButton({ userId, userName }: ResetPasswordB
 
   return (
     <>
-      <Button type="button" variant="outline" onClick={() => setConfirmOpen(true)} className="gap-2">
+      {/* Same weight as the "Edit" button beside it on the detail page (secondary): an outline next to a
+          filled secondary read as two different kinds of button. */}
+      <Button type="button" variant="secondary" onClick={() => setConfirmOpen(true)}>
         <KeyRound className="h-4 w-4" aria-hidden="true" />
         Reset Kata Sandi
       </Button>
@@ -69,8 +72,8 @@ export default function ResetPasswordButton({ userId, userName }: ResetPasswordB
       <ConfirmDialog
         open={confirmOpen}
         title="Reset kata sandi?"
-        description={`Reset kata sandi untuk ${userName}? Kata sandi sementara yang baru akan dibuat.`}
-        confirmLabel="Reset"
+        description={`Kata sandi ${userName} saat ini tidak bisa dipakai lagi. Sistem akan membuat kata sandi sementara yang baru untuk diberikan kepadanya.`}
+        confirmLabel="Reset Kata Sandi"
         variant="primary"
         isLoading={isSubmitting}
         onConfirm={handleReset}
@@ -81,13 +84,7 @@ export default function ResetPasswordButton({ userId, userName }: ResetPasswordB
           backdrop click and the X must not be able to close it — only "Selesai" can. */}
       <Dialog open={open} onClose={handleAcknowledge} dismissible={false} title="Kata Sandi Sementara">
         <Dialog.Body>
-          <div className="rounded-input border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 p-3 text-sm text-amber-800 dark:text-amber-300">
-            <p className="font-medium">Kata sandi sementara baru:</p>
-            <p className="mt-1 select-all break-all font-mono text-base">{temporaryPassword}</p>
-            <p className="mt-2 text-amber-700 dark:text-amber-300">
-              Catat kata sandi ini sekarang. Kata sandi ini tidak akan ditampilkan lagi setelah dialog ini ditutup.
-            </p>
-          </div>
+          {temporaryPassword ? <TemporaryPasswordNotice password={temporaryPassword} employeeName={userName} /> : null}
         </Dialog.Body>
         <Dialog.Footer>
           <Button type="button" onClick={handleAcknowledge}>

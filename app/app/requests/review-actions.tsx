@@ -14,6 +14,11 @@ export interface ReviewActionsProps {
   dateTo: string;
   reason: string;
   requesterName: string;
+  requestedCheckIn: string | null;
+  requestedCheckOut: string | null;
+  attachmentHref?: string;
+  submittedAt: string | Date;
+  timeZone: string;
 }
 
 interface ApiErrorBody {
@@ -36,14 +41,20 @@ export default function ReviewActions({
   dateTo,
   reason,
   requesterName,
+  requestedCheckIn,
+  requestedCheckOut,
+  attachmentHref,
+  submittedAt,
+  timeZone,
 }: ReviewActionsProps) {
   const [note, setNote] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pendingAction, setPendingAction] = useState<'approve' | 'reject' | undefined>();
+  const isSubmitting = pendingAction !== undefined;
   const router = useRouter();
   const { show } = useToast();
 
   async function review(action: 'approve' | 'reject') {
-    setIsSubmitting(true);
+    setPendingAction(action);
     try {
       const res = await fetch(`/api/attendance-requests/${requestId}`, {
         method: 'PATCH',
@@ -61,7 +72,7 @@ export default function ReviewActions({
     } catch {
       show('Gagal memproses pengajuan. Periksa koneksi Anda.', 'error');
     } finally {
-      setIsSubmitting(false);
+      setPendingAction(undefined);
     }
   }
 
@@ -73,18 +84,28 @@ export default function ReviewActions({
       reason={reason}
       status="PENDING"
       requesterName={requesterName}
+      requestedCheckIn={requestedCheckIn}
+      requestedCheckOut={requestedCheckOut}
+      attachmentHref={attachmentHref}
+      submittedAt={submittedAt}
+      timeZone={timeZone}
       isSubmitting={isSubmitting}
+      pendingAction={pendingAction}
       onApprove={() => review('approve')}
       onReject={() => review('reject')}
     >
-      <Input
-        label="Catatan (opsional)"
-        value={note}
-        onChange={(e) => setNote(e.target.value)}
-        disabled={isSubmitting}
-        maxLength={255}
-        placeholder="Catatan untuk pemohon"
-      />
+      {/* A rule between what the employee sent and the reviewer's own note + buttons, so
+          the decision area reads as a separate step instead of more request text. */}
+      <div className="border-t border-border pt-3">
+        <Input
+          label="Catatan (opsional)"
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          disabled={isSubmitting}
+          maxLength={255}
+          placeholder="Mis. alasan penolakan"
+        />
+      </div>
     </RequestCard>
   );
 }

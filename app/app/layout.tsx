@@ -34,9 +34,20 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <ToastProvider>
-      <div className="flex min-h-screen bg-bg">
-        <Sidebar items={items} logout={{ url: '/api/auth/logout', redirectTo: '/login' }} />
-        <main className="flex-1 overflow-x-hidden p-4 pt-16 lg:p-6 lg:pt-6">{children}</main>
+      <div className="flex min-h-dvh lg:h-dvh lg:overflow-hidden">
+        <Sidebar items={items} logout={{ url: '/api/auth/logout', redirectTo: '/' }} />
+        {/* min-w-0 lets wide tables scroll inside their own wrapper instead of widening the
+            page; the inner max-w keeps tiles and tables from stretching edge to edge on a
+            2000px+ monitor; the column is centered in the space beside the sidebar. */}
+        <main className="min-w-0 flex-1 overflow-x-hidden p-4 pt-16 lg:h-dvh lg:p-5 lg:pt-5">
+          {/* lg:h-full + overflow-y-auto: on desktop the shell is exactly one viewport tall and the page
+              never scrolls; pages built on components/shared/Page keep their header fixed and scroll
+              only their own body. This wrapper is the safety net for any page that is still taller.
+              Its lg:p-1 (taken out of main's padding, so the gutter is still 24px) is room for the
+              3px focus ring of a control that sits flush with the page edge: overflow-y-auto also
+              clips on x, and the ring of the first filter or the header button was cut off. */}
+          <div className="mx-auto w-full max-w-[1600px] lg:h-full lg:overflow-y-auto lg:p-1">{children}</div>
+        </main>
       </div>
     </ToastProvider>
   );

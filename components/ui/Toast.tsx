@@ -24,13 +24,19 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
-const AUTO_DISMISS_MS = 5000;
+// An error or warning says something the person has to act on, so it stays longer than a
+// confirmation (WCAG 2.2.1 asks for enough time to read; the X is there for impatient people).
+const AUTO_DISMISS_MS: Record<ToastVariant, number> = { success: 5000, info: 5000, warning: 8000, error: 8000 };
 
-const VARIANT_CLASSES: Record<ToastVariant, string> = {
-  success: 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300',
-  error: 'border-red-200 bg-red-50 text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300',
-  info: 'border-sky-200 bg-sky-50 text-sky-800 dark:border-sky-900 dark:bg-sky-950/40 dark:text-sky-300',
-  warning: 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300',
+// Every variant is the same neutral card (bg-surface + border + normal text): the product owner
+// wants no tinted panels, so the variant is carried by the icon color alone. The fill is
+// opaque in both themes because a toast floats over arbitrary content; a see-through one let
+// the top bar's logo or a dialog title show through the message text.
+const VARIANT_ICON_CLASSES: Record<ToastVariant, string> = {
+  success: 'text-success',
+  error: 'text-destructive',
+  info: 'text-info',
+  warning: 'text-warning',
 };
 
 const VARIANT_ICONS: Record<ToastVariant, LucideIcon> = {
@@ -80,7 +86,7 @@ export function ToastProvider({ children }: ToastProviderProps) {
     (message: string, variant: ToastVariant = 'info') => {
       const id = createToastId();
       setToasts((prev) => [...prev, { id, message, variant }]);
-      setTimeout(() => dismiss(id), AUTO_DISMISS_MS);
+      setTimeout(() => dismiss(id), AUTO_DISMISS_MS[variant]);
     },
     [dismiss],
   );
@@ -100,17 +106,20 @@ export function ToastProvider({ children }: ToastProviderProps) {
               <div
                 key={toast.id}
                 role={toast.variant === 'error' ? 'alert' : 'status'}
-                className={`pointer-events-auto flex w-full max-w-sm items-start gap-2 rounded-input border px-3 py-2 text-sm shadow-sm ${VARIANT_CLASSES[toast.variant]}`}
+                className="toast-in pointer-events-auto flex w-full max-w-sm items-start gap-2.5 rounded-input border border-input bg-surface px-3 py-2.5 text-sm text-text shadow-lg"
               >
-                <Icon className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-                <p className="flex-1">{toast.message}</p>
+                <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${VARIANT_ICON_CLASSES[toast.variant]}`} aria-hidden="true" />
+                <p className="min-w-0 flex-1 break-words">{toast.message}</p>
+                {/* 28px box pulled back by -m-1 so the row height is unchanged: the bare
+                    16px icon was below the 24px minimum target (WCAG 2.5.8). Not an
+                    IconButton on purpose: no hover chrome, just the muted X. */}
                 <button
                   type="button"
                   onClick={() => dismiss(toast.id)}
                   aria-label="Tutup notifikasi"
-                  className="shrink-0 opacity-70 hover:opacity-100"
+                  className="-m-1 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-input text-muted transition-colors hover:text-text focus-visible:text-text focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-4 w-4" aria-hidden="true" />
                 </button>
               </div>
             );

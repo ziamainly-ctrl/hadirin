@@ -1,6 +1,6 @@
 /**
  * Hadirin's mascot: an original, hand-drawn anime-style character (not traced from, or
- * derived from, any existing artwork). She wears a green check hair clip ("hadir" = present)
+ * derived from, any existing artwork). The character wears a green check hair clip ("hadir" = present)
  * and an attendance lanyard, so the character carries the product's one idea.
  *
  * One source of truth for every place the mark appears. The functions return plain SVG
@@ -20,9 +20,12 @@ export interface MascotOptions {
    * the lanyard, which would be a stray green stub at the crop edge), which is what
    * survives at favicon and sidebar-logo sizes. */
   framing?: MascotFraming;
-  /** Rounded-square tile (the logo/favicon) vs a full-bleed square (Apple touch icon,
-   * where iOS applies its own corner mask). */
-  rounded?: boolean;
+  /** 'none' (default) is a transparent canvas: the logo, favicon and share image sit directly
+   * on whatever page they are on. 'neutral' paints a white-to-gray gradient square, only for
+   * the places an OS fills transparency with black (the Apple touch icon, the maskable PWA
+   * icon). A light outline around the character keeps the dark hair readable on a dark
+   * page, which is why no tile is needed. */
+  background?: 'none' | 'neutral';
 }
 
 const FRAMING_TRANSFORM: Record<MascotFraming, string> = {
@@ -31,13 +34,13 @@ const FRAMING_TRANSFORM: Record<MascotFraming, string> = {
 };
 
 /** Markup for everything inside the <svg> element (defs + artwork). */
-export function mascotInner({ idPrefix = 'hm', framing = 'full', rounded = true }: MascotOptions = {}): string {
+export function mascotInner({ idPrefix = 'hm', framing = 'full', background = 'none' }: MascotOptions = {}): string {
   const p = idPrefix;
   return `
 <defs>
   <linearGradient id="${p}-bg" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0" stop-color="#d6f5e6"/>
-    <stop offset="1" stop-color="#c3e2ff"/>
+    <stop offset="0" stop-color="#ffffff"/>
+    <stop offset="1" stop-color="#d4d4d4"/>
   </linearGradient>
   <linearGradient id="${p}-hair" x1="0" y1="0" x2="0" y2="1">
     <stop offset="0" stop-color="#434a8f"/>
@@ -48,13 +51,17 @@ export function mascotInner({ idPrefix = 'hm', framing = 'full', rounded = true 
     <stop offset=".5" stop-color="#2f8de4"/>
     <stop offset="1" stop-color="#74e3d4"/>
   </linearGradient>
-  <clipPath id="${p}-tile"><rect width="256" height="256" rx="${rounded ? 58 : 0}"/></clipPath>
+  <clipPath id="${p}-tile"><rect width="256" height="256"/></clipPath>
+  <filter id="${p}-o" x="-12%" y="-12%" width="124%" height="124%" color-interpolation-filters="sRGB">
+    <feMorphology in="SourceAlpha" operator="dilate" radius="6" result="d"/>
+    <feFlood flood-color="#f4f4f5"/>
+    <feComposite in2="d" operator="in" result="ring"/>
+    <feMerge><feMergeNode in="ring"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
 </defs>
 <g clip-path="url(#${p}-tile)">
-  <rect width="256" height="256" fill="url(#${p}-bg)"/>
-  <path d="M40 58c1 8 3 10 11 11-8 1-10 3-11 11-1-8-3-10-11-11 8-1 10-3 11-11z" fill="#fff" opacity=".9"/>
-  <path d="M220 190c1 5 2 6 7 7-5 1-6 2-7 7-1-5-2-6-7-7 5-1 6-2 7-7z" fill="#fff" opacity=".8"/>
-  <g transform="${FRAMING_TRANSFORM[framing]}">
+  ${background === 'neutral' ? `<rect width="256" height="256" fill="url(#${p}-bg)"/>` : ''}
+  <g transform="${FRAMING_TRANSFORM[framing]}" filter="url(#${p}-o)">
     <path d="M42 152C36 86 76 32 128 32s92 54 86 120c-2 28-8 50-18 64-8 10-24 10-32 0H92c-8 10-24 10-32 0-10-14-16-36-18-64z" fill="#232658"/>
     <path d="M112 196h32v24c0 6-6 10-16 10s-16-4-16-10z" fill="#f6cdb8"/>
     <path d="M52 262c2-26 28-44 60-46l16 14 16-14c32 2 58 20 60 46z" fill="#fff"/>

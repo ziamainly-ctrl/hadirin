@@ -1,7 +1,11 @@
+import type { Metadata } from 'next';
 import { Package } from 'lucide-react';
 import EmptyState from '@/components/shared/EmptyState';
+import Page from '@/components/shared/Page';
 import { listAllPlans } from '@/lib/queries/plans';
 import PlanFormDialog, { SortablePlansTable } from './plan-form-dialog';
+
+export const metadata: Metadata = { title: 'Paket' };
 
 /**
  * Server Component: calls listAllPlans() directly (TRD.md §5) — the same call
@@ -14,20 +18,20 @@ export default async function PlansPage() {
   const plans = await listAllPlans();
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-text">Paket</h1>
-          <p className="text-sm text-muted">Kelola paket berlangganan, harga, batas, dan fitur.</p>
-        </div>
-        <PlanFormDialog nextSortOrder={plans.length} />
-      </div>
+    <Page>
+      <Page.Header
+        title="Paket"
+        description="Kelola paket berlangganan, harga, batas, dan fitur."
+        actions={<PlanFormDialog nextSortOrder={plans.length} />}
+      />
 
-      {plans.length === 0 ? (
-        <EmptyState icon={Package} message="Belum ada paket." />
-      ) : (
-        <SortablePlansTable plans={plans} />
-      )}
-    </div>
+      <Page.Body>
+        {plans.length === 0 ? (
+          <EmptyState icon={Package} message="Belum ada paket." />
+        ) : (
+          <SortablePlansTable plans={plans} />
+        )}
+      </Page.Body>
+    </Page>
   );
 }

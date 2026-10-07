@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { AlertTriangle, Loader2, MapPinOff, ShieldAlert, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Loader2, MapPin, MapPinOff, ShieldAlert, XCircle } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import StatusBadge from '@/components/shared/StatusBadge';
 import GeoPermissionGate, { type GeoCoords } from '@/components/shared/GeoPermissionGate';
@@ -10,6 +12,7 @@ import SelfieCamera from '@/components/shared/SelfieCamera';
 import { useToast } from '@/components/ui/Toast';
 import type { AttendanceLogRow } from '@/lib/queries/attendance';
 import type { AttendanceStatus } from '@/lib/constants/statuses';
+import { formatClock, formatDuration } from './format';
 
 export type PendingAction = 'check-in' | 'check-out' | 'done';
 
@@ -21,7 +24,8 @@ export interface CheckInCardProps {
 
 type Step =
   | { kind: 'camera' }
-  | { kind: 'submitting' }
+  // TRD.md §14: "Upload and the check-in call happen in sequence with clear progress."
+  | { kind: 'submitting'; phase: 'upload' | 'punch' }
   | { kind: 'result'; status: AttendanceStatus; lateMinutes: number }
   | { kind: 'business-error'; message: string };
 
@@ -49,25 +53,23 @@ async function postJson<T>(url: string, init: RequestInit): Promise<{ status: nu
   }
 }
 
-function formatClockTime(iso: string, timezone: string): string {
-  return new Date(iso).toLocaleTimeString('id-ID', { timeZone: timezone, hour: '2-digit', minute: '2-digit' });
-}
-
 /**
- * Cosmetic client-side clock only, always Asia/Jakarta, ticking every second. The
+ * Cosmetic client-side clock only, in the org's timezone, ticking every second. The
  * actually recorded check-in/out time comes from the server's now() in every case
  * (AGENTS.md domain rule #4) — this is purely a friendly display, never read back.
  * Starts at null so the first server-rendered and first client-rendered paint match
- * exactly; the real time appears once the effect ticks after hydration.
+ * exactly; the real time appears once the effect ticks after hydration. Lives in the card
+ * (not in the clock block) so the number keeps ticking when the block is re-created for a
+ * different step instead of flashing "--.--.--" again.
  */
-function LiveClock() {
+function useClock(timeZone: string): string | null {
   const [now, setNow] = useState<string | null>(null);
 
   useEffect(() => {
     const tick = () =>
       setNow(
         new Date().toLocaleTimeString('id-ID', {
-          timeZone: 'Asia/Jakarta',
+          timeZone,
           hour: '2-digit',
           minute: '2-digit',
           second: '2-digit',
@@ -76,9 +78,94 @@ function LiveClock() {
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, []);
+  }, [timeZone]);
 
-  return <p className="text-4xl font-bold tabular-nums text-text">{now ?? '--:--:--'}</p>;
+  return now;
+}
+
+/** The big clock and, for a check-out, when the person checked in. Centered in a narrow
+ * container, left-aligned (and larger) beside the viewfinder in a wide one (see SelfieCamera
+ * `intro`). */
+function ClockBlock({ time, checkedInAt }: { time: string | null; checkedInAt: string | null }) {
+  return (
+    <div className="flex flex-col items-center gap-2 @xl:items-start">
+      <p className="text-4xl font-bold leading-none tabular-nums text-text @xl:text-5xl">
+        {time ?? '--.--.--'}
+      </p>
+      {checkedInAt ? (
+        <p className="text-sm text-muted">
+          Masuk pukul <span className="font-semibold tabular-nums text-text">{checkedInAt}</span>
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+// Neutral surface for every notice; semantic color lives on the icon only (a tinted panel is
+// off-brand here). Destructive is a theme token (it already switches with .dark); there is no
+// warning token, so the amber pair follows the warning accents used elsewhere, light + dark.
+const NOTICE_ICON_CLASSES = {
+  danger: 'text-destructive',
+  warning: 'text-amber-600 dark:text-amber-400',
+} as const;
+
+/** One look for every "something needs your attention" state of the check-in flow
+ * (location denied / not found, weak GPS, a refused check-in): icon + bold title + plain
+ * explanation, left-aligned so a multi-line explanation reads like a paragraph, and an
+ * optional action underneath. */
+function Notice({
+  tone,
+  icon: Icon,
+  title,
+  children,
+  action,
+  role = 'alert',
+}: {
+  tone: keyof typeof NOTICE_ICON_CLASSES;
+  icon: LucideIcon;
+  title: string;
+  children?: ReactNode;
+  action?: ReactNode;
+  role?: 'alert' | 'status';
+}) {
+  return (
+    <div role={role} className="flex w-full gap-3 rounded-input border border-border bg-accent p-3 text-left">
+      <Icon className={`mt-0.5 h-5 w-5 shrink-0 ${NOTICE_ICON_CLASSES[tone]}`} aria-hidden="true" />
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <p className="text-sm font-semibold text-text">{title}</p>
+        {children ? <p className="text-sm text-text/80">{children}</p> : null}
+        {action ? <div className="mt-2">{action}</div> : null}
+      </div>
+    </div>
+  );
+}
+
+/** Everything is done for today: a plain summary, no camera. */
+function DoneSummary({ log, orgTimezone }: { log: AttendanceLogRow | null; orgTimezone: string }) {
+  const rows: { label: string; value: string }[] = [
+    { label: 'Masuk', value: formatClock(log?.checkInAt, orgTimezone) },
+    { label: 'Keluar', value: formatClock(log?.checkOutAt, orgTimezone) },
+  ];
+  if (log?.workMinutes != null) rows.push({ label: 'Durasi kerja', value: formatDuration(log.workMinutes) });
+  if (log && log.lateMinutes > 0) rows.push({ label: 'Terlambat', value: formatDuration(log.lateMinutes) });
+  if (log && log.earlyLeaveMinutes > 0) rows.push({ label: 'Pulang lebih awal', value: formatDuration(log.earlyLeaveMinutes) });
+
+  return (
+    <div className="mx-auto flex w-full max-w-sm flex-col gap-3">
+      <div className="flex items-center gap-2">
+        <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+        <h3 className="text-sm font-semibold text-text">Absensi hari ini sudah lengkap</h3>
+      </div>
+      <dl className="divide-y divide-border text-sm">
+        {rows.map((row) => (
+          <div key={row.label} className="flex items-baseline justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
+            <dt className="text-muted">{row.label}</dt>
+            <dd className="font-semibold tabular-nums text-text">{row.value}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
 }
 
 /**
@@ -88,46 +175,33 @@ function LiveClock() {
  * renders a plain summary (no camera UI) when pendingAction is "done". The page
  * mounts this with `key={pendingAction}`, so a successful punch + router.refresh()
  * naturally remounts it fresh for whatever comes next (check-out, or the summary).
+ *
+ * Layout: the nearest ancestor `@container` decides. Narrow (the /m phone column): one
+ * centered column. Wide (>= 36rem, /check-in in the marketing shell): the viewfinder on the
+ * left, the clock + hint + capture button beside it (see SelfieCamera `intro`).
  */
 export default function CheckInCard({ log, pendingAction, orgTimezone }: CheckInCardProps) {
+  if (pendingAction === 'done') return <DoneSummary log={log} orgTimezone={orgTimezone} />;
+  return <CheckInFlow log={log} pendingAction={pendingAction} orgTimezone={orgTimezone} />;
+}
+
+function CheckInFlow({
+  log,
+  pendingAction,
+  orgTimezone,
+}: {
+  log: AttendanceLogRow | null;
+  pendingAction: Exclude<PendingAction, 'done'>;
+  orgTimezone: string;
+}) {
   const router = useRouter();
   const { show } = useToast();
   const [step, setStep] = useState<Step>({ kind: 'camera' });
-
-  if (pendingAction === 'done') {
-    return (
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-text">Absensi hari ini selesai</h3>
-          {log ? <StatusBadge status={log.status} /> : null}
-        </div>
-        <dl className="space-y-2 text-sm text-text">
-          <div className="flex items-baseline justify-between">
-            <dt className="text-muted">Masuk</dt>
-            <dd className="text-lg font-semibold tabular-nums">
-              {log?.checkInAt ? formatClockTime(log.checkInAt, orgTimezone) : '-'}
-            </dd>
-          </div>
-          <div className="flex items-baseline justify-between">
-            <dt className="text-muted">Keluar</dt>
-            <dd className="text-lg font-semibold tabular-nums">
-              {log?.checkOutAt ? formatClockTime(log.checkOutAt, orgTimezone) : '-'}
-            </dd>
-          </div>
-          {log?.workMinutes != null ? (
-            <div className="flex items-baseline justify-between">
-              <dt className="text-muted">Durasi kerja</dt>
-              <dd className="text-lg font-semibold tabular-nums">
-                {Math.floor(log.workMinutes / 60)} jam {log.workMinutes % 60} menit
-              </dd>
-            </div>
-          ) : null}
-        </dl>
-      </div>
-    );
-  }
+  const clock = useClock(orgTimezone);
 
   const actionNoun = pendingAction === 'check-in' ? 'Absen masuk' : 'Absen keluar';
+  const checkedInAt = pendingAction === 'check-out' ? formatClock(log?.checkInAt, orgTimezone) : null;
+  const clockBlock = <ClockBlock time={clock} checkedInAt={checkedInAt} />;
 
   function handleFailure(status: number | undefined, message: string) {
     if (status === 422) {
@@ -142,7 +216,7 @@ export default function CheckInCard({ log, pendingAction, orgTimezone }: CheckIn
   }
 
   async function handleCapture(blob: Blob, coords: GeoCoords) {
-    setStep({ kind: 'submitting' });
+    setStep({ kind: 'submitting', phase: 'upload' });
 
     const form = new FormData();
     form.append('file', blob, 'selfie.jpg');
@@ -158,6 +232,7 @@ export default function CheckInCard({ log, pendingAction, orgTimezone }: CheckIn
       return;
     }
 
+    setStep({ kind: 'submitting', phase: 'punch' });
     const endpoint = pendingAction === 'check-in' ? '/api/attendance/check-in' : '/api/attendance/check-out';
     const punchResult = await postJson<{ log: AttendanceLogRow }>(endpoint, {
       method: 'POST',
@@ -184,93 +259,146 @@ export default function CheckInCard({ log, pendingAction, orgTimezone }: CheckIn
   }
 
   return (
-    <div className="flex flex-col items-center gap-4">
-      <LiveClock />
+    <GeoPermissionGate>
+      {(coords, geoStatus, retryGeo) => {
+        // Every step except "ready for the selfie" is the clock plus one status block
+        // (stacked when narrow, side by side when wide). The ready step hands the clock to
+        // SelfieCamera as its intro, so the viewfinder can sit beside it.
+        const withClock = (content: ReactNode) => (
+          <div className="flex w-full flex-col items-center gap-4 @xl:flex-row @xl:justify-center @xl:gap-10">
+            {clockBlock}
+            <div className="flex w-full flex-col items-center gap-3 @xl:max-w-sm">{content}</div>
+          </div>
+        );
 
-      <GeoPermissionGate>
-        {(coords, geoStatus) => {
-          if (geoStatus === 'loading') {
-            return (
-              <div role="status" className="flex items-center gap-2 text-sm text-muted">
-                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                Mendapatkan lokasi Anda...
-              </div>
-            );
-          }
+        if (geoStatus === 'loading') {
+          return withClock(
+            <div role="status" className="flex items-center gap-2 text-sm text-muted">
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+              Mendapatkan lokasi Anda...
+            </div>,
+          );
+        }
 
-          if (geoStatus === 'denied') {
-            return (
-              <div role="alert" className="flex flex-col items-center gap-2 text-center text-sm text-red-700 dark:text-red-300">
-                <ShieldAlert className="h-8 w-8" aria-hidden="true" />
-                <p>
-                  Izin lokasi ditolak. Aktifkan izin lokasi untuk situs ini di pengaturan browser atau perangkat Anda,
-                  lalu muat ulang halaman.
-                </p>
-              </div>
-            );
-          }
-
-          if (geoStatus === 'error') {
-            return (
-              <div role="alert" className="flex flex-col items-center gap-2 text-center text-sm text-red-700 dark:text-red-300">
-                <MapPinOff className="h-8 w-8" aria-hidden="true" />
-                <p>Tidak dapat mendeteksi lokasi Anda. Pastikan GPS aktif, lalu coba lagi.</p>
-              </div>
-            );
-          }
-
-          // geoStatus is 'ok' or 'weak-signal' below — both are allowed to proceed.
-          if (step.kind === 'business-error') {
-            return (
-              <div role="alert" className="w-full space-y-3 rounded-input border border-red-200 bg-red-50 p-3 text-center dark:border-red-900 dark:bg-red-950/40">
-                <div className="flex items-center justify-center gap-2 text-sm text-red-800 dark:text-red-300">
-                  <XCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
-                  {step.message}
-                </div>
-                <Button variant="primary" onClick={() => setStep({ kind: 'camera' })}>
+        if (geoStatus === 'denied') {
+          return withClock(
+            <Notice
+              tone="danger"
+              icon={ShieldAlert}
+              title="Izin lokasi ditolak"
+              action={
+                <Button variant="outline" onClick={retryGeo}>
                   Coba Lagi
                 </Button>
-              </div>
-            );
-          }
-
-          if (step.kind === 'result') {
-            const isLate = step.status === 'LATE';
-            return (
-              <p role="status" className={`text-base font-semibold ${isLate ? 'text-amber-700 dark:text-amber-300' : 'text-emerald-700 dark:text-emerald-300'}`}>
-                {isLate ? `Terlambat ${step.lateMinutes} menit` : 'Tepat waktu'}
-              </p>
-            );
-          }
-
-          if (step.kind === 'submitting') {
-            return (
-              <div role="status" className="flex items-center gap-2 text-sm text-muted">
-                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                Mengirim {actionNoun.toLowerCase()}...
-              </div>
-            );
-          }
-
-          if (!coords) return null; // GeoPermissionGate always sets coords alongside 'ok'/'weak-signal'.
-
-          return (
-            <div className="flex w-full flex-col items-center gap-3">
-              {geoStatus === 'weak-signal' ? (
-                <div
-                  role="status"
-                  className="flex items-center gap-2 rounded-input border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300"
-                >
-                  <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
-                  Sinyal GPS terlalu lemah. Pindah ke tempat yang lebih terbuka agar lokasi lebih akurat.
-                </div>
-              ) : null}
-              <p className="text-sm text-muted">Ambil selfie untuk mencatat {actionNoun.toLowerCase()}.</p>
-              <SelfieCamera onCapture={(blob) => handleCapture(blob, coords)} onError={(message) => show(message, 'error')} />
-            </div>
+              }
+            >
+              Lokasi dibutuhkan untuk mencatat absensi. Izinkan akses lokasi untuk situs ini di pengaturan browser
+              atau perangkat Anda, lalu ketuk Coba Lagi.
+            </Notice>,
           );
-        }}
-      </GeoPermissionGate>
-    </div>
+        }
+
+        if (geoStatus === 'error') {
+          return withClock(
+            <Notice
+              tone="danger"
+              icon={MapPinOff}
+              title="Lokasi belum terdeteksi"
+              action={
+                <Button variant="outline" onClick={retryGeo}>
+                  Coba Lagi
+                </Button>
+              }
+            >
+              Pastikan GPS atau layanan lokasi di perangkat Anda aktif, lalu coba lagi.
+            </Notice>,
+          );
+        }
+
+        // geoStatus is 'ok' or 'weak-signal' below — both are allowed to proceed.
+        if (step.kind === 'business-error') {
+          return withClock(
+            <Notice
+              tone="danger"
+              icon={XCircle}
+              title={`${actionNoun} belum tercatat`}
+              action={
+                <Button variant="outline" onClick={() => setStep({ kind: 'camera' })}>
+                  Coba Lagi
+                </Button>
+              }
+            >
+              {step.message}
+            </Notice>,
+          );
+        }
+
+        if (step.kind === 'result') {
+          // Shown for the moment between the punch and router.refresh() remounting this
+          // card for the next action. A check-out keeps the morning's status (LATE stays
+          // LATE), so only a check-in reports on time vs late here.
+          return withClock(
+            <div role="status" className="flex flex-col items-center gap-2 text-center">
+              <CheckCircle2 className="h-8 w-8 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+              <p className="text-base font-semibold text-text">{actionNoun} berhasil dicatat</p>
+              {pendingAction === 'check-in' ? (
+                <>
+                  <StatusBadge status={step.status} />
+                  {step.status === 'LATE' ? (
+                    <p className="text-sm text-muted">Anda terlambat {formatDuration(step.lateMinutes)}.</p>
+                  ) : null}
+                </>
+              ) : null}
+            </div>,
+          );
+        }
+
+        if (!coords) return null; // GeoPermissionGate always sets coords alongside 'ok'/'weak-signal'.
+
+        // Sending the photo keeps the camera on screen (frozen on the captured frame, with the
+        // progress text over it) instead of swapping it for a short status line: the card does not
+        // collapse and jump, and if the send fails the live preview just resumes.
+        const busyLabel =
+          step.kind === 'submitting'
+            ? step.phase === 'upload'
+              ? 'Mengunggah foto...'
+              : `Mencatat ${actionNoun.toLowerCase()}...`
+            : undefined;
+
+        const accuracy = Math.round(coords.accuracyM);
+        const weak = geoStatus === 'weak-signal';
+        return (
+          <SelfieCamera
+            compact={weak}
+            busyLabel={busyLabel}
+            intro={
+              <>
+                {clockBlock}
+                {weak ? (
+                  // Short on purpose: this state still allows a check-in, and the viewfinder
+                  // below shrinks (compact) so "Ambil Foto" stays above the fold on 360×740.
+                  <Notice tone="warning" icon={AlertTriangle} title={`Sinyal GPS lemah (±${accuracy}\u00A0m)`} role="status">
+                    Anda tetap bisa absen. Cari tempat terbuka agar lebih akurat.
+                  </Notice>
+                ) : null}
+                <div className="flex flex-col items-center gap-1 text-center @xl:items-start @xl:text-left">
+                  <p className="text-sm text-text">Ambil selfie untuk {actionNoun.toLowerCase()}.</p>
+                  {/* Like Talenta's camera step, the employee sees that their location was
+                      found before the photo is sent, not only when something is wrong. */}
+                  {weak ? null : (
+                    <p role="status" className="flex items-center gap-1 text-xs text-muted">
+                      <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                      Lokasi terdeteksi · akurasi ±{accuracy}&nbsp;m
+                    </p>
+                  )}
+                </div>
+              </>
+            }
+            onCapture={(blob) => handleCapture(blob, coords)}
+            onError={(message) => show(message, 'error')}
+          />
+        );
+      }}
+    </GeoPermissionGate>
   );
 }

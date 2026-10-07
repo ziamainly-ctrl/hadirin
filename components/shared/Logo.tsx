@@ -25,9 +25,13 @@ export default function Logo({ className, iconOnly = false, suffix }: LogoProps)
         <span className="flex flex-col leading-none">
           <span className="font-bold tracking-tight text-text">Hadirin</span>
           {/* Stacked under the wordmark rather than beside it: beside it, "Hadirin Platform"
-              plus the theme toggle and collapse button overflow the 240px sidebar header. */}
+              plus the theme toggle and collapse button overflow the 240px sidebar header.
+              Floor of 10px: at 0.55em it rendered 7.7px in the 14px mobile top bar and 9px in
+              the sidebar, too small to read even as an all-caps label. */}
           {suffix ? (
-            <span className="mt-1 text-[0.55em] font-semibold uppercase tracking-[0.18em] text-muted">{suffix}</span>
+            <span className="mt-1 text-[max(0.62em,10px)] font-semibold uppercase tracking-[0.14em] text-muted">
+              {suffix}
+            </span>
           ) : null}
         </span>
       ) : null}

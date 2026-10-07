@@ -1,9 +1,11 @@
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 import { Camera, ListChecks, TriangleAlert } from 'lucide-react';
 import { requireSession } from '@/lib/auth';
 import { listAttendanceForOrg } from '@/lib/queries/attendance';
 import { listUsers, getUserByIdInOrg } from '@/lib/queries/users';
 import { listBranches } from '@/lib/queries/branches';
+import { getOrganizationPlanContext } from '@/lib/queries/organizations';
 import { dateStringSchema, idParam } from '@/lib/validators/common';
 import { ATTENDANCE_STATUSES } from '@/lib/constants/statuses';
 import type { AttendanceStatus } from '@/lib/constants/statuses';
@@ -11,7 +13,9 @@ import Table from '@/components/ui/Table';
 import Pagination from '@/components/ui/Pagination';
 import StatusBadge from '@/components/shared/StatusBadge';
 import EmptyState from '@/components/shared/EmptyState';
+import Page from '@/components/shared/Page';
 import AttendanceFilters from './filters';
+import { formatMinutes, toCalendarDate } from './format';
 
 export const metadata: Metadata = { title: 'Absensi' };
 
@@ -41,21 +45,22 @@ function parseStatusParam(value: string | undefined): AttendanceStatus | undefin
   return value && (ATTENDANCE_STATUSES as readonly string[]).includes(value) ? (value as AttendanceStatus) : undefined;
 }
 
-// Pure calendar date (no time component) — timeZone: 'UTC' keeps it from shifting to the
-// previous/next day under a viewer's local offset, same convention as
-// components/shared/RequestCard.tsx and app/app/settings/billing/page.tsx.
+// Pure calendar date (no time component): toCalendarDate() first turns the driver's Date
+// back into "YYYY-MM-DD", then timeZone: 'UTC' formats that midnight without shifting it a
+// day under any offset — same convention as components/shared/RequestCard.tsx.
 const DATE_FORMATTER = new Intl.DateTimeFormat('id-ID', {
+  weekday: 'short',
   day: 'numeric',
   month: 'short',
   year: 'numeric',
   timeZone: 'UTC',
 });
 
-// HH:MM in the org's display timezone — same convention as lib/export/xlsx.ts's
-// formatTimeJakarta (no date library in TRD.md §3's fixed dependency list).
-function formatTime(value: string | null): string {
-  if (!value) return '-';
-  return new Date(value).toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit' });
+// HH:MM in the org's own timezone (organizations.timezone, TRD.md §5) — the same zone the
+// dashboard uses, so a WITA/WIT org never sees its check-ins an hour off here.
+function formatTime(value: string | null, timeZone: string): string {
+  if (!value) return '—';
+  return new Date(value).toLocaleTimeString('id-ID', { timeZone, hour: '2-digit', minute: '2-digit' });
 }
 
 /**
@@ -88,7 +93,7 @@ export default async function AttendancePage({ searchParams }: AttendancePagePro
       ? listUsers(orgId, { managerId: userId }).then((users) => new Map(users.map((u) => [u.id, u.name] as const)))
       : getUserByIdInOrg(orgId, userId).then((me) => new Map([[me.id, me.name] as const]));
 
-  const [{ rows, total }, branches, nameByUserId] = await Promise.all([
+  const [{ rows, total }, branches, nameByUserId, org] = await Promise.all([
     listAttendanceForOrg(
       orgId,
       {
@@ -104,7 +109,10 @@ export default async function AttendancePage({ searchParams }: AttendancePagePro
     ),
     listBranches(orgId, { activeOnly: true }),
     namesPromise,
+    getOrganizationPlanContext(orgId),
   ]);
+  const timeZone = org?.timezone ?? 'Asia/Jakarta';
+  const hasFilter = Boolean(dateFrom || dateTo || branchId !== undefined || status);
 
   const branchOptions = branches.map((b) => ({ id: b.id, name: b.name }));
   const filterSearchParams = {
@@ -114,99 +122,217 @@ export default async function AttendancePage({ searchParams }: AttendancePagePro
     status,
   };
 
+  // A page number past the end (a stale bookmark, or the data shrank under a filter) used to
+  // render an empty table under a pager that said "Halaman 1 dari 1". Send it to the last real page.
+  const lastPage = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  if (page > lastPage) {
+    const query = new URLSearchParams();
+    for (const [key, value] of Object.entries(filterSearchParams)) if (value) query.set(key, value);
+    if (lastPage > 1) query.set('page', String(lastPage));
+    const queryString = query.toString();
+    redirect(queryString ? `/app/attendance?${queryString}` : '/app/attendance');
+  }
+
+  // Desktop: header and filters stay put; the table scrolls inside its own box with the column
+  // head pinned (ui/TableFrame) and the pager pinned under it. Below lg the page just scrolls.
   return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-xl font-semibold text-text">Absensi</h1>
-        <p className="text-sm text-muted">Riwayat check-in dan check-out karyawan.</p>
-      </div>
+    <Page>
+      <Page.Header
+        title="Absensi"
+        description="Riwayat check-in dan check-out karyawan, lengkap dengan foto dan lokasi."
+      />
 
       <AttendanceFilters branches={branchOptions} />
 
-      {total === 0 ? (
-        <EmptyState icon={ListChecks} message="Belum ada data absensi untuk filter ini." />
-      ) : (
-        <>
-          <Table>
-            <Table.Head>
-              <Table.Row>
-                <Table.HeadCell>Karyawan</Table.HeadCell>
-                <Table.HeadCell>Tanggal</Table.HeadCell>
-                <Table.HeadCell>Status</Table.HeadCell>
-                <Table.HeadCell>Masuk</Table.HeadCell>
-                <Table.HeadCell>Keluar</Table.HeadCell>
-                <Table.HeadCell>Menit Terlambat</Table.HeadCell>
-                <Table.HeadCell>Menit Kerja</Table.HeadCell>
-                <Table.HeadCell>Lokasi</Table.HeadCell>
-              </Table.Row>
-            </Table.Head>
-            <Table.Body>
-              {rows.map((log) => {
-                const isOutside = log.checkInIsOutside || log.checkOutIsOutside;
-                return (
-                  <Table.Row key={log.id}>
-                    <Table.Cell>{nameByUserId.get(log.userId) ?? `#${log.userId}`}</Table.Cell>
-                    <Table.Cell>{DATE_FORMATTER.format(new Date(log.workDate))}</Table.Cell>
-                    <Table.Cell>
-                      <StatusBadge status={log.status} />
-                    </Table.Cell>
-                    <Table.Cell>
-                      <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
-                        {formatTime(log.checkInAt)}
-                        {log.checkInPhotoUrl ? (
-                          <a
-                            href={`/api/files/attendance-logs/${log.id}/check-in`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            aria-label="Lihat foto check-in"
-                            className="text-muted hover:text-primary"
-                          >
-                            <Camera className="h-4 w-4" aria-hidden="true" />
-                          </a>
-                        ) : null}
-                      </span>
-                    </Table.Cell>
-                    <Table.Cell>
-                      <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
-                        {formatTime(log.checkOutAt)}
-                        {log.checkOutPhotoUrl ? (
-                          <a
-                            href={`/api/files/attendance-logs/${log.id}/check-out`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            aria-label="Lihat foto check-out"
-                            className="text-muted hover:text-primary"
-                          >
-                            <Camera className="h-4 w-4" aria-hidden="true" />
-                          </a>
-                        ) : null}
-                      </span>
-                    </Table.Cell>
-                    <Table.Cell>{log.lateMinutes}</Table.Cell>
-                    <Table.Cell>{log.workMinutes ?? '-'}</Table.Cell>
-                    <Table.Cell>
-                      {isOutside ? (
-                        <TriangleAlert
-                          className="h-4 w-4 text-amber-600 dark:text-amber-400"
-                          aria-label="Di luar radius cabang"
-                        />
-                      ) : null}
-                    </Table.Cell>
-                  </Table.Row>
-                );
-              })}
-            </Table.Body>
-          </Table>
+      <Page.Body>
+        {total === 0 ? (
+          hasFilter ? (
+            // No action button here: "Hapus Filter" already sits right above, in the filter bar.
+            <EmptyState
+              icon={ListChecks}
+              message="Tidak ada data absensi yang cocok dengan filter ini. Coba ubah atau hapus filter."
+            />
+          ) : (
+            <EmptyState
+              icon={ListChecks}
+              message="Belum ada data absensi. Data muncul setelah karyawan melakukan check-in."
+            />
+          )
+        ) : (
+          <>
+            <AttendanceList rows={rows} names={nameByUserId} timeZone={timeZone} />
+            <AttendanceTable rows={rows} names={nameByUserId} timeZone={timeZone} />
+            <Pagination
+              page={page}
+              pageSize={PAGE_SIZE}
+              total={total}
+              basePath="/app/attendance"
+              searchParams={filterSearchParams}
+              className="shrink-0"
+            />
+          </>
+        )}
+      </Page.Body>
+    </Page>
+  );
+}
 
-          <Pagination
-            page={page}
-            pageSize={PAGE_SIZE}
-            total={total}
-            basePath="/app/attendance"
-            searchParams={filterSearchParams}
-          />
-        </>
-      )}
+type AttendanceRow = Awaited<ReturnType<typeof listAttendanceForOrg>>['rows'][number];
+
+interface AttendanceRowsProps {
+  rows: AttendanceRow[];
+  names: Map<number, string>;
+  timeZone: string;
+}
+
+function formatWorkDate(log: AttendanceRow): string {
+  return DATE_FORMATTER.format(new Date(toCalendarDate(log.workDate)));
+}
+
+// Selfie link next to a check-in/out time: a padded hit area (the bare 16px icon was too
+// small to tap; 40px on a touch screen, with the negative margin keeping the row height) with a
+// visible focus ring, since it is the only control in the row.
+function SelfieLink({ logId, kind }: { logId: number; kind: 'check-in' | 'check-out' }) {
+  const label = `Lihat foto ${kind}`;
+  return (
+    <a
+      href={`/api/files/attendance-logs/${logId}/${kind}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={label}
+      title={label}
+      className="-m-1.5 inline-flex rounded-input p-1.5 pointer-coarse:-m-3 pointer-coarse:p-3 text-muted transition-colors hover:bg-accent hover:text-text focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+    >
+      <Camera className="h-4 w-4" aria-hidden="true" />
+    </a>
+  );
+}
+
+function ClockWithSelfie({ log, kind, timeZone }: { log: AttendanceRow; kind: 'check-in' | 'check-out'; timeZone: string }) {
+  const at = kind === 'check-in' ? log.checkInAt : log.checkOutAt;
+  const photo = kind === 'check-in' ? log.checkInPhotoUrl : log.checkOutPhotoUrl;
+  return (
+    <span className="inline-flex items-center gap-2 tabular-nums">
+      {formatTime(at, timeZone)}
+      {photo ? <SelfieLink logId={log.id} kind={kind} /> : null}
+    </span>
+  );
+}
+
+// Spelled out, not a lone icon: an empty cell could mean "inside" or "no check-in", and
+// the warning icon alone had no visible meaning.
+function LocationLabel({ log }: { log: AttendanceRow }) {
+  if (log.checkInIsOutside || log.checkOutIsOutside) {
+    return (
+      <span className="inline-flex items-center gap-1.5 font-medium text-amber-700 dark:text-amber-400">
+        <TriangleAlert className="h-4 w-4 shrink-0" aria-hidden="true" />
+        Luar area
+      </span>
+    );
+  }
+  return <span className="text-muted">{log.checkInAt ? 'Dalam area' : '—'}</span>;
+}
+
+// Phones get one stacked row per log: as an eight-column table a 360px screen showed the
+// name and date only, and the status, times and selfies were all off to the right. From sm
+// up the table (AttendanceTable) has the room, so this list is hidden there.
+function AttendanceList({ rows, names, timeZone }: AttendanceRowsProps) {
+  return (
+    <ul className="divide-y divide-border rounded-card border border-border bg-surface sm:hidden">
+      {rows.map((log) => {
+        // Only what is worth a glance: lateness, worked time and an outside-area flag. "Dalam
+        // area" is the normal case, so on a phone it is left out instead of filling every row.
+        const isOutside = log.checkInIsOutside || log.checkOutIsOutside;
+        const extras = [
+          log.lateMinutes > 0 ? `Terlambat ${formatMinutes(log.lateMinutes)}` : null,
+          log.workMinutes !== null ? `Kerja ${formatMinutes(log.workMinutes)}` : null,
+        ].filter((item): item is string => item !== null);
+        return (
+          <li key={log.id} className="flex flex-col gap-2 px-4 py-3 text-sm">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="line-clamp-2 break-words font-medium text-text">{names.get(log.userId) ?? `#${log.userId}`}</p>
+                <p className="text-xs text-muted">{formatWorkDate(log)}</p>
+              </div>
+              <StatusBadge status={log.status} />
+            </div>
+            <dl className="grid grid-cols-2 gap-x-4">
+              <div className="flex items-center gap-1.5">
+                <dt className="text-muted">Masuk</dt>
+                <dd className="text-text">
+                  <ClockWithSelfie log={log} kind="check-in" timeZone={timeZone} />
+                </dd>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <dt className="text-muted">Keluar</dt>
+                <dd className="text-text">
+                  <ClockWithSelfie log={log} kind="check-out" timeZone={timeZone} />
+                </dd>
+              </div>
+            </dl>
+            {extras.length > 0 || isOutside ? (
+              <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted">
+                {extras.length > 0 ? <span className="tabular-nums">{extras.join(' · ')}</span> : null}
+                {extras.length > 0 && isOutside ? <span aria-hidden="true">·</span> : null}
+                {isOutside ? <LocationLabel log={log} /> : null}
+              </p>
+            ) : null}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+function AttendanceTable({ rows, names, timeZone }: AttendanceRowsProps) {
+  return (
+    // A flex column so ui/Table's frame can shrink to the space Page.Body has left and scroll its
+    // rows inside (header pinned); the pager below stays in view.
+    <div className="hidden min-h-0 flex-col sm:flex">
+      <Table aria-label="Riwayat absensi karyawan">
+        <Table.Head>
+          <Table.Row>
+            <Table.HeadCell>Karyawan</Table.HeadCell>
+            <Table.HeadCell>Tanggal</Table.HeadCell>
+            <Table.HeadCell>Status</Table.HeadCell>
+            <Table.HeadCell>Masuk</Table.HeadCell>
+            <Table.HeadCell>Keluar</Table.HeadCell>
+            <Table.HeadCell className="text-right">Keterlambatan</Table.HeadCell>
+            <Table.HeadCell className="text-right">Durasi Kerja</Table.HeadCell>
+            <Table.HeadCell>Lokasi</Table.HeadCell>
+          </Table.Row>
+        </Table.Head>
+        <Table.Body>
+          {rows.map((log) => (
+            <Table.Row key={log.id}>
+              <Table.Cell>
+                <span className="block max-w-56 truncate" title={names.get(log.userId)}>
+                  {names.get(log.userId) ?? `#${log.userId}`}
+                </span>
+              </Table.Cell>
+              <Table.Cell>{formatWorkDate(log)}</Table.Cell>
+              <Table.Cell>
+                <StatusBadge status={log.status} />
+              </Table.Cell>
+              <Table.Cell>
+                <ClockWithSelfie log={log} kind="check-in" timeZone={timeZone} />
+              </Table.Cell>
+              <Table.Cell>
+                <ClockWithSelfie log={log} kind="check-out" timeZone={timeZone} />
+              </Table.Cell>
+              <Table.Cell className="text-right tabular-nums">
+                {log.lateMinutes > 0 ? formatMinutes(log.lateMinutes) : '—'}
+              </Table.Cell>
+              <Table.Cell className="text-right tabular-nums">
+                {log.workMinutes !== null ? formatMinutes(log.workMinutes) : '—'}
+              </Table.Cell>
+              <Table.Cell>
+                <LocationLabel log={log} />
+              </Table.Cell>
+            </Table.Row>
+          ))}
+        </Table.Body>
+      </Table>
     </div>
   );
 }

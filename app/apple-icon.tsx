@@ -10,7 +10,7 @@ export const size = { width: 180, height: 180 };
 export const contentType = 'image/png';
 
 export default function AppleIcon() {
-  const src = mascotDataUri({ framing: 'tight', rounded: false, idPrefix: 'ha' });
+  const src = mascotDataUri({ framing: 'tight', background: 'neutral', idPrefix: 'ha' });
   return new ImageResponse(
     (
       // next/og renders plain elements through Satori, so a raw <img> is correct here.

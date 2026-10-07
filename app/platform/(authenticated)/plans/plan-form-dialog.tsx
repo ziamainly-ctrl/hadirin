@@ -155,22 +155,27 @@ export default function PlanFormDialog({ plan, nextSortOrder = 0 }: PlanFormDial
         variant={isEdit ? 'secondary' : 'primary'}
         size={isEdit ? 'sm' : 'md'}
         onClick={openDialog}
-        className="gap-1.5"
+        // Every row says "Edit": the name tells a screen-reader user (or voice control: the
+        // label still starts with the visible word) which plan this button changes.
+        aria-label={isEdit ? `Edit paket ${plan?.name}` : undefined}
       >
         {isEdit ? <Pencil className="h-4 w-4" aria-hidden="true" /> : <Plus className="h-4 w-4" aria-hidden="true" />}
         {isEdit ? 'Edit' : 'Tambah Paket'}
       </Button>
 
-      <Dialog open={open} onClose={closeDialog} title={isEdit ? 'Edit Paket' : 'Tambah Paket'}>
+      <Dialog open={open} onClose={closeDialog} title={isEdit ? 'Edit Paket' : 'Tambah Paket'} size="lg">
         <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
           <Dialog.Body className="flex flex-col gap-4">
-            <div className="grid grid-cols-2 gap-3">
+            {/* Side by side only from sm (same as the payment-method dialog): at 360px the
+                half-width fields clipped their own "Contoh: STARTER" placeholder. */}
+            <div className="grid gap-4 sm:grid-cols-2 sm:gap-3">
               <Input
                 label="Kode"
                 value={form.code}
                 onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))}
                 error={fieldErrors.code}
                 maxLength={30}
+                placeholder="Contoh: STARTER"
                 required
               />
               <Input
@@ -179,22 +184,25 @@ export default function PlanFormDialog({ plan, nextSortOrder = 0 }: PlanFormDial
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                 error={fieldErrors.name}
                 maxLength={60}
+                placeholder="Contoh: Starter"
                 required
               />
             </div>
 
-            <Input
-              label="Harga per Bulan (Rp)"
-              type="number"
-              min={0}
-              value={form.priceMonthly}
-              onChange={(e) => setForm((f) => ({ ...f, priceMonthly: e.target.value }))}
-              error={fieldErrors.priceMonthly}
-              hint="0 untuk paket gratis."
-              required
-            />
-
-            <div className="grid grid-cols-2 gap-3">
+            {/* Price, seats and branches in one row from sm (the dialog is size lg); on a phone the
+                price takes a full row and the two limits share the next one. */}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:items-start">
+              <Input
+                label="Harga per Bulan (Rp)"
+                type="number"
+                min={0}
+                value={form.priceMonthly}
+                onChange={(e) => setForm((f) => ({ ...f, priceMonthly: e.target.value }))}
+                error={fieldErrors.priceMonthly}
+                hint="0 untuk paket gratis."
+                wrapperClassName="col-span-2 sm:col-span-1"
+                required
+              />
               <Input
                 label="Maks. Karyawan"
                 type="number"
@@ -215,8 +223,12 @@ export default function PlanFormDialog({ plan, nextSortOrder = 0 }: PlanFormDial
               />
             </div>
 
-            <fieldset className="flex flex-col gap-1.5 border-0 p-0">
-              <legend className="mb-0 p-0 text-sm font-medium text-text">Fitur</legend>
+            {/* Two columns from sm (the dialog is size lg): five single-line checkboxes stacked were
+                the tallest part of the form and forced an inner scroll on a 1024x600 window.
+                gap-y-3 between rows keeps them from reading as one block of text; on a touch screen
+                each Checkbox row is already a 44px target, so no extra gap there. */}
+            <fieldset className="grid gap-x-4 gap-y-3 border-0 p-0 sm:grid-cols-2 pointer-coarse:gap-y-0">
+              <legend className="mb-2 p-0 text-sm font-medium text-text">Fitur</legend>
               {FEATURE_KEYS.map((key) => (
                 <Checkbox
                   key={key}
@@ -231,6 +243,7 @@ export default function PlanFormDialog({ plan, nextSortOrder = 0 }: PlanFormDial
 
             <Checkbox
               label="Aktif"
+              description="Hanya paket aktif yang tampil di halaman Harga dan bisa dipilih organisasi."
               checked={form.isActive}
               onChange={(e) => setForm((f) => ({ ...f, isActive: e.target.checked }))}
             />
@@ -258,12 +271,10 @@ function SortablePlanRow({ plan }: { plan: Plan }) {
   };
 
   return (
-    // Table.Row (components/ui/Table.tsx) is a plain function component over <tr>, not
-    // wrapped in forwardRef, so it cannot take the ref useSortable needs on the row's
-    // real DOM node — this row renders a plain <tr> with Table.Row's own hover class
-    // instead. Table.Cell (no ref needed) is reused as-is for every cell below.
-    <tr ref={setNodeRef} style={style} className="hover:bg-accent/50">
-      <Table.Cell className="w-8">
+    // Table.Row takes the ref useSortable needs (React 19 passes ref as a prop), so the row
+    // keeps the shared hover state instead of a copy of it.
+    <Table.Row ref={setNodeRef} style={style}>
+      <Table.Cell narrow>
         <IconButton
           label="Seret untuk mengurutkan"
           size="sm"
@@ -274,20 +285,23 @@ function SortablePlanRow({ plan }: { plan: Plan }) {
           <GripVertical className="h-4 w-4" aria-hidden="true" />
         </IconButton>
       </Table.Cell>
-      <Table.Cell className="font-medium text-text">{plan.code}</Table.Cell>
-      <Table.Cell>{plan.name}</Table.Cell>
-      <Table.Cell>{plan.priceMonthly === 0 ? 'Gratis' : RUPIAH.format(plan.priceMonthly)}</Table.Cell>
-      <Table.Cell>{plan.maxEmployees}</Table.Cell>
-      <Table.Cell>{plan.maxBranches}</Table.Cell>
+      {/* Name with the code under it (one column instead of two), so the table fits a
+          tablet without the Aksi column scrolling out of view. */}
       <Table.Cell>
-        <Badge className={plan.isActive ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-accent text-muted'}>
-          {plan.isActive ? 'Aktif' : 'Nonaktif'}
-        </Badge>
+        <span className="block font-medium text-text">{plan.name}</span>
+        <span className="mt-0.5 block font-mono text-xs text-muted">{plan.code}</span>
+      </Table.Cell>
+      {/* Numbers right-aligned so digits line up under each other (Table is tabular-nums). */}
+      <Table.Cell className="text-right">{plan.priceMonthly === 0 ? 'Gratis' : RUPIAH.format(plan.priceMonthly)}</Table.Cell>
+      <Table.Cell className="text-right">{plan.maxEmployees}</Table.Cell>
+      <Table.Cell className="text-right">{plan.maxBranches}</Table.Cell>
+      <Table.Cell>
+        <Badge tone={plan.isActive ? 'success' : 'neutral'}>{plan.isActive ? 'Aktif' : 'Nonaktif'}</Badge>
       </Table.Cell>
       <Table.Cell className="text-right">
         <PlanFormDialog plan={plan} />
       </Table.Cell>
-    </tr>
+    </Table.Row>
   );
 }
 
@@ -351,15 +365,16 @@ export function SortablePlansTable({ plans: initialPlans }: SortablePlansTablePr
     // Fixed id: dnd-kit numbers its accessibility ids from a module-level counter, which
     // differs between the server render and hydration (a mismatch logged on every load).
     <DndContext id="plans-dnd" sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-      <Table>
+      <Table aria-label="Daftar paket">
         <Table.Head>
           <Table.Row>
-            <Table.HeadCell className="w-8" />
-            <Table.HeadCell>Kode</Table.HeadCell>
-            <Table.HeadCell>Nama</Table.HeadCell>
-            <Table.HeadCell>Harga</Table.HeadCell>
-            <Table.HeadCell>Maks. Karyawan</Table.HeadCell>
-            <Table.HeadCell>Maks. Cabang</Table.HeadCell>
+            <Table.HeadCell narrow>
+              <span className="sr-only">Urutan</span>
+            </Table.HeadCell>
+            <Table.HeadCell>Paket</Table.HeadCell>
+            <Table.HeadCell className="text-right">Harga / Bulan</Table.HeadCell>
+            <Table.HeadCell className="text-right">Maks. Karyawan</Table.HeadCell>
+            <Table.HeadCell className="text-right">Maks. Cabang</Table.HeadCell>
             <Table.HeadCell>Status</Table.HeadCell>
             <Table.HeadCell className="text-right">Aksi</Table.HeadCell>
           </Table.Row>

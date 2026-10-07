@@ -22,8 +22,24 @@ export interface OrganizationFormProps {
 }
 
 const GEOFENCE_OPTIONS: { value: GeofenceMode; label: string }[] = [
-  { value: 'STRICT', label: 'Ketat (tolak di luar radius)' },
-  { value: 'FLAG', label: 'Longgar (tandai, tetap diterima)' },
+  { value: 'STRICT', label: 'Ketat' },
+  { value: 'FLAG', label: 'Longgar' },
+];
+
+// Explains the selected mode under the field — kept out of the option labels so they
+// stay short enough not to be clipped inside a native <select> on a phone.
+const GEOFENCE_HINTS: Record<GeofenceMode, string> = {
+  STRICT: 'Absen dari luar radius cabang ditolak.',
+  FLAG: 'Absen dari luar radius tetap diterima, tetapi ditandai untuk Anda tinjau.',
+};
+
+// Indonesia's three zones cover every customer this product targets (PRD: Indonesian
+// SMEs). The column still stores the IANA name the server computes work dates with, so
+// an org created elsewhere with another zone keeps it as an extra option below.
+const TIMEZONE_OPTIONS: { value: string; label: string }[] = [
+  { value: 'Asia/Jakarta', label: 'WIB (Asia/Jakarta)' },
+  { value: 'Asia/Makassar', label: 'WITA (Asia/Makassar)' },
+  { value: 'Asia/Jayapura', label: 'WIT (Asia/Jayapura)' },
 ];
 
 // Client leaf: writes via our own /api/organizations route (TRD.md §5 — a Server
@@ -37,6 +53,9 @@ export default function OrganizationForm({ initialValues }: OrganizationFormProp
   const [values, setValues] = useState(initialValues);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const timezoneOptions = TIMEZONE_OPTIONS.some((option) => option.value === initialValues.timezone)
+    ? TIMEZONE_OPTIONS
+    : [...TIMEZONE_OPTIONS, { value: initialValues.timezone, label: initialValues.timezone }];
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -65,47 +84,56 @@ export default function OrganizationForm({ initialValues }: OrganizationFormProp
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <Input
-        label="Nama Organisasi"
-        value={values.name}
-        onChange={(e) => setValues((v) => ({ ...v, name: e.target.value }))}
-        error={fieldErrors.name}
-        maxLength={120}
-        required
-      />
-      <Input
-        label="Zona Waktu"
-        value={values.timezone}
-        onChange={(e) => setValues((v) => ({ ...v, timezone: e.target.value }))}
-        error={fieldErrors.timezone}
-        hint="Contoh: Asia/Jakarta"
-        maxLength={40}
-        required
-      />
-      <Select
-        label="Mode Geofence"
-        value={values.geofenceMode}
-        onChange={(e) => setValues((v) => ({ ...v, geofenceMode: e.target.value as GeofenceMode }))}
-        options={GEOFENCE_OPTIONS}
-        error={fieldErrors.geofenceMode}
-      />
-      <Checkbox
-        label="Wajibkan selfie saat check-in/out"
-        checked={values.selfieRequired}
-        onChange={(e) => setValues((v) => ({ ...v, selfieRequired: e.target.checked }))}
-      />
-      <Input
-        label="URL Logo"
-        type="url"
-        value={values.logoUrl ?? ''}
-        onChange={(e) => setValues((v) => ({ ...v, logoUrl: e.target.value || null }))}
-        error={fieldErrors.logoUrl}
-        hint="Opsional"
-        maxLength={500}
-      />
-      <Button type="submit" isLoading={isSubmitting} className="mt-2 self-start">
-        Simpan
-      </Button>
+      {/* Two columns from sm up so the whole form (and the plan strip under it) fits one short
+          laptop screen without scrolling; every hint is one line at this width. */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Input
+          label="Nama Organisasi"
+          value={values.name}
+          onChange={(e) => setValues((v) => ({ ...v, name: e.target.value }))}
+          error={fieldErrors.name}
+          maxLength={120}
+          required
+        />
+        <Select
+          label="Zona Waktu"
+          value={values.timezone}
+          onChange={(e) => setValues((v) => ({ ...v, timezone: e.target.value }))}
+          options={timezoneOptions}
+          error={fieldErrors.timezone}
+          hint="Dasar tanggal kerja dan jam absen karyawan."
+        />
+        <Select
+          label="Aturan Lokasi Absen"
+          value={values.geofenceMode}
+          onChange={(e) => setValues((v) => ({ ...v, geofenceMode: e.target.value as GeofenceMode }))}
+          options={GEOFENCE_OPTIONS}
+          error={fieldErrors.geofenceMode}
+          hint={GEOFENCE_HINTS[values.geofenceMode]}
+        />
+        <Input
+          label="URL Logo (opsional)"
+          type="url"
+          inputMode="url"
+          placeholder="https://contoh.com/logo.png"
+          value={values.logoUrl ?? ''}
+          onChange={(e) => setValues((v) => ({ ...v, logoUrl: e.target.value || null }))}
+          error={fieldErrors.logoUrl}
+          maxLength={500}
+        />
+        <Checkbox
+          className="sm:col-span-2 pointer-coarse:min-h-11 pointer-coarse:items-center"
+          label="Wajibkan selfie saat check-in dan check-out"
+          description="Karyawan harus mengambil foto sebelum absennya tersimpan."
+          checked={values.selfieRequired}
+          onChange={(e) => setValues((v) => ({ ...v, selfieRequired: e.target.checked }))}
+        />
+      </div>
+      <div className="flex border-t border-border pt-4">
+        <Button type="submit" isLoading={isSubmitting} className="w-full sm:w-auto">
+          Simpan Perubahan
+        </Button>
+      </div>
     </form>
   );
 }
