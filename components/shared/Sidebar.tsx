@@ -24,6 +24,7 @@ import {
   CalendarDays,
 } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
+import LogoutButton from './LogoutButton';
 
 // A Server Component layout (app/app/layout.tsx, app/platform/(authenticated)/layout.tsx)
 // builds `items` and passes it into this 'use client' component — a Lucide icon is a
@@ -61,6 +62,11 @@ export interface SidebarProps {
   /** Pass usePathname() from the caller, or omit it to let Sidebar call it itself. */
   activePath?: string;
   header?: ReactNode;
+  /** Plain strings, not a pre-built LogoutButton element or a render-prop function —
+   * same reason `icon` is a string key (see ICONS above): this is a Server Component
+   * prop, and only serializable data may cross that boundary. Sidebar renders
+   * LogoutButton itself, the same way it already resolves `items[].icon` itself. */
+  logout?: { url: string; redirectTo: string };
   className?: string;
 }
 
@@ -69,7 +75,7 @@ export interface SidebarProps {
  * desktop, off-canvas drawer on mobile (TRD.md §14). Callers supply `items`;
  * this component holds no app/admin/platform-specific nav content.
  */
-export default function Sidebar({ items, activePath, header, className }: SidebarProps) {
+export default function Sidebar({ items, activePath, header, logout, className }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
@@ -147,6 +153,11 @@ export default function Sidebar({ items, activePath, header, className }: Sideba
               </div>
             </div>
             <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-2">{renderNavItems(true)}</nav>
+            {logout ? (
+              <div className="border-t border-black/10 p-2 dark:border-white/10">
+                <LogoutButton logoutUrl={logout.url} redirectTo={logout.redirectTo} />
+              </div>
+            ) : null}
           </aside>
         </div>
       ) : null}
@@ -171,6 +182,11 @@ export default function Sidebar({ items, activePath, header, className }: Sideba
           </div>
         </div>
         <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-2">{renderNavItems(!collapsed)}</nav>
+        {logout ? (
+          <div className="border-t border-black/10 p-2 dark:border-white/10">
+            <LogoutButton logoutUrl={logout.url} redirectTo={logout.redirectTo} showLabel={!collapsed} />
+          </div>
+        ) : null}
       </aside>
     </>
   );

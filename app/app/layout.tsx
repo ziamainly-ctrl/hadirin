@@ -35,7 +35,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <ToastProvider>
       <div className="flex min-h-screen bg-bg">
-        <Sidebar items={items} />
+        <Sidebar items={items} logout={{ url: '/api/auth/logout', redirectTo: '/login' }} />
         <main className="flex-1 overflow-x-hidden p-4 pt-16 lg:p-6 lg:pt-6">{children}</main>
       </div>
     </ToastProvider>

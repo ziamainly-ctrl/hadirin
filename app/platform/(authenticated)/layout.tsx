@@ -20,7 +20,11 @@ export default async function PlatformAuthenticatedLayout({ children }: { childr
   return (
     <ToastProvider>
       <div className="flex min-h-screen bg-bg">
-        <Sidebar items={ITEMS} header={<span className="font-semibold text-text">Hadirin Platform</span>} />
+        <Sidebar
+          items={ITEMS}
+          header={<span className="font-semibold text-text">Hadirin Platform</span>}
+          logout={{ url: '/api/platform/auth/logout', redirectTo: '/platform/login' }}
+        />
         <main className="flex-1 overflow-x-hidden p-4 pt-16 lg:p-6 lg:pt-6">{children}</main>
       </div>
     </ToastProvider>
