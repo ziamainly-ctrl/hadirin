@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { requireSession } from '@/lib/auth';
+import Logo from '@/components/shared/Logo';
 import MarketingNav from './marketing-nav';
 
 /** Null for an anonymous visitor (the common case — this layout wraps public pages with
@@ -23,8 +24,8 @@ export default async function MarketingLayout({ children }: { children: React.Re
     <div className="flex min-h-screen flex-col">
       <header className="relative border-b border-black/5 bg-surface dark:border-white/10">
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4">
-          <Link href="/" className="text-lg font-bold text-primary">
-            Hadirin
+          <Link href="/">
+            <Logo className="text-lg" />
           </Link>
           <MarketingNav dashboardHref={dashboardHref} />
         </div>

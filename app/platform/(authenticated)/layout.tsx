@@ -2,6 +2,7 @@ import { requirePlatformSession } from '@/lib/auth';
 import { ToastProvider } from '@/components/ui/Toast';
 import Sidebar from '@/components/shared/Sidebar';
 import type { SidebarItem } from '@/components/shared/Sidebar';
+import Logo from '@/components/shared/Logo';
 
 // /platform/login lives outside this (authenticated) group (no Sidebar, no session
 // check) specifically so proxy.ts's gate on /platform/* can't redirect it to itself.
@@ -22,7 +23,7 @@ export default async function PlatformAuthenticatedLayout({ children }: { childr
       <div className="flex min-h-screen bg-bg">
         <Sidebar
           items={ITEMS}
-          header={<span className="font-semibold text-text">Hadirin Platform</span>}
+          header={<Logo suffix="Platform" />}
           logout={{ url: '/api/platform/auth/logout', redirectTo: '/platform/login' }}
         />
         <main className="flex-1 overflow-x-hidden p-4 pt-16 lg:p-6 lg:pt-6">{children}</main>
