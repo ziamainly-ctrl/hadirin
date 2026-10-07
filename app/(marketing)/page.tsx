@@ -107,7 +107,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="border-y border-black/5 bg-surface py-16 dark:border-white/5">
+      <section id="fitur" className="scroll-mt-20 border-y border-black/5 bg-surface py-16 dark:border-white/5">
         <div className="mx-auto max-w-5xl px-4">
           <h2 className="text-center text-2xl font-bold text-text">Semua yang dibutuhkan tim lapangan</h2>
           <div className="mt-10 grid gap-6 sm:grid-cols-3">
