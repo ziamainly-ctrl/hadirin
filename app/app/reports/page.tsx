@@ -5,7 +5,10 @@ import { getMonthlyRecap } from '@/lib/queries/reports';
 import { getOrganizationPlanContext } from '@/lib/queries/organizations';
 import { getLocalParts, pad2 } from '@/lib/tz';
 import { idParam } from '@/lib/validators/common';
+import Card from '@/components/ui/Card';
 import Table from '@/components/ui/Table';
+import BarList from '@/components/shared/BarList';
+import DonutChart from '@/components/shared/DonutChart';
 import EmptyState from '@/components/shared/EmptyState';
 import ExportButtons from './export-buttons';
 
@@ -53,6 +56,21 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
 
   const canExportPdf = org?.features.export_pdf ?? false;
 
+  const totals = recap.reduce(
+    (acc, row) => ({
+      present: acc.present + row.presentCount,
+      late: acc.late + row.lateCount,
+      absent: acc.absent + row.absentCount,
+      leaveSickPermit: acc.leaveSickPermit + row.leaveCount + row.sickCount + row.permitCount,
+    }),
+    { present: 0, late: 0, absent: 0, leaveSickPermit: 0 },
+  );
+  const topLate = recap
+    .filter((row) => row.totalLateMinutes > 0)
+    .sort((a, b) => b.totalLateMinutes - a.totalLateMinutes)
+    .slice(0, 5)
+    .map((row) => ({ label: row.name, value: row.totalLateMinutes }));
+
   return (
     <div className="flex flex-col gap-4">
       <div>
@@ -69,7 +87,41 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
       {recap.length === 0 ? (
         <EmptyState icon={FileBarChart} message="Belum ada data untuk bulan ini." />
       ) : (
-        <Table>
+        <>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Card shadow>
+              <Card.Header>
+                <h2 className="text-sm font-semibold text-text">Ringkasan Bulan Ini</h2>
+              </Card.Header>
+              <Card.Body>
+                <DonutChart
+                  centerValue={String(totals.present + totals.late)}
+                  centerLabel="Hari Hadir"
+                  segments={[
+                    { label: 'Tepat Waktu', value: totals.present, color: 'var(--color-status-present)' },
+                    { label: 'Terlambat', value: totals.late, color: 'var(--color-status-late)' },
+                    { label: 'Tidak Hadir', value: totals.absent, color: 'var(--color-status-absent)' },
+                    { label: 'Cuti/Sakit/Izin', value: totals.leaveSickPermit, color: 'var(--color-status-leave)' },
+                  ]}
+                />
+              </Card.Body>
+            </Card>
+
+            <Card shadow>
+              <Card.Header>
+                <h2 className="text-sm font-semibold text-text">Keterlambatan Terbanyak</h2>
+              </Card.Header>
+              <Card.Body>
+                {topLate.length === 0 ? (
+                  <p className="text-sm text-muted">Tidak ada keterlambatan bulan ini.</p>
+                ) : (
+                  <BarList items={topLate} formatValue={(v) => `${v}m`} />
+                )}
+              </Card.Body>
+            </Card>
+          </div>
+
+          <Table>
           <Table.Head>
             <Table.Row>
               <Table.HeadCell>Nama</Table.HeadCell>
@@ -100,7 +152,8 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
               </Table.Row>
             ))}
           </Table.Body>
-        </Table>
+          </Table>
+        </>
       )}
     </div>
   );

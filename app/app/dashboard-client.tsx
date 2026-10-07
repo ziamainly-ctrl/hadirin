@@ -5,9 +5,11 @@ import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-quer
 import { CircleCheck, ClockAlert, LogOut, MapPinOff, TriangleAlert, Users, UserX } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
+import Card from '@/components/ui/Card';
 import Skeleton from '@/components/ui/Skeleton';
 import Table from '@/components/ui/Table';
 import { useToast } from '@/components/ui/Toast';
+import DonutChart from '@/components/shared/DonutChart';
 import EmptyState from '@/components/shared/EmptyState';
 import StatTile from '@/components/shared/StatTile';
 import StatusBadge from '@/components/shared/StatusBadge';
@@ -154,37 +156,56 @@ function DashboardContent({ orgTimezone }: DashboardClientProps) {
         Data {WORK_DATE_FORMATTER.format(new Date(workDate))} · diperbarui otomatis setiap 30 detik
       </p>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-        <StatTile
-          label="Total Karyawan"
-          value={counts.total}
-          icon={<Users className="h-4 w-4" aria-hidden="true" />}
-        />
-        <StatTile
-          label="Sudah Hadir"
-          value={counts.checkedIn}
-          icon={<CircleCheck className="h-4 w-4" aria-hidden="true" />}
-        />
-        <StatTile
-          label="Terlambat"
-          value={counts.late}
-          icon={<ClockAlert className="h-4 w-4" aria-hidden="true" />}
-        />
-        <StatTile
-          label="Belum Hadir"
-          value={counts.notYetIn}
-          icon={<UserX className="h-4 w-4" aria-hidden="true" />}
-        />
-        <StatTile
-          label="Luar Area"
-          value={counts.outsideArea}
-          icon={<MapPinOff className="h-4 w-4" aria-hidden="true" />}
-        />
-        <StatTile
-          label="Belum Check-out"
-          value={counts.missingCheckOut}
-          icon={<LogOut className="h-4 w-4" aria-hidden="true" />}
-        />
+      <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
+        <Card shadow>
+          <Card.Header>
+            <h2 className="text-sm font-semibold text-text">Ringkasan Hari Ini</h2>
+          </Card.Header>
+          <Card.Body>
+            <DonutChart
+              centerValue={String(counts.total)}
+              centerLabel="Karyawan"
+              segments={[
+                { label: 'Tepat Waktu', value: Math.max(0, counts.checkedIn - counts.late), color: 'var(--color-status-present)' },
+                { label: 'Terlambat', value: counts.late, color: 'var(--color-status-late)' },
+                { label: 'Belum Hadir', value: counts.notYetIn, color: 'var(--color-status-absent)' },
+              ]}
+            />
+          </Card.Body>
+        </Card>
+
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+          <StatTile
+            label="Total Karyawan"
+            value={counts.total}
+            icon={<Users className="h-4 w-4" aria-hidden="true" />}
+          />
+          <StatTile
+            label="Sudah Hadir"
+            value={counts.checkedIn}
+            icon={<CircleCheck className="h-4 w-4" aria-hidden="true" />}
+          />
+          <StatTile
+            label="Terlambat"
+            value={counts.late}
+            icon={<ClockAlert className="h-4 w-4" aria-hidden="true" />}
+          />
+          <StatTile
+            label="Belum Hadir"
+            value={counts.notYetIn}
+            icon={<UserX className="h-4 w-4" aria-hidden="true" />}
+          />
+          <StatTile
+            label="Luar Area"
+            value={counts.outsideArea}
+            icon={<MapPinOff className="h-4 w-4" aria-hidden="true" />}
+          />
+          <StatTile
+            label="Belum Check-out"
+            value={counts.missingCheckOut}
+            icon={<LogOut className="h-4 w-4" aria-hidden="true" />}
+          />
+        </div>
       </div>
 
       {rows.length === 0 ? (
@@ -249,10 +270,13 @@ function DashboardSkeleton() {
       <span role="status" className="sr-only">
         Memuat data dashboard…
       </span>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-        {Array.from({ length: 6 }, (_, i) => (
-          <Skeleton key={i} className="h-24" />
-        ))}
+      <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
+        <Skeleton className="h-48" />
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+          {Array.from({ length: 6 }, (_, i) => (
+            <Skeleton key={i} className="h-24" />
+          ))}
+        </div>
       </div>
       <Skeleton className="h-80 w-full" />
     </div>
