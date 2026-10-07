@@ -1,6 +1,7 @@
 'use client';
 
 import { Moon, Sun } from 'lucide-react';
+import IconButton from '@/components/ui/IconButton';
 
 export interface ThemeToggleProps {
   className?: string;
@@ -25,14 +26,9 @@ export default function ThemeToggle({ className }: ThemeToggleProps) {
   }
 
   return (
-    <button
-      type="button"
-      onClick={toggle}
-      aria-label="Ganti tema terang/gelap"
-      className={`inline-flex h-9 w-9 items-center justify-center rounded-full text-muted transition-colors hover:bg-black/5 dark:hover:bg-white/10 ${className ?? ''}`}
-    >
+    <IconButton label="Ganti tema terang/gelap" onClick={toggle} className={className}>
       <Sun className="hidden h-5 w-5 dark:block" aria-hidden="true" />
       <Moon className="block h-5 w-5 dark:hidden" aria-hidden="true" />
-    </button>
+    </IconButton>
   );
 }

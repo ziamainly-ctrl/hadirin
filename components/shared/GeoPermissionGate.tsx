@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
 
 export type GeoStatus = 'loading' | 'ok' | 'denied' | 'weak-signal' | 'error';
@@ -23,6 +23,9 @@ function hasGeolocation(): boolean {
   return typeof navigator !== 'undefined' && 'geolocation' in navigator;
 }
 
+// Nothing to subscribe to: whether the API exists never changes while the page is open.
+const subscribeNever = () => () => {};
+
 /**
  * Pure geolocation logic wrapper for check-in/out (PRD.md US-01). Renders
  * nothing itself beyond the children render-prop — every status's UI is the
@@ -32,15 +35,20 @@ export default function GeoPermissionGate({
   children,
   weakSignalThresholdM = DEFAULT_WEAK_SIGNAL_THRESHOLD_M,
 }: GeoPermissionGateProps) {
-  // "No geolocation API" is knowable at render time, so it's the lazy initial
-  // state rather than a setState call inside the effect below (which would
-  // otherwise trip react-hooks/set-state-in-effect for a value that never
-  // actually changes after mount).
-  const [status, setStatus] = useState<GeoStatus>(() => (hasGeolocation() ? 'loading' : 'error'));
+  // "No geolocation API" is knowable at render time but differs between server and
+  // client, so it can't seed useState: the server (no navigator.geolocation) would render
+  // the error UI into the HTML, the client's first render would say "loading", and React
+  // would throw the server markup away on hydration (a visible error flash, plus a
+  // hydration error in the console). useSyncExternalStore is the sanctioned way to read a
+  // client-only value: the server snapshot (true = assume supported) matches the first
+  // client render, and React re-renders with the real value right after hydrating.
+  const supported = useSyncExternalStore(subscribeNever, hasGeolocation, () => true);
+  const [geoStatus, setStatus] = useState<GeoStatus>('loading');
   const [coords, setCoords] = useState<GeoCoords | null>(null);
+  const status: GeoStatus = supported ? geoStatus : 'error';
 
   useEffect(() => {
-    if (!hasGeolocation()) return;
+    if (!supported) return;
 
     let cancelled = false;
 
@@ -66,7 +74,7 @@ export default function GeoPermissionGate({
     return () => {
       cancelled = true;
     };
-  }, [weakSignalThresholdM]);
+  }, [supported, weakSignalThresholdM]);
 
   return children(coords, status);
 }

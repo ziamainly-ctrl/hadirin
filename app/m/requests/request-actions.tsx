@@ -38,7 +38,7 @@ export default function RequestActions({ requestId }: RequestActionsProps) {
   }
 
   return (
-    <Button variant="ghost" size="sm" onClick={handleCancel} isLoading={isSubmitting} className="text-red-600 dark:text-red-400">
+    <Button variant="ghost" size="sm" onClick={handleCancel} isLoading={isSubmitting} className="text-destructive">
       Batalkan
     </Button>
   );

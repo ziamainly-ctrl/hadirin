@@ -17,9 +17,9 @@ export default async function NotificationSettingsPage() {
 
   if (!org.features.template_override) {
     return (
-      <div className="mx-auto max-w-3xl">
+      <div>
         <h1 className="text-xl font-semibold text-text">Notifikasi</h1>
-        <Card className="mt-6">
+        <Card className="mt-6 max-w-2xl">
           <p className="text-sm text-muted">Kustomisasi template notifikasi memerlukan paket berbayar.</p>
         </Card>
       </div>
@@ -29,11 +29,11 @@ export default async function NotificationSettingsPage() {
   const templates = await listOrgTemplateOverrides(orgId);
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div>
       <h1 className="text-xl font-semibold text-text">Notifikasi</h1>
       <p className="mt-1 text-sm text-muted">Kustomisasi isi notifikasi email dan WhatsApp untuk organisasi ini.</p>
 
-      <div className="mt-6">
+      <div className="mt-6 max-w-2xl">
         <TemplateEditor existingTemplates={templates} />
       </div>
     </div>

@@ -162,76 +162,78 @@ export default function BranchFormDialog({ branch }: BranchFormDialogProps) {
       </Button>
 
       <Dialog open={open} onClose={closeDialog} title={isEdit ? 'Edit Cabang' : 'Tambah Cabang'}>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <Input
-            label="Nama Cabang"
-            value={form.name}
-            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-            error={fieldErrors.name}
-            maxLength={100}
-            required
-          />
-          <Input
-            label="Alamat"
-            value={form.address}
-            onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
-            error={fieldErrors.address}
-            maxLength={255}
-          />
-          <div className="grid grid-cols-2 gap-3">
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+          <Dialog.Body className="flex flex-col gap-4">
             <Input
-              label="Latitude"
-              type="number"
-              step="any"
-              min={-90}
-              max={90}
-              value={form.latitude}
-              onChange={(e) => setForm((f) => ({ ...f, latitude: e.target.value }))}
-              error={fieldErrors.latitude}
+              label="Nama Cabang"
+              value={form.name}
+              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              error={fieldErrors.name}
+              maxLength={100}
               required
             />
             <Input
-              label="Longitude"
+              label="Alamat"
+              value={form.address}
+              onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
+              error={fieldErrors.address}
+              maxLength={255}
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <Input
+                label="Latitude"
+                type="number"
+                step="any"
+                min={-90}
+                max={90}
+                value={form.latitude}
+                onChange={(e) => setForm((f) => ({ ...f, latitude: e.target.value }))}
+                error={fieldErrors.latitude}
+                required
+              />
+              <Input
+                label="Longitude"
+                type="number"
+                step="any"
+                min={-180}
+                max={180}
+                value={form.longitude}
+                onChange={(e) => setForm((f) => ({ ...f, longitude: e.target.value }))}
+                error={fieldErrors.longitude}
+                required
+              />
+            </div>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={handleUseMyLocation}
+              isLoading={isLocating}
+              className="gap-1.5 self-start"
+            >
+              <Crosshair className="h-4 w-4" aria-hidden="true" />
+              Gunakan Lokasi Saya
+            </Button>
+            <Input
+              label="Radius (meter)"
               type="number"
-              step="any"
-              min={-180}
-              max={180}
-              value={form.longitude}
-              onChange={(e) => setForm((f) => ({ ...f, longitude: e.target.value }))}
-              error={fieldErrors.longitude}
+              min={RADIUS_MIN_M}
+              max={RADIUS_MAX_M}
+              value={form.radiusM}
+              onChange={(e) => setForm((f) => ({ ...f, radiusM: e.target.value }))}
+              error={radiusError}
+              hint={radiusError ? undefined : `Antara ${RADIUS_MIN_M} dan ${RADIUS_MAX_M} meter.`}
               required
             />
-          </div>
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            onClick={handleUseMyLocation}
-            isLoading={isLocating}
-            className="gap-1.5 self-start"
-          >
-            <Crosshair className="h-4 w-4" aria-hidden="true" />
-            Gunakan Lokasi Saya
-          </Button>
-          <Input
-            label="Radius (meter)"
-            type="number"
-            min={RADIUS_MIN_M}
-            max={RADIUS_MAX_M}
-            value={form.radiusM}
-            onChange={(e) => setForm((f) => ({ ...f, radiusM: e.target.value }))}
-            error={radiusError}
-            hint={radiusError ? undefined : `Antara ${RADIUS_MIN_M} dan ${RADIUS_MAX_M} meter.`}
-            required
-          />
-          <div className="mt-2 flex justify-end gap-2">
+          </Dialog.Body>
+          <Dialog.Footer>
             <Button type="button" variant="ghost" onClick={closeDialog}>
               Batal
             </Button>
             <Button type="submit" isLoading={isSubmitting} disabled={Boolean(radiusError)}>
               {isEdit ? 'Simpan' : 'Tambah'}
             </Button>
-          </div>
+          </Dialog.Footer>
         </form>
       </Dialog>
     </>

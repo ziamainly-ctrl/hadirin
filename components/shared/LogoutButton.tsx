@@ -47,7 +47,7 @@ export default function LogoutButton({ logoutUrl, redirectTo, showLabel = true }
       onClick={handleLogout}
       disabled={isSubmitting}
       title={!showLabel ? 'Keluar' : undefined}
-      className="flex w-full items-center gap-3 rounded-input px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-black/5 hover:text-text disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-white/10"
+      className="flex w-full items-center gap-3 rounded-input px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-accent hover:text-text disabled:cursor-not-allowed disabled:opacity-50"
     >
       <LogOut className="h-5 w-5 shrink-0" aria-hidden="true" />
       {showLabel ? <span className="truncate">{isSubmitting ? 'Keluar...' : 'Keluar'}</span> : null}

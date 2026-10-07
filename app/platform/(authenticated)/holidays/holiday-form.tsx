@@ -5,6 +5,8 @@ import type { FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { Trash2 } from 'lucide-react';
 import Button from '@/components/ui/Button';
+import Checkbox from '@/components/ui/Checkbox';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import Card from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
@@ -76,15 +78,11 @@ export default function HolidayForm() {
           placeholder="Contoh: Hari Kemerdekaan RI"
           required
         />
-        <label className="flex items-center gap-2 text-sm text-text">
-          <input
-            type="checkbox"
-            checked={isCollectiveLeave}
-            onChange={(e) => setIsCollectiveLeave(e.target.checked)}
-            className="h-4 w-4 rounded border-black/20 dark:border-white/20 accent-primary"
-          />
-          Cuti bersama
-        </label>
+        <Checkbox
+          label="Cuti bersama"
+          checked={isCollectiveLeave}
+          onChange={(e) => setIsCollectiveLeave(e.target.checked)}
+        />
         <Button type="submit" isLoading={isSubmitting} className="w-full">
           Tambah
         </Button>
@@ -103,10 +101,9 @@ export function DeleteHolidayButton({ holidayId, holidayName }: DeleteHolidayBut
   const router = useRouter();
   const { show } = useToast();
   const [isDeleting, setIsDeleting] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   async function handleDelete() {
-    if (!window.confirm(`Hapus hari libur "${holidayName}"? Tindakan ini tidak bisa dibatalkan.`)) return;
-
     setIsDeleting(true);
     try {
       const res = await fetch(`/api/platform/holidays/${holidayId}`, { method: 'DELETE' });
@@ -121,20 +118,31 @@ export function DeleteHolidayButton({ holidayId, holidayName }: DeleteHolidayBut
       show('Tidak bisa terhubung ke server. Coba lagi.', 'error');
     } finally {
       setIsDeleting(false);
+      setConfirmOpen(false);
     }
   }
 
   return (
-    <Button
-      type="button"
-      variant="ghost"
-      size="sm"
-      onClick={handleDelete}
-      isLoading={isDeleting}
-      className="gap-1.5 text-red-600 dark:text-red-400"
-    >
-      <Trash2 className="h-4 w-4" aria-hidden="true" />
-      Hapus
-    </Button>
+    <>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={() => setConfirmOpen(true)}
+        className="gap-1.5 text-destructive"
+      >
+        <Trash2 className="h-4 w-4" aria-hidden="true" />
+        Hapus
+      </Button>
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Hapus hari libur?"
+        description={`Hapus hari libur "${holidayName}"? Tindakan ini tidak bisa dibatalkan.`}
+        confirmLabel="Hapus"
+        isLoading={isDeleting}
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmOpen(false)}
+      />
+    </>
   );
 }

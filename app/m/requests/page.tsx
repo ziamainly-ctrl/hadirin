@@ -1,8 +1,7 @@
-import Link from 'next/link';
 import { ClipboardList } from 'lucide-react';
 import { requireSession } from '@/lib/auth';
 import { listRequestsForOrg } from '@/lib/queries/attendance-requests';
-import Button from '@/components/ui/Button';
+import ButtonLink from '@/components/ui/ButtonLink';
 import RequestCard from '@/components/shared/RequestCard';
 import EmptyState from '@/components/shared/EmptyState';
 import RequestActions from './request-actions';
@@ -19,9 +18,9 @@ export default async function RequestsPage() {
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-2">
         <h1 className="text-lg font-semibold text-text">Pengajuan Saya</h1>
-        <Link href="/m/requests/new">
-          <Button size="sm">Ajukan Baru</Button>
-        </Link>
+        <ButtonLink href="/m/requests/new" size="sm">
+          Ajukan Baru
+        </ButtonLink>
       </div>
 
       {requests.length === 0 ? (

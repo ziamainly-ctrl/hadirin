@@ -48,14 +48,14 @@ export default function Pagination({ page, pageSize, total, basePath, searchPara
           <Link
             href={hrefForPage(basePath, searchParams, current - 1)}
             aria-label="Halaman sebelumnya"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-input border border-black/10 dark:border-white/10 text-text hover:bg-bg"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-input border border-border text-text hover:bg-accent"
           >
             <ChevronLeft className="h-4 w-4" />
           </Link>
         ) : (
           <span
             aria-hidden="true"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-input border border-black/5 dark:border-white/5 text-muted/40"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-input border border-border text-muted/40"
           >
             <ChevronLeft className="h-4 w-4" />
           </span>
@@ -67,14 +67,14 @@ export default function Pagination({ page, pageSize, total, basePath, searchPara
           <Link
             href={hrefForPage(basePath, searchParams, current + 1)}
             aria-label="Halaman berikutnya"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-input border border-black/10 dark:border-white/10 text-text hover:bg-bg"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-input border border-border text-text hover:bg-accent"
           >
             <ChevronRight className="h-4 w-4" />
           </Link>
         ) : (
           <span
             aria-hidden="true"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-input border border-black/5 dark:border-white/5 text-muted/40"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-input border border-border text-muted/40"
           >
             <ChevronRight className="h-4 w-4" />
           </span>

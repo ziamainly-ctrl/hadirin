@@ -23,6 +23,8 @@ import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Pencil, Plus } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
+import Checkbox from '@/components/ui/Checkbox';
+import IconButton from '@/components/ui/IconButton';
 import Dialog from '@/components/ui/Dialog';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
@@ -186,83 +188,80 @@ export default function PaymentMethodFormDialog({ method, nextSortOrder = 0 }: P
       </Button>
 
       <Dialog open={open} onClose={closeDialog} title={isEdit ? 'Edit Metode Pembayaran' : 'Tambah Metode Pembayaran'}>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div className="grid grid-cols-2 gap-3">
-            <Select
-              label="Kode"
-              value={form.code}
-              onChange={(e) => setForm((f) => ({ ...f, code: e.target.value as PaymentMethodCode }))}
-              options={CODE_OPTIONS}
-              error={fieldErrors.code}
-            />
-            <Select
-              label="Jenis"
-              value={form.type}
-              onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as PaymentMethodType }))}
-              options={TYPE_OPTIONS}
-              error={fieldErrors.type}
-            />
-          </div>
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+          <Dialog.Body className="flex flex-col gap-4">
+            <div className="grid grid-cols-2 gap-3">
+              <Select
+                label="Kode"
+                value={form.code}
+                onChange={(e) => setForm((f) => ({ ...f, code: e.target.value as PaymentMethodCode }))}
+                options={CODE_OPTIONS}
+                error={fieldErrors.code}
+              />
+              <Select
+                label="Jenis"
+                value={form.type}
+                onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as PaymentMethodType }))}
+                options={TYPE_OPTIONS}
+                error={fieldErrors.type}
+              />
+            </div>
 
-          <Input
-            label="Nama"
-            value={form.name}
-            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-            error={fieldErrors.name}
-            maxLength={80}
-            required
-          />
-
-          <Input
-            label="URL Logo (opsional)"
-            value={form.logoUrl}
-            onChange={(e) => setForm((f) => ({ ...f, logoUrl: e.target.value }))}
-            error={fieldErrors.logoUrl}
-            maxLength={500}
-            placeholder="https://..."
-          />
-
-          <div className="grid grid-cols-2 gap-3">
             <Input
-              label="Biaya Admin Tetap (Rp)"
-              type="number"
-              min={0}
-              value={form.adminFeeFlat}
-              onChange={(e) => setForm((f) => ({ ...f, adminFeeFlat: e.target.value }))}
-              error={fieldErrors.adminFeeFlat}
+              label="Nama"
+              value={form.name}
+              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              error={fieldErrors.name}
+              maxLength={80}
               required
             />
-            <Input
-              label="Biaya Admin (%)"
-              type="number"
-              min={0}
-              max={100}
-              step="0.01"
-              value={form.adminFeePct}
-              onChange={(e) => setForm((f) => ({ ...f, adminFeePct: e.target.value }))}
-              error={fieldErrors.adminFeePct}
-              required
-            />
-          </div>
 
-          <label className="flex items-center gap-2 text-sm text-text">
-            <input
-              type="checkbox"
+            <Input
+              label="URL Logo (opsional)"
+              value={form.logoUrl}
+              onChange={(e) => setForm((f) => ({ ...f, logoUrl: e.target.value }))}
+              error={fieldErrors.logoUrl}
+              maxLength={500}
+              placeholder="https://..."
+            />
+
+            <div className="grid grid-cols-2 gap-3">
+              <Input
+                label="Biaya Admin Tetap (Rp)"
+                type="number"
+                min={0}
+                value={form.adminFeeFlat}
+                onChange={(e) => setForm((f) => ({ ...f, adminFeeFlat: e.target.value }))}
+                error={fieldErrors.adminFeeFlat}
+                required
+              />
+              <Input
+                label="Biaya Admin (%)"
+                type="number"
+                min={0}
+                max={100}
+                step="0.01"
+                value={form.adminFeePct}
+                onChange={(e) => setForm((f) => ({ ...f, adminFeePct: e.target.value }))}
+                error={fieldErrors.adminFeePct}
+                required
+              />
+            </div>
+
+            <Checkbox
+              label="Aktif"
               checked={form.isActive}
               onChange={(e) => setForm((f) => ({ ...f, isActive: e.target.checked }))}
-              className="h-4 w-4 rounded border-black/20 dark:border-white/20 accent-primary"
             />
-            Aktif
-          </label>
-
-          <div className="mt-2 flex justify-end gap-2">
+          </Dialog.Body>
+          <Dialog.Footer>
             <Button type="button" variant="ghost" onClick={closeDialog}>
               Batal
             </Button>
             <Button type="submit" isLoading={isSubmitting}>
               {isEdit ? 'Simpan' : 'Tambah'}
             </Button>
-          </div>
+          </Dialog.Footer>
         </form>
       </Dialog>
     </>
@@ -280,24 +279,24 @@ function SortablePaymentMethodRow({ method }: { method: PaymentMethod }) {
   return (
     // Same reason as plans/plan-form-dialog.tsx's SortablePlanRow: Table.Row cannot take
     // the ref useSortable needs, so this is a plain <tr> with Table.Row's hover class.
-    <tr ref={setNodeRef} style={style} className="hover:bg-bg/60">
+    <tr ref={setNodeRef} style={style} className="hover:bg-accent/50">
       <Table.Cell className="w-8">
-        <button
-          type="button"
+        <IconButton
+          label="Seret untuk mengurutkan"
+          size="sm"
           {...attributes}
           {...listeners}
-          aria-label="Seret untuk mengurutkan"
-          className="cursor-grab touch-none text-muted hover:text-text active:cursor-grabbing"
+          className="cursor-grab touch-none active:cursor-grabbing"
         >
           <GripVertical className="h-4 w-4" aria-hidden="true" />
-        </button>
+        </IconButton>
       </Table.Cell>
       <Table.Cell className="font-medium text-text">{CODE_LABELS[method.code]}</Table.Cell>
       <Table.Cell>{method.name}</Table.Cell>
       <Table.Cell className="text-muted">{TYPE_LABELS[method.type]}</Table.Cell>
       <Table.Cell>{formatFee(method.adminFeeFlat, method.adminFeePct)}</Table.Cell>
       <Table.Cell>
-        <Badge className={method.isActive ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-black/5 dark:bg-white/5 text-muted'}>
+        <Badge className={method.isActive ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-accent text-muted'}>
           {method.isActive ? 'Aktif' : 'Nonaktif'}
         </Badge>
       </Table.Cell>
@@ -361,7 +360,9 @@ export function SortablePaymentMethodsTable({ paymentMethods: initialMethods }: 
   }
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+    // Fixed id: dnd-kit numbers its accessibility ids from a module-level counter, which
+    // differs between the server render and hydration (a mismatch logged on every load).
+    <DndContext id="payment-methods-dnd" sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <Table>
         <Table.Head>
           <Table.Row>

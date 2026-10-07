@@ -86,7 +86,7 @@ export default async function ShiftsPage() {
                     className={
                       shift.isActive
                         ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
-                        : 'bg-black/5 dark:bg-white/5 text-muted'
+                        : 'bg-accent text-muted'
                     }
                   >
                     {shift.isActive ? 'Aktif' : 'Nonaktif'}

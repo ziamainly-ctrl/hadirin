@@ -21,7 +21,7 @@ export interface StatTileProps {
 
 const TREND_CLASSES: Record<StatTileTrendDirection, string> = {
   up: 'text-emerald-600 dark:text-emerald-400',
-  down: 'text-red-600 dark:text-red-400',
+  down: 'text-destructive',
   neutral: 'text-muted',
 };
 
@@ -53,7 +53,7 @@ export default function StatTile({ label, value, subLabel, trend, icon, onClick,
       <button
         type="button"
         onClick={onClick}
-        className={`rounded-card border border-black/5 bg-surface p-4 text-left transition hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 dark:border-white/5 ${className ?? ''}`}
+        className={`rounded-card border border-border bg-surface p-4 text-left transition hover:shadow-sm focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 ${className ?? ''}`}
       >
         {content}
       </button>

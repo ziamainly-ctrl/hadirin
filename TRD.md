@@ -78,13 +78,16 @@ hadirin/
 │  │                          shifts/, holidays/, reports/, settings/{organization,notifications,billing}/
 │  ├─ platform/               organizations/, plans/, payment-methods/, templates/, holidays/
 │  ├─ api/                    see §6
-│  ├─ manifest.ts             PWA manifest
+│  ├─ manifest.ts             PWA manifest (icons: /icon.svg + /icons/[name] PNGs)
+│  ├─ icon.svg, apple-icon.tsx, opengraph-image.tsx, favicon.ico/route.ts, icons/[name]/route.tsx
+│  │                          brand icons, all drawn from lib/brand/mascot.ts
 │  ├─ robots.ts, sitemap.ts   SEO
 │  └─ layout.tsx
 ├─ components/
-│  ├─ ui/                     Button, Input, Select, Dialog, Badge, Card, Table, Pagination, Skeleton, Toast
+│  ├─ ui/                     Button, ButtonLink, IconButton, Input, Select, Textarea, Checkbox, Radio, Dialog,
+│  │                          Badge, Card, Table, Pagination, Skeleton, Toast
 │  └─ shared/                 StatusBadge, AttendanceTable, RequestCard, SelfieCamera, GeoPermissionGate,
-│                             StatTile, DateRangeFilter, BranchFilter, ExportButton, EmptyState, Sidebar
+│                             StatTile, DateRangeFilter, BranchFilter, ExportButton, EmptyState, Sidebar, Logo, Mascot
 ├─ lib/
 │  ├─ db.ts                   neon client (single instance)
 │  ├─ queries/                one file per model: users.ts, branches.ts, shifts.ts, attendance.ts,
@@ -98,13 +101,14 @@ hadirin/
 │  ├─ midtrans.ts             createSnap, verifySignature
 │  ├─ notify.ts               render template, send email/WA, write notification_logs
 │  ├─ export/                 xlsx.ts, pdf.ts
+│  ├─ brand/                  mascot.ts (the one drawing), assets.ts, ico.ts
 │  ├─ validators/             zod schemas per model
 │  └─ constants/              roles.ts, statuses.ts, events.ts (static value sets from ERD §1.1)
 ├─ db/
 │  ├─ schema.ts               Drizzle schema (migration source only)
 │  └─ seed.sql                Seed from ERD §4
 ├─ drizzle/                   generated + custom migrations
-├─ scripts/                   db-migrate.ts, db-seed.ts, db-reset-demo.ts
+├─ scripts/                   db-migrate.ts, db-seed.ts, db-reset-demo.ts, gen-brand-assets.ts
 ├─ proxy.ts
 ├─ vercel.json
 ├─ PRD.md · ERD.md · TRD.md · AGENTS.md · CLAUDE.md
@@ -180,6 +184,8 @@ Rules:
 ## 6. API surface
 
 All responses are JSON `{ data }` or `{ error: { code, message, fields? } }`. Status codes: 200/201, 400 validation, 401 no session, 403 wrong role or plan feature, 404 not found **in this org**, 409 conflict, 422 business rule, 429 rate limited.
+
+The UI shows `error.message` in toasts and `error.fields[name]` under form fields, so those strings are user-facing copy. A 400's `fields` text is Indonesian: `lib/validators/locale-id.ts` replaces Zod's default messages ("Wajib diisi.", "Minimal 8 karakter.") and is loaded by `lib/api-response.ts`; a message written on a schema wins over it. 404/409/422 messages thrown from route handlers and queries are still English; translating them is a follow-up.
 
 | Route | Methods | Roles | Notes |
 |---|---|---|---|
@@ -351,18 +357,29 @@ Times are UTC (00:30 and 01:00 WIB). On Hobby, crons run at most once a day and 
 
 ## 14. Frontend, design system and performance
 
-**Design tokens** (Tailwind `@theme`):
+**Design tokens** (Tailwind `@theme` in `app/globals.css`; the palette is the neutral oklch scale used by shadcn/ui and tweakcn). Components use these tokens only, so a theme change is a change in one file:
 
-| Token | Value | Use |
-|---|---|---|
-| `--color-primary` | `#0E7C66` | Buttons, active nav, check-in CTA |
-| `--color-primary-fg` | `#FFFFFF` | |
-| `--color-bg` / `--color-surface` | `#F7F8FA` / `#FFFFFF` | |
-| `--color-text` / `--color-muted` | `#0F172A` / `#64748B` | |
-| Status PRESENT / LATE / ABSENT | `#16A34A` / `#D97706` / `#DC2626` | `StatusBadge` only |
-| Status LEAVE / SICK / PERMIT / HOLIDAY | `#2563EB` / `#7C3AED` / `#0891B2` / `#64748B` | |
-| Font | Plus Jakarta Sans via `next/font/google` | All text |
-| Radius | 12 px cards, 10 px inputs, full for the check-in button | |
+| Token | Light | Dark | Use |
+|---|---|---|---|
+| `--color-primary` / `-fg` | `oklch(0.205 0 0)` / `oklch(0.985 0 0)` | `oklch(0.922 0 0)` / `oklch(0.205 0 0)` | Filled buttons, selected chips, check-in CTA |
+| `--color-secondary` / `-fg` | `oklch(0.97 0 0)` / `oklch(0.205 0 0)` | `oklch(0.269 0 0)` / `oklch(0.985 0 0)` | Secondary buttons, the active nav pill |
+| `--color-accent` | `oklch(0.97 0 0)` | `oklch(0.269 0 0)` | Hover fill, neutral badges, table header tint |
+| `--color-bg` / `--color-surface` | `oklch(0.985 0 0)` / `oklch(1 0 0)` | `oklch(0.145 0 0)` / `oklch(0.205 0 0)` | Page / cards, header, dialogs |
+| `--color-text` / `--color-muted` | `oklch(0.145 0 0)` / `oklch(0.556 0 0)` | `oklch(0.985 0 0)` / `oklch(0.708 0 0)` | Text |
+| `--color-border` / `--color-input` / `--color-ring` | `oklch(0.922 0 0)` ×2 / `oklch(0.708 0 0)` | `oklch(1 0 0 / 10%)` / `oklch(1 0 0 / 15%)` / `oklch(0.556 0 0)` | Borders (a bare `border` already uses `--color-border`), field borders, focus ring |
+| `--color-destructive` | `oklch(0.577 0.245 27.325)` | `oklch(0.704 0.191 22.216)` | Error text, `Button variant="danger"` |
+| Status PRESENT / LATE / ABSENT | `#16A34A` / `#D97706` / `#DC2626` | `#22C55E` / `#F59E0B` / `#EF4444` | `StatusBadge` only |
+| Status LEAVE / SICK / PERMIT / HOLIDAY | `#2563EB` / `#7C3AED` / `#0891B2` / `#64748B` | `#3B82F6` / `#A78BFA` / `#22D3EE` / `#94A3B8` | |
+| Font | Plus Jakarta Sans via `next/font/google` | | All text |
+| Radius | 12 px cards, 10 px inputs/buttons | | |
+
+The dark primary/secondary pairs are the exact values chosen by the product owner; the light values are the shadcn neutral light theme (the same two roles flipped). Never write `border-black/10 dark:border-white/10`-style pairs: use `border-border`, `bg-accent`, `text-muted` and the rest of the tokens, which already switch with `.dark`.
+
+**Components** (reuse, don't re-style): `Button` variants are `primary` (filled), `secondary` (filled, quieter), `outline` (bordered), `ghost`, `danger`. A link that must look like a button is `ButtonLink` (never a `<Link>` wrapping a `<Button>`). Icon-only controls are `IconButton`; checkboxes and radios are `Checkbox` / `Radio`. `Dialog` is a native `<dialog>`: it centers itself (`m-auto`, because the Tailwind reset zeroes the browser's margin), caps its height at the viewport, and splits into `Dialog.Body` (scrolls) and `Dialog.Footer` (pinned, buttons stack full-width on phones). A one-time reveal (a generated password) passes `dismissible={false}`.
+
+**Brand:** the mascot is one original hand-drawn SVG (`lib/brand/mascot.ts`: anime-style, green check hair clip, attendance lanyard). `Logo` = mascot + "Hadirin" wordmark; `Mascot` is the inline SVG. `app/icon.svg` and `public/icon.svg` are generated by `npm run brand:generate` (a test fails if they drift); the Apple touch icon, `/favicon.ico`, the PWA PNGs (`/icons/192`, `/icons/512`, `/icons/maskable-512`) and the share image are rendered from the same drawing with `next/og`.
+
+**Marketing header:** logo, then Fitur / Harga / Tentang Kami (text links; the current one is a secondary pill, and Fitur follows the `#fitur` section on `/`), then theme toggle, **Sign in** (outline) and **Sign up** (filled). Signed-in visitors see **Buka Dashboard** instead. Below `md` the links and both buttons move into a hamburger panel.
 
 **Layout:** admin uses a collapsible sidebar (icon-only on desktop, drawer on mobile). The employee `/m` is single-column with a bottom tab bar (Hari ini, Riwayat, Pengajuan, Profil) and one large primary action.
 
@@ -413,6 +430,7 @@ npm run db:generate    # drizzle-kit generate (from db/schema.ts)
 npm run db:migrate     # tsx scripts/db-migrate.ts (uses DATABASE_URL_UNPOOLED)
 npm run db:seed        # tsx scripts/db-seed.ts (runs db/seed.sql, idempotent)
 npm run db:reset-demo  # truncate transactional tables + reseed (demo only, refuses in production)
+npm run brand:generate  # rewrite app/icon.svg + public/icon.svg from lib/brand/mascot.ts
 ```
 
 Deploy: push → Vercel preview per branch, `main` → production. Neon branch per preview is optional (Vercel–Neon integration).
@@ -422,6 +440,7 @@ Deploy: push → Vercel preview per branch, `main` → production. Neon branch p
 | Layer | What | Tool |
 |---|---|---|
 | Unit | `distanceM`, `workDate` (incl. cross-day), `lateMinutes` (tolerance edge), `workMinutes`, Midtrans signature | Vitest |
+| Unit | Brand icons in sync with `lib/brand/mascot.ts`; `.ico` container layout | Vitest |
 | Query | Each `lib/queries/*` function against a fresh DB with the seed (PGlite or a Neon branch) | Vitest |
 | API | Role matrix + tenant isolation: org 2 owner calling every org 1 id → 404 | Vitest + route handler calls |
 | E2E (smoke) | Login → check-in with mocked geolocation/camera → dashboard count → approve → export | Playwright (P1) |

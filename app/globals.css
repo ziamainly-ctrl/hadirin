@@ -8,18 +8,32 @@
 
 /* Design tokens — TRD.md §14. Swap values here, not in components. Every bg- or text-
    utility Tailwind generates from these (bg-bg, text-text, bg-surface, bg-primary,
-   bg-status-present, ...) repaints automatically under .dark below — components using
-   only these tokens need no dark: variant of their own. Only hardcoded colors
-   (border-black/N, bg-black/N, or a raw Tailwind palette color used directly) need one. */
+   bg-secondary, border-border, ...) repaints automatically under .dark below, so
+   components using only these tokens need no dark: variant of their own.
+
+   The palette is the neutral oklch scale used by shadcn/ui and tweakcn. The primary and
+   secondary pairs under .dark are the exact values the product owner picked
+   (primary oklch(0.922 0 0) on oklch(0.205 0 0), secondary oklch(0.269 0 0) on
+   oklch(0.985 0 0)); the light values are the matching shadcn neutral light theme, i.e.
+   the same two roles flipped (near-black primary, light-gray secondary). */
 @theme {
   --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
 
-  --color-primary: #0e7c66;
-  --color-primary-fg: #ffffff;
-  --color-bg: #f7f8fa;
-  --color-surface: #ffffff;
-  --color-text: #0f172a;
-  --color-muted: #64748b;
+  --color-bg: oklch(0.985 0 0);
+  --color-surface: oklch(1 0 0);
+  --color-text: oklch(0.145 0 0);
+  --color-muted: oklch(0.556 0 0);
+
+  --color-primary: oklch(0.205 0 0);
+  --color-primary-fg: oklch(0.985 0 0);
+  --color-secondary: oklch(0.97 0 0);
+  --color-secondary-fg: oklch(0.205 0 0);
+  --color-accent: oklch(0.97 0 0);
+
+  --color-border: oklch(0.922 0 0);
+  --color-input: oklch(0.922 0 0);
+  --color-ring: oklch(0.708 0 0);
+  --color-destructive: oklch(0.577 0.245 27.325);
 
   --color-status-present: #16a34a;
   --color-status-late: #d97706;
@@ -42,18 +56,30 @@
    override). Getting that backwards here would make dark mode silently keep the light
    dot color, the kind of bug that only shows up by actually toggling the theme. */
 :root {
-  --dot-color: rgba(15, 23, 42, 0.05);
+  --dot-color: oklch(0.145 0 0 / 6%);
+  /* Tells the browser which scheme native controls (date/time pickers, scrollbars,
+     select popups, autofill) should draw in; without it a time input's clock icon stays
+     black on a dark surface. */
+  color-scheme: light;
 }
 
-/* Same token names, dark values — accents brightened a step since a saturated
-   light-mode color loses contrast on a dark surface. */
+/* Same token names, dark values. */
 .dark {
-  --color-primary: #18a37e;
-  --color-primary-fg: #ffffff;
-  --color-bg: #0b0d10;
-  --color-surface: #15181d;
-  --color-text: #e7e9ec;
-  --color-muted: #8b93a1;
+  --color-bg: oklch(0.145 0 0);
+  --color-surface: oklch(0.205 0 0);
+  --color-text: oklch(0.985 0 0);
+  --color-muted: oklch(0.708 0 0);
+
+  --color-primary: oklch(0.922 0 0);
+  --color-primary-fg: oklch(0.205 0 0);
+  --color-secondary: oklch(0.269 0 0);
+  --color-secondary-fg: oklch(0.985 0 0);
+  --color-accent: oklch(0.269 0 0);
+
+  --color-border: oklch(1 0 0 / 10%);
+  --color-input: oklch(1 0 0 / 15%);
+  --color-ring: oklch(0.556 0 0);
+  --color-destructive: oklch(0.704 0.191 22.216);
 
   --color-status-present: #22c55e;
   --color-status-late: #f59e0b;
@@ -64,13 +90,65 @@
   --color-status-holiday: #94a3b8;
   --color-status-off: #cbd5e1;
 
-  --dot-color: rgba(255, 255, 255, 0.06);
+  --dot-color: oklch(1 0 0 / 7%);
+  color-scheme: dark;
 }
 
 @layer base {
+  /* Tailwind v4 draws a bare `border` in currentColor, which is how raw black/white
+     borders crept into components. Defaulting every border and outline to the tokens
+     means a plain `border` is already the right color in both themes. */
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-border);
+  }
+
+  /* Tailwind v4's preflight no longer gives buttons a pointer cursor, so every button in
+     the app showed the plain arrow and nothing hinted that it was clickable. */
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  summary,
+  select:not(:disabled),
+  label[for],
+  input:is([type='checkbox'], [type='radio'], [type='file']):not(:disabled) {
+    cursor: pointer;
+  }
+
   body {
     background-color: var(--color-bg);
     color: var(--color-text);
+  }
+}
+
+/* Native <dialog> modals (components/ui/Dialog.tsx): freeze the page behind an open
+   dialog so wheel/touch scrolling can't move the page under the backdrop, and ease the
+   dialog + backdrop in. Both are skipped for users who ask for reduced motion. */
+body:has(dialog[open]) {
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  dialog[open] {
+    animation: dialog-in 160ms ease-out;
+  }
+  dialog[open]::backdrop {
+    animation: dialog-backdrop-in 160ms ease-out;
+  }
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+@keyframes dialog-backdrop-in {
+  from {
+    opacity: 0;
   }
 }
 

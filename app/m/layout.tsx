@@ -13,7 +13,7 @@ export default async function EmployeeLayout({ children }: { children: React.Rea
   return (
     <ToastProvider>
       <div className="mx-auto flex min-h-screen max-w-md flex-col bg-bg">
-        <header className="sticky top-0 z-20 flex items-center justify-between border-b border-black/10 bg-surface px-4 py-2.5 dark:border-white/10">
+        <header className="sticky top-0 z-20 flex items-center justify-between border-b border-border bg-surface px-4 py-2.5">
           <Logo className="text-sm" />
           <ThemeToggle />
         </header>

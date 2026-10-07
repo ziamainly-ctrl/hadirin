@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
@@ -19,6 +20,10 @@ export interface RequestCardProps {
   onReject?: () => void;
   isSubmitting?: boolean;
   className?: string;
+  /** Extra content inside the card, between the details and the action row — the admin
+   * inbox puts its optional review-note field here so it reads as part of this request
+   * instead of floating between two cards. */
+  children?: ReactNode;
 }
 
 const TYPE_LABELS: Record<RequestType, string> = {
@@ -39,7 +44,7 @@ const STATUS_BADGE_CLASSES: Record<RequestStatus, string> = {
   PENDING: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
   APPROVED: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
   REJECTED: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
-  CANCELLED: 'bg-black/5 text-muted dark:bg-white/5',
+  CANCELLED: 'bg-accent text-muted',
 };
 
 // timeZone: 'UTC' keeps a pure calendar date (no time component) from
@@ -74,6 +79,7 @@ export default function RequestCard({
   onReject,
   isSubmitting = false,
   className,
+  children,
 }: RequestCardProps) {
   const showActions = Boolean(onApprove || onReject);
 
@@ -91,10 +97,11 @@ export default function RequestCard({
         <p>{reason}</p>
         {reviewNote ? <p className="italic text-muted">Catatan: {reviewNote}</p> : null}
       </Card.Body>
+      {children ? <div className="mt-3">{children}</div> : null}
       {showActions ? (
         <Card.Footer>
           {onReject ? (
-            <Button variant="ghost" size="sm" onClick={onReject} isLoading={isSubmitting}>
+            <Button variant="outline" size="sm" onClick={onReject} isLoading={isSubmitting}>
               Tolak
             </Button>
           ) : null}

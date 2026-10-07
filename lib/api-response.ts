@@ -3,6 +3,9 @@ import { ZodError } from 'zod';
 import { AuthError } from './auth';
 import { NotFoundError } from './db';
 import { CronAuthError } from './cron-auth';
+// Side effect: swaps Zod's default (English) issue messages for short Indonesian ones, so the
+// per-field text in a VALIDATION_ERROR response is already fit to show next to a form field.
+import './validators/locale-id';
 
 // Every route handler returns one of these two shapes (TRD.md §6).
 
@@ -48,7 +51,7 @@ export function handleApiError(error: unknown): NextResponse {
       const key = issue.path.join('.') || '_root';
       if (!fields[key]) fields[key] = issue.message;
     }
-    return apiError(400, 'VALIDATION_ERROR', 'Invalid input', fields);
+    return apiError(400, 'VALIDATION_ERROR', 'Data tidak valid. Periksa isian yang ditandai.', fields);
   }
   if (error instanceof BusinessRuleError) {
     return apiError(422, error.code, error.message);
@@ -57,7 +60,7 @@ export function handleApiError(error: unknown): NextResponse {
     return apiError(409, error.code, error.message);
   }
   console.error(error);
-  return apiError(500, 'INTERNAL_ERROR', 'Something went wrong');
+  return apiError(500, 'INTERNAL_ERROR', 'Terjadi kesalahan di server. Coba lagi.');
 }
 
 /** 422 — a well-formed request that violates a business rule (e.g. outside geofence). */

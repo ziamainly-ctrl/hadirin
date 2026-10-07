@@ -16,12 +16,12 @@ export const createRequestSchema = z
   // Mirrors ck_requests_range (date strings are YYYY-MM-DD, so lexicographic
   // comparison is also chronological comparison).
   .refine((data) => data.dateTo >= data.dateFrom, {
-    message: 'dateTo must be on or after dateFrom',
+    message: 'Tanggal selesai harus sama dengan atau setelah tanggal mulai.',
     path: ['dateTo'],
   })
   // Mirrors ck_requests_correction_single_day.
   .refine((data) => data.type !== 'CORRECTION' || data.dateTo === data.dateFrom, {
-    message: 'CORRECTION requests must have dateTo equal to dateFrom',
+    message: 'Koreksi absensi hanya untuk satu tanggal.',
     path: ['dateTo'],
   });
 

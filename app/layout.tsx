@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 
@@ -16,6 +16,19 @@ export const metadata: Metadata = {
   },
   description:
     'Absensi karyawan dengan GPS dan selfie, dashboard langsung, persetujuan satu klik. Siap dalam 5 menit, mulai gratis.',
+  // Deliberately no `icons` here: setting it replaces the file-convention icons (icon.svg
+  // and apple-icon.tsx, both cache-busted by Next) instead of adding to them. /favicon.ico
+  // is still served by app/favicon.ico/route.ts for crawlers and browsers that request it
+  // by path.
+};
+
+// Browser UI color (mobile address bar) per OS scheme; the neutral page background in each
+// theme, as hex. An explicit in-app theme choice can't change this static tag.
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#fafafa' },
+    { media: '(prefers-color-scheme: dark)', color: '#0a0a0a' },
+  ],
 };
 
 // Blocking script, first thing in <head>: must run before first paint, so the .dark

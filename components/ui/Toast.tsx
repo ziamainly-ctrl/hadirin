@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useCallback, useContext, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { CheckCircle2, Info, TriangleAlert, X, XCircle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -56,6 +56,21 @@ function createToastId() {
  */
 export function ToastProvider({ children }: ToastProviderProps) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  // The toast list is a manual popover so it lives in the browser's top layer. A modal
+  // <dialog> (components/ui/Dialog.tsx) and its backdrop also live there, and a plain
+  // `fixed z-50` element can never paint above them: a validation error toast fired from
+  // inside a form dialog showed up dimmed *under* the backdrop. Elements enter the top
+  // layer in the order they were shown, so hiding and re-showing the list on every change
+  // keeps it above whatever is open. Browsers without the Popover API fall back to the
+  // plain fixed positioning below.
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el || typeof el.showPopover !== 'function') return;
+    if (el.matches(':popover-open')) el.hidePopover();
+    if (toasts.length > 0) el.showPopover();
+  }, [toasts]);
 
   const dismiss = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -73,28 +88,34 @@ export function ToastProvider({ children }: ToastProviderProps) {
   return (
     <ToastContext.Provider value={{ show, dismiss }}>
       {children}
-      <div className="fixed inset-x-0 top-4 z-50 flex flex-col items-center gap-2 px-4">
-        {toasts.map((toast) => {
-          const Icon = VARIANT_ICONS[toast.variant];
-          return (
-            <div
-              key={toast.id}
-              role={toast.variant === 'error' ? 'alert' : 'status'}
-              className={`flex w-full max-w-sm items-start gap-2 rounded-input border px-3 py-2 text-sm shadow-sm ${VARIANT_CLASSES[toast.variant]}`}
-            >
-              <Icon className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-              <p className="flex-1">{toast.message}</p>
-              <button
-                type="button"
-                onClick={() => dismiss(toast.id)}
-                aria-label="Tutup notifikasi"
-                className="shrink-0 opacity-70 hover:opacity-100"
+      <div
+        ref={listRef}
+        popover="manual"
+        className="pointer-events-none fixed inset-x-0 bottom-auto top-4 z-50 m-0 h-auto w-full max-w-none overflow-visible border-0 bg-transparent p-0"
+      >
+        <div className="flex flex-col items-center gap-2 px-4">
+          {toasts.map((toast) => {
+            const Icon = VARIANT_ICONS[toast.variant];
+            return (
+              <div
+                key={toast.id}
+                role={toast.variant === 'error' ? 'alert' : 'status'}
+                className={`pointer-events-auto flex w-full max-w-sm items-start gap-2 rounded-input border px-3 py-2 text-sm shadow-sm ${VARIANT_CLASSES[toast.variant]}`}
               >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          );
-        })}
+                <Icon className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                <p className="flex-1">{toast.message}</p>
+                <button
+                  type="button"
+                  onClick={() => dismiss(toast.id)}
+                  aria-label="Tutup notifikasi"
+                  className="shrink-0 opacity-70 hover:opacity-100"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </ToastContext.Provider>
   );

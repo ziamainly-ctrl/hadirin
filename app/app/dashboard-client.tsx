@@ -255,7 +255,7 @@ function DashboardContent({ orgTimezone }: DashboardClientProps) {
 // it gets its own plain Badge instead of being forced through StatusBadge.
 function StatusCell({ status }: { status: AttendanceStatus | 'NOT_YET_IN' }) {
   if (status === 'NOT_YET_IN') {
-    return <Badge className="bg-black/5 dark:bg-white/5 text-muted">Belum Masuk</Badge>;
+    return <Badge className="bg-accent text-muted">Belum Masuk</Badge>;
   }
   return <StatusBadge status={status} />;
 }

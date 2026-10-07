@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { MapPin, Camera, BellRing, CheckCircle2, Sparkles } from 'lucide-react';
-import Button from '@/components/ui/Button';
+import ButtonLink from '@/components/ui/ButtonLink';
 import Card from '@/components/ui/Card';
 import CheckInPreview from './check-in-preview';
 
@@ -85,7 +84,7 @@ export default function LandingPage() {
       <section className="mx-auto max-w-5xl px-4 py-16 sm:py-24">
         <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
           <div className="text-center lg:text-left">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-surface px-3 py-1 text-xs font-medium text-muted dark:border-white/10">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1 text-xs font-medium text-muted">
               <Sparkles className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
               Siap dipakai dalam 5 menit
             </span>
@@ -99,23 +98,19 @@ export default function LandingPage() {
               hari ini juga.
             </p>
             <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row lg:justify-start">
-              <Link href="/register">
-                <Button size="lg" className="w-full sm:w-auto">
-                  Mulai Gratis
-                </Button>
-              </Link>
-              <Link href="/pricing">
-                <Button size="lg" variant="secondary" className="w-full sm:w-auto">
-                  Lihat Harga
-                </Button>
-              </Link>
+              <ButtonLink href="/register" size="lg" className="w-full sm:w-auto">
+                Mulai Gratis
+              </ButtonLink>
+              <ButtonLink href="/pricing" size="lg" variant="outline" className="w-full sm:w-auto">
+                Lihat Harga
+              </ButtonLink>
             </div>
           </div>
           <CheckInPreview />
         </div>
       </section>
 
-      <section id="fitur" className="scroll-mt-20 border-y border-black/5 bg-surface py-16 dark:border-white/5">
+      <section id="fitur" className="scroll-mt-20 border-y border-border bg-surface py-16">
         <div className="mx-auto max-w-5xl px-4">
           <h2 className="text-center text-2xl font-bold text-text">Semua yang dibutuhkan tim lapangan</h2>
           <div className="mt-10 grid gap-6 sm:grid-cols-3">
@@ -149,7 +144,7 @@ export default function LandingPage() {
         </ol>
       </section>
 
-      <section className="border-t border-black/5 bg-surface py-16 dark:border-white/5">
+      <section className="border-t border-border bg-surface py-16">
         <div className="mx-auto max-w-3xl px-4">
           <h2 className="text-center text-2xl font-bold text-text">Pertanyaan umum</h2>
           <dl className="mt-10 space-y-6">

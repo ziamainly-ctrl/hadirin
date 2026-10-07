@@ -66,18 +66,17 @@ export default function ReviewActions({
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      <RequestCard
-        type={type}
-        dateFrom={dateFrom}
-        dateTo={dateTo}
-        reason={reason}
-        status="PENDING"
-        requesterName={requesterName}
-        isSubmitting={isSubmitting}
-        onApprove={() => review('approve')}
-        onReject={() => review('reject')}
-      />
+    <RequestCard
+      type={type}
+      dateFrom={dateFrom}
+      dateTo={dateTo}
+      reason={reason}
+      status="PENDING"
+      requesterName={requesterName}
+      isSubmitting={isSubmitting}
+      onApprove={() => review('approve')}
+      onReject={() => review('reject')}
+    >
       <Input
         label="Catatan (opsional)"
         value={note}
@@ -86,6 +85,6 @@ export default function ReviewActions({
         maxLength={255}
         placeholder="Catatan untuk pemohon"
       />
-    </div>
+    </RequestCard>
   );
 }

@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { MapPin, Camera, Rocket } from 'lucide-react';
-import Button from '@/components/ui/Button';
+import ButtonLink from '@/components/ui/ButtonLink';
 import Card from '@/components/ui/Card';
 
 export const metadata: Metadata = {
@@ -60,14 +59,12 @@ export default function AboutPage() {
       </Card>
 
       <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-        <Link href="/register">
-          <Button size="lg">Mulai Gratis</Button>
-        </Link>
-        <Link href="/pricing">
-          <Button size="lg" variant="secondary">
-            Lihat Harga
-          </Button>
-        </Link>
+        <ButtonLink href="/register" size="lg">
+          Mulai Gratis
+        </ButtonLink>
+        <ButtonLink href="/pricing" size="lg" variant="outline">
+          Lihat Harga
+        </ButtonLink>
       </div>
     </section>
   );

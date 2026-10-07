@@ -54,7 +54,7 @@ export default async function HolidaysPage({ searchParams }: HolidaysPageProps) 
               className={`rounded-input border px-3 py-1.5 text-sm font-medium transition-colors ${
                 year === undefined
                   ? 'border-primary bg-primary/10 text-primary'
-                  : 'border-black/10 dark:border-white/10 text-muted hover:text-text'
+                  : 'border-border text-muted hover:text-text'
               }`}
             >
               Semua
@@ -65,7 +65,7 @@ export default async function HolidaysPage({ searchParams }: HolidaysPageProps) 
                 href={`/platform/holidays?year=${y}`}
                 aria-current={year === y ? 'page' : undefined}
                 className={`rounded-input border px-3 py-1.5 text-sm font-medium transition-colors ${
-                  year === y ? 'border-primary bg-primary/10 text-primary' : 'border-black/10 dark:border-white/10 text-muted hover:text-text'
+                  year === y ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted hover:text-text'
                 }`}
               >
                 {y}

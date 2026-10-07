@@ -8,5 +8,5 @@ export type SkeletonProps = HTMLAttributes<HTMLDivElement>;
  * <Suspense fallback={...}> (TRD.md §14).
  */
 export default function Skeleton({ className, ...rest }: SkeletonProps) {
-  return <div aria-hidden="true" className={`animate-pulse rounded-input bg-muted/20 ${className ?? ''}`} {...rest} />;
+  return <div aria-hidden="true" className={`animate-pulse rounded-input bg-accent ${className ?? ''}`} {...rest} />;
 }

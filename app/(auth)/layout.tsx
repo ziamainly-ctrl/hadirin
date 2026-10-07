@@ -8,10 +8,10 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         aria-hidden="true"
         className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-gradient-to-b from-primary/10 to-transparent"
       />
-      <Link href="/" className="relative mb-6">
+      <Link href="/" aria-label="Hadirin — beranda" className="relative mb-6 flex items-center">
         <Logo className="text-xl" />
       </Link>
-      <div className="relative w-full max-w-sm rounded-card border border-black/5 bg-surface p-6 shadow-sm dark:border-white/5">
+      <div className="relative w-full max-w-sm rounded-card border border-border bg-surface p-6 shadow-sm">
         {children}
       </div>
     </div>

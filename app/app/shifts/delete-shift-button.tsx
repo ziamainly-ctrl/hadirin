@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Trash2 } from 'lucide-react';
 import Button from '@/components/ui/Button';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/components/ui/Toast';
 
 export interface DeleteShiftButtonProps {
@@ -21,10 +22,9 @@ export default function DeleteShiftButton({ shiftId, shiftName }: DeleteShiftBut
   const router = useRouter();
   const { show } = useToast();
   const [isDeleting, setIsDeleting] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   async function handleDelete() {
-    if (!window.confirm(`Hapus shift "${shiftName}"? Tindakan ini tidak bisa dibatalkan.`)) return;
-
     setIsDeleting(true);
     try {
       const res = await fetch(`/api/shifts/${shiftId}`, { method: 'DELETE' });
@@ -39,20 +39,31 @@ export default function DeleteShiftButton({ shiftId, shiftName }: DeleteShiftBut
       show('Tidak bisa terhubung ke server. Coba lagi.', 'error');
     } finally {
       setIsDeleting(false);
+      setConfirmOpen(false);
     }
   }
 
   return (
-    <Button
-      type="button"
-      variant="ghost"
-      size="sm"
-      onClick={handleDelete}
-      isLoading={isDeleting}
-      className="gap-1.5 text-red-600 dark:text-red-400"
-    >
-      <Trash2 className="h-4 w-4" aria-hidden="true" />
-      Hapus
-    </Button>
+    <>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={() => setConfirmOpen(true)}
+        className="gap-1.5 text-destructive"
+      >
+        <Trash2 className="h-4 w-4" aria-hidden="true" />
+        Hapus
+      </Button>
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Hapus shift?"
+        description={`Hapus shift "${shiftName}"? Tindakan ini tidak bisa dibatalkan.`}
+        confirmLabel="Hapus"
+        isLoading={isDeleting}
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmOpen(false)}
+      />
+    </>
   );
 }

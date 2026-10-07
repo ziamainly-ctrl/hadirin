@@ -169,116 +169,130 @@ export default function EmployeeFormDialog({ branches, shifts, existingUser }: E
         // While the one-time password banner is showing, Escape / backdrop / the X
         // button must not be able to dismiss it — only the explicit "Selesai" button
         // (handleAcknowledgeTemporaryPassword) may close the dialog at that point.
-        onClose={temporaryPassword ? () => {} : closeDialog}
+        onClose={temporaryPassword ? handleAcknowledgeTemporaryPassword : closeDialog}
+        dismissible={!temporaryPassword}
         title={isEdit ? 'Edit Karyawan' : 'Tambah Karyawan'}
+        size="lg"
       >
         {temporaryPassword ? (
-          <div className="flex flex-col gap-4">
-            <div className="rounded-input border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 p-3 text-sm text-amber-800 dark:text-amber-300">
-              <p className="font-medium">Kata sandi sementara:</p>
-              <p className="mt-1 select-all break-all font-mono text-base">{temporaryPassword}</p>
-              <p className="mt-2 text-amber-700 dark:text-amber-300">
-                Catat kata sandi ini sekarang. Kata sandi ini tidak akan ditampilkan lagi setelah dialog ini ditutup.
-              </p>
-            </div>
-            <div className="flex justify-end">
+          <>
+            <Dialog.Body>
+              <div className="rounded-input border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 p-3 text-sm text-amber-800 dark:text-amber-300">
+                <p className="font-medium">Kata sandi sementara:</p>
+                <p className="mt-1 select-all break-all font-mono text-base">{temporaryPassword}</p>
+                <p className="mt-2 text-amber-700 dark:text-amber-300">
+                  Catat kata sandi ini sekarang. Kata sandi ini tidak akan ditampilkan lagi setelah dialog ini ditutup.
+                </p>
+              </div>
+            </Dialog.Body>
+            <Dialog.Footer>
               <Button type="button" onClick={handleAcknowledgeTemporaryPassword}>
                 Selesai
               </Button>
-            </div>
-          </div>
+            </Dialog.Footer>
+          </>
         ) : (
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <Input
-              label="Nama"
-              value={form.name}
-              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-              error={fieldErrors.name}
-              maxLength={100}
-              required
-            />
-            <Select
-              label="Peran"
-              value={form.role}
-              onChange={(e) => setForm((f) => ({ ...f, role: e.target.value as UserRole }))}
-              options={ROLE_OPTIONS}
-              error={fieldErrors.role}
-            />
-            <Input
-              label="Email"
-              type="email"
-              value={form.email}
-              onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-              error={fieldErrors.email}
-              maxLength={150}
-              hint={!isEdit ? 'Isi email atau nomor telepon.' : undefined}
-            />
-            <Input
-              label="Telepon"
-              type="tel"
-              value={form.phone}
-              onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-              error={fieldErrors.phone}
-              maxLength={20}
-            />
-            <Select
-              label="Cabang"
-              value={form.branchId}
-              onChange={(e) => setForm((f) => ({ ...f, branchId: e.target.value }))}
-              error={fieldErrors.branchId}
-            >
-              <option value="">Tanpa Cabang</option>
-              {branches.map((branch) => (
-                <option key={branch.id} value={String(branch.id)}>
-                  {branch.name}
-                  {branch.isActive ? '' : ' (Nonaktif)'}
-                </option>
-              ))}
-            </Select>
-            <Select
-              label="Shift"
-              value={form.shiftId}
-              onChange={(e) => setForm((f) => ({ ...f, shiftId: e.target.value }))}
-              error={fieldErrors.shiftId}
-              hint="Tanpa shift berarti karyawan ini tidak absen."
-            >
-              <option value="">Tanpa Shift</option>
-              {shifts.map((shift) => (
-                <option key={shift.id} value={String(shift.id)}>
-                  {shift.name}
-                  {shift.isActive ? '' : ' (Nonaktif)'}
-                </option>
-              ))}
-            </Select>
-            <Input
-              label="Kode Karyawan"
-              value={form.employeeCode}
-              onChange={(e) => setForm((f) => ({ ...f, employeeCode: e.target.value }))}
-              error={fieldErrors.employeeCode}
-              maxLength={30}
-            />
-            <Input
-              label="Posisi"
-              value={form.position}
-              onChange={(e) => setForm((f) => ({ ...f, position: e.target.value }))}
-              error={fieldErrors.position}
-              maxLength={80}
-            />
-            <Input
-              label="Tanggal Bergabung"
-              type="date"
-              value={form.joinedAt}
-              onChange={(e) => setForm((f) => ({ ...f, joinedAt: e.target.value }))}
-              error={fieldErrors.joinedAt}
-            />
-            <div className="mt-2 flex justify-end gap-2">
+          <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+            <Dialog.Body className="flex flex-col gap-4">
+              <Input
+                label="Nama"
+                value={form.name}
+                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                error={fieldErrors.name}
+                maxLength={100}
+                required
+              />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Select
+                  label="Peran"
+                  value={form.role}
+                  onChange={(e) => setForm((f) => ({ ...f, role: e.target.value as UserRole }))}
+                  options={ROLE_OPTIONS}
+                  error={fieldErrors.role}
+                />
+                <Select
+                  label="Cabang"
+                  value={form.branchId}
+                  onChange={(e) => setForm((f) => ({ ...f, branchId: e.target.value }))}
+                  error={fieldErrors.branchId}
+                >
+                  <option value="">Tanpa Cabang</option>
+                  {branches.map((branch) => (
+                    <option key={branch.id} value={String(branch.id)}>
+                      {branch.name}
+                      {branch.isActive ? '' : ' (Nonaktif)'}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Input
+                  label="Email"
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                  error={fieldErrors.email}
+                  maxLength={150}
+                  hint={!isEdit ? 'Isi email atau nomor telepon.' : undefined}
+                />
+                <Input
+                  label="Telepon"
+                  type="tel"
+                  value={form.phone}
+                  onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+                  error={fieldErrors.phone}
+                  maxLength={20}
+                />
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Select
+                  label="Shift"
+                  value={form.shiftId}
+                  onChange={(e) => setForm((f) => ({ ...f, shiftId: e.target.value }))}
+                  error={fieldErrors.shiftId}
+                  hint="Tanpa shift berarti karyawan ini tidak absen."
+                >
+                  <option value="">Tanpa Shift</option>
+                  {shifts.map((shift) => (
+                    <option key={shift.id} value={String(shift.id)}>
+                      {shift.name}
+                      {shift.isActive ? '' : ' (Nonaktif)'}
+                    </option>
+                  ))}
+                </Select>
+                <Input
+                  label="Kode Karyawan"
+                  value={form.employeeCode}
+                  onChange={(e) => setForm((f) => ({ ...f, employeeCode: e.target.value }))}
+                  error={fieldErrors.employeeCode}
+                  maxLength={30}
+                />
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Input
+                  label="Posisi"
+                  value={form.position}
+                  onChange={(e) => setForm((f) => ({ ...f, position: e.target.value }))}
+                  error={fieldErrors.position}
+                  maxLength={80}
+                />
+                <Input
+                  label="Tanggal Bergabung"
+                  type="date"
+                  value={form.joinedAt}
+                  onChange={(e) => setForm((f) => ({ ...f, joinedAt: e.target.value }))}
+                  error={fieldErrors.joinedAt}
+                />
+              </div>
+            </Dialog.Body>
+            <Dialog.Footer>
               <Button type="button" variant="ghost" onClick={closeDialog}>
                 Batal
               </Button>
               <Button type="submit" isLoading={isSubmitting}>
                 {isEdit ? 'Simpan' : 'Tambah'}
               </Button>
-            </div>
+            </Dialog.Footer>
           </form>
         )}
       </Dialog>

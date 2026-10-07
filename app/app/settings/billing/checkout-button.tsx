@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Button from '@/components/ui/Button';
+import Radio from '@/components/ui/Radio';
 import { useToast } from '@/components/ui/Toast';
 
 export interface CheckoutButtonMethod {
@@ -76,16 +77,14 @@ export default function CheckoutButton({ methods }: CheckoutButtonProps) {
         {methods.map((method) => (
           <label
             key={method.id}
-            className="flex items-center justify-between gap-3 rounded-input border border-black/10 dark:border-white/10 px-3 py-2 text-sm text-text"
+            className="flex items-center justify-between gap-3 rounded-input border border-border px-3 py-2 text-sm text-text"
           >
             <span className="flex items-center gap-2">
-              <input
-                type="radio"
+              <Radio
                 name="paymentMethodId"
                 value={method.id}
                 checked={selectedId === method.id}
                 onChange={() => setSelectedId(method.id)}
-                className="h-4 w-4 accent-primary"
               />
               {method.name}
             </span>

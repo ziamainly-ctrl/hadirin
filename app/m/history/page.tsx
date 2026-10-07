@@ -67,7 +67,7 @@ export default async function HistoryPage() {
       <h1 className="text-lg font-semibold text-text">Riwayat Absensi</h1>
 
       {lastWeek.length > 0 ? (
-        <div className="flex items-stretch justify-between gap-1.5 rounded-card border border-black/5 bg-surface p-3 dark:border-white/5">
+        <div className="flex items-stretch justify-between gap-1.5 rounded-card border border-border bg-surface p-3">
           {lastWeek.map((log) => (
             <div
               key={log.id}

@@ -118,7 +118,7 @@ export default function TemplateForm({ existingTemplates }: TemplateFormProps) {
               key={`${template.eventTrigger}:${template.channel}`}
               type="button"
               onClick={() => loadForEdit(template)}
-              className="flex items-center justify-between gap-2 rounded-input border border-black/10 dark:border-white/10 bg-surface px-3 py-2 text-left text-sm text-text transition hover:bg-bg"
+              className="flex items-center justify-between gap-2 rounded-input border border-border bg-surface px-3 py-2 text-left text-sm text-text transition hover:bg-accent"
             >
               <span>{EVENT_LABELS[template.eventTrigger]}</span>
               <Badge className="bg-primary/10 text-primary">{CHANNEL_LABELS[template.channel]}</Badge>

@@ -1,0 +1,107 @@
+/**
+ * Hadirin's mascot: an original, hand-drawn anime-style character (not traced from, or
+ * derived from, any existing artwork). She wears a green check hair clip ("hadir" = present)
+ * and an attendance lanyard, so the character carries the product's one idea.
+ *
+ * One source of truth for every place the mark appears. The functions return plain SVG
+ * strings so the same drawing feeds the inline <Mascot> component (components/shared),
+ * the generated app/icon.svg + public/icon.svg (scripts/gen-brand-assets.ts), the Apple
+ * touch icon and the social share image (both next/og, which takes the SVG as a data URI).
+ * tests/brand-assets.test.ts fails if a generated file drifts from this source.
+ */
+
+export type MascotFraming = 'full' | 'tight';
+
+export interface MascotOptions {
+  /** Prefix for gradient/clip ids. Two inline copies of one SVG on a page must not share
+   * ids, or a copy inside a hidden (display:none) parent can lose its gradients. */
+  idPrefix?: string;
+  /** 'full' shows head, shoulders and the lanyard; 'tight' crops in on the face (and drops
+   * the lanyard, which would be a stray green stub at the crop edge), which is what
+   * survives at favicon and sidebar-logo sizes. */
+  framing?: MascotFraming;
+  /** Rounded-square tile (the logo/favicon) vs a full-bleed square (Apple touch icon,
+   * where iOS applies its own corner mask). */
+  rounded?: boolean;
+}
+
+const FRAMING_TRANSFORM: Record<MascotFraming, string> = {
+  full: 'translate(128 136) scale(0.9) translate(-128 -122)',
+  tight: 'translate(128 146) scale(1.14) translate(-128 -122)',
+};
+
+/** Markup for everything inside the <svg> element (defs + artwork). */
+export function mascotInner({ idPrefix = 'hm', framing = 'full', rounded = true }: MascotOptions = {}): string {
+  const p = idPrefix;
+  return `
+<defs>
+  <linearGradient id="${p}-bg" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#d6f5e6"/>
+    <stop offset="1" stop-color="#c3e2ff"/>
+  </linearGradient>
+  <linearGradient id="${p}-hair" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#434a8f"/>
+    <stop offset="1" stop-color="#232658"/>
+  </linearGradient>
+  <linearGradient id="${p}-iris" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#1d3f94"/>
+    <stop offset=".5" stop-color="#2f8de4"/>
+    <stop offset="1" stop-color="#74e3d4"/>
+  </linearGradient>
+  <clipPath id="${p}-tile"><rect width="256" height="256" rx="${rounded ? 58 : 0}"/></clipPath>
+</defs>
+<g clip-path="url(#${p}-tile)">
+  <rect width="256" height="256" fill="url(#${p}-bg)"/>
+  <path d="M40 58c1 8 3 10 11 11-8 1-10 3-11 11-1-8-3-10-11-11 8-1 10-3 11-11z" fill="#fff" opacity=".9"/>
+  <path d="M220 190c1 5 2 6 7 7-5 1-6 2-7 7-1-5-2-6-7-7 5-1 6-2 7-7z" fill="#fff" opacity=".8"/>
+  <g transform="${FRAMING_TRANSFORM[framing]}">
+    <path d="M42 152C36 86 76 32 128 32s92 54 86 120c-2 28-8 50-18 64-8 10-24 10-32 0H92c-8 10-24 10-32 0-10-14-16-36-18-64z" fill="#232658"/>
+    <path d="M112 196h32v24c0 6-6 10-16 10s-16-4-16-10z" fill="#f6cdb8"/>
+    <path d="M52 262c2-26 28-44 60-46l16 14 16-14c32 2 58 20 60 46z" fill="#fff"/>
+    <path d="M112 216l16 14 16-14" fill="none" stroke="#c5d3e2" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>
+    ${framing === 'full' ? '<path d="M116 218l8 44M140 218l-8 44" stroke="#22c55e" stroke-width="7" stroke-linecap="round" fill="none"/>' : ''}
+    <path d="M62 134c0-34 30-52 66-52s66 18 66 52c0 42-28 70-66 70s-66-28-66-70z" fill="#ffe4d3"/>
+    <path d="M112 200h32v6c-10 6-22 6-32 0z" fill="#e9b79f" opacity=".7"/>
+    <path d="M66 126c10-14 30-22 62-22s52 8 62 22c-14-8-34-12-62-12s-48 4-62 12z" fill="#f3c2ab" opacity=".55"/>
+    <path d="M122 40c-8-14 0-28 14-30" fill="none" stroke="#232658" stroke-width="9" stroke-linecap="round"/>
+    <path d="M50 142C42 80 82 36 128 36s86 44 78 106c-4-22-14-36-26-42-6 16-16 26-30 30-2-14-10-24-20-28-4 14-12 24-24 28-10-4-18-14-22-26-14 6-24 22-28 38z" fill="url(#${p}-hair)"/>
+    <path d="M62 120c-6 24-6 50 4 74 8-10 10-26 8-44-1-12-4-22-12-30z" fill="#232658"/>
+    <path d="M194 120c6 24 6 50-4 74-8-10-10-26-8-44 1-12 4-22 12-30z" fill="#232658"/>
+    <path d="M78 74c14-16 36-24 58-22" fill="none" stroke="#7d86d6" stroke-opacity=".7" stroke-width="7" stroke-linecap="round"/>
+    <path d="M150 54c12 2 22 8 30 16" fill="none" stroke="#7d86d6" stroke-opacity=".45" stroke-width="5" stroke-linecap="round"/>
+    <ellipse cx="96" cy="152" rx="17" ry="22" fill="#fff"/>
+    <ellipse cx="96" cy="154" rx="14" ry="19" fill="url(#${p}-iris)"/>
+    <ellipse cx="96" cy="156" rx="7" ry="10" fill="#14163a"/>
+    <circle cx="90" cy="145" r="6" fill="#fff"/>
+    <circle cx="102" cy="164" r="3" fill="#fff"/>
+    <path d="M77 142c3-11 14-16 24-13" fill="none" stroke="#14163a" stroke-width="5.5" stroke-linecap="round"/>
+    <path d="M77 142l-6 4" stroke="#14163a" stroke-width="3.5" stroke-linecap="round"/>
+    <ellipse cx="160" cy="152" rx="17" ry="22" fill="#fff"/>
+    <ellipse cx="160" cy="154" rx="14" ry="19" fill="url(#${p}-iris)"/>
+    <ellipse cx="160" cy="156" rx="7" ry="10" fill="#14163a"/>
+    <circle cx="154" cy="145" r="6" fill="#fff"/>
+    <circle cx="166" cy="164" r="3" fill="#fff"/>
+    <path d="M179 142c-3-11-14-16-24-13" fill="none" stroke="#14163a" stroke-width="5.5" stroke-linecap="round"/>
+    <path d="M179 142l6 4" stroke="#14163a" stroke-width="3.5" stroke-linecap="round"/>
+    <ellipse cx="82" cy="180" rx="10" ry="5.5" fill="#ff8fa6" opacity=".55"/>
+    <ellipse cx="174" cy="180" rx="10" ry="5.5" fill="#ff8fa6" opacity=".55"/>
+    <path d="M117 185c4 12 18 12 22 0z" fill="#a8434f"/>
+    <path d="M121 192c3 4 11 4 14 0c-3-3-11-3-14 0z" fill="#ff8fa6"/>
+    <g transform="translate(178 88)">
+      <circle r="15" fill="#22c55e" stroke="#fff" stroke-width="3.5"/>
+      <path d="M-7 0l5 5 9-10" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </g>
+</g>`.replace(/\n\s*/g, '');
+}
+
+/** A complete standalone SVG document string (for files and data URIs). */
+export function mascotSvg(options: MascotOptions & { size?: number } = {}): string {
+  const { size, ...rest } = options;
+  const dims = size ? ` width="${size}" height="${size}"` : '';
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"${dims}>${mascotInner(rest)}</svg>`;
+}
+
+export function mascotDataUri(options: MascotOptions & { size?: number } = {}): string {
+  return `data:image/svg+xml;base64,${Buffer.from(mascotSvg(options)).toString('base64')}`;
+}

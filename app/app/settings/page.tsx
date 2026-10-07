@@ -45,7 +45,7 @@ export default async function SettingsPage() {
   await requireSession(['OWNER', 'ADMIN']);
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div>
       <h1 className="text-xl font-semibold text-text">Pengaturan</h1>
       <p className="mt-1 text-sm text-muted">Kelola organisasi, billing, dan notifikasi.</p>
 

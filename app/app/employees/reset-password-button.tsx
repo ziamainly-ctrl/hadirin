@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { KeyRound } from 'lucide-react';
 import Button from '@/components/ui/Button';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import Dialog from '@/components/ui/Dialog';
 import { useToast } from '@/components/ui/Toast';
 
@@ -22,15 +23,11 @@ export default function ResetPasswordButton({ userId, userName }: ResetPasswordB
   const router = useRouter();
   const { show } = useToast();
   const [open, setOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [temporaryPassword, setTemporaryPassword] = useState<string | null>(null);
 
-  async function handleClick() {
-    const confirmed = window.confirm(
-      `Reset kata sandi untuk ${userName}? Kata sandi sementara yang baru akan dibuat.`,
-    );
-    if (!confirmed) return;
-
+  async function handleReset() {
     setIsSubmitting(true);
     try {
       const res = await fetch(`/api/users/${userId}/reset-password`, {
@@ -52,6 +49,7 @@ export default function ResetPasswordButton({ userId, userName }: ResetPasswordB
       show('Tidak bisa terhubung ke server. Coba lagi.', 'error');
     } finally {
       setIsSubmitting(false);
+      setConfirmOpen(false);
     }
   }
 
@@ -63,15 +61,26 @@ export default function ResetPasswordButton({ userId, userName }: ResetPasswordB
 
   return (
     <>
-      <Button type="button" variant="secondary" onClick={handleClick} isLoading={isSubmitting} className="gap-2">
+      <Button type="button" variant="outline" onClick={() => setConfirmOpen(true)} className="gap-2">
         <KeyRound className="h-4 w-4" aria-hidden="true" />
         Reset Kata Sandi
       </Button>
 
-      {/* Always a no-op onClose: this dialog only ever shows the one-time reveal, so
-          Escape/backdrop/X must not be able to dismiss it — only "Selesai" can. */}
-      <Dialog open={open} onClose={() => {}} title="Kata Sandi Sementara">
-        <div className="flex flex-col gap-4">
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Reset kata sandi?"
+        description={`Reset kata sandi untuk ${userName}? Kata sandi sementara yang baru akan dibuat.`}
+        confirmLabel="Reset"
+        variant="primary"
+        isLoading={isSubmitting}
+        onConfirm={handleReset}
+        onCancel={() => setConfirmOpen(false)}
+      />
+
+      {/* Not dismissible: this dialog only ever shows the one-time reveal, so Escape, a
+          backdrop click and the X must not be able to close it — only "Selesai" can. */}
+      <Dialog open={open} onClose={handleAcknowledge} dismissible={false} title="Kata Sandi Sementara">
+        <Dialog.Body>
           <div className="rounded-input border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 p-3 text-sm text-amber-800 dark:text-amber-300">
             <p className="font-medium">Kata sandi sementara baru:</p>
             <p className="mt-1 select-all break-all font-mono text-base">{temporaryPassword}</p>
@@ -79,12 +88,12 @@ export default function ResetPasswordButton({ userId, userName }: ResetPasswordB
               Catat kata sandi ini sekarang. Kata sandi ini tidak akan ditampilkan lagi setelah dialog ini ditutup.
             </p>
           </div>
-          <div className="flex justify-end">
-            <Button type="button" onClick={handleAcknowledge}>
-              Selesai
-            </Button>
-          </div>
-        </div>
+        </Dialog.Body>
+        <Dialog.Footer>
+          <Button type="button" onClick={handleAcknowledge}>
+            Selesai
+          </Button>
+        </Dialog.Footer>
       </Dialog>
     </>
   );

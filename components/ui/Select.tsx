@@ -2,6 +2,7 @@
 
 import { forwardRef, useId } from 'react';
 import type { SelectHTMLAttributes } from 'react';
+import { FIELD_CLASSES, fieldBorderClass } from './field';
 
 export interface SelectOption {
   value: string;
@@ -40,9 +41,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
         id={selectId}
         aria-invalid={error ? true : undefined}
         aria-describedby={describedById}
-        className={`h-10 rounded-input border bg-surface px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-50 ${
-          error ? 'border-red-500' : 'border-black/10 dark:border-white/10'
-        } ${className ?? ''}`}
+        className={`h-10 ${FIELD_CLASSES} ${fieldBorderClass(error)} ${className ?? ''}`}
         {...rest}
       >
         {options
@@ -54,7 +53,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
           : children}
       </select>
       {error ? (
-        <p id={`${selectId}-error`} className="text-sm text-red-600 dark:text-red-400">
+        <p id={`${selectId}-error`} className="text-sm text-destructive">
           {error}
         </p>
       ) : hint ? (

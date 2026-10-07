@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { Check } from 'lucide-react';
-import Button from '@/components/ui/Button';
+import ButtonLink from '@/components/ui/ButtonLink';
 import Card from '@/components/ui/Card';
 import { listActivePlans } from '@/lib/queries/plans';
 
@@ -35,7 +34,7 @@ export default async function PricingPage() {
 
       <div className="mt-10 grid gap-6 sm:grid-cols-3">
         {plans.map((plan, i) => (
-          <Card key={plan.id} shadow className={`relative ${i === 1 ? 'ring-2 ring-primary' : ''}`}>
+          <Card key={plan.id} shadow className={`relative flex flex-col ${i === 1 ? 'ring-2 ring-primary' : ''}`}>
             {i === 1 ? (
               <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-fg">
                 Paling Populer
@@ -43,30 +42,32 @@ export default async function PricingPage() {
             ) : null}
             <h2 className="text-lg font-semibold text-text">{plan.name}</h2>
             <p className="mt-2 text-3xl font-bold text-text">
-              {plan.priceMonthly === 0 ? 'Gratis' : RUPIAH.format(plan.priceMonthly)}
-              {plan.priceMonthly > 0 ? <span className="text-sm font-normal text-muted">/bulan</span> : null}
+              {RUPIAH.format(plan.priceMonthly)}
+              <span className="text-sm font-normal text-muted">/bulan</span>
             </p>
             <ul className="mt-4 space-y-2 text-sm text-text">
               <li className="flex gap-2">
-                <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                 Hingga {plan.maxEmployees} karyawan
               </li>
               <li className="flex gap-2">
-                <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                 Hingga {plan.maxBranches} cabang
               </li>
               {featureLines(plan.features).map((line) => (
                 <li key={line} className="flex gap-2">
-                  <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                   {line}
                 </li>
               ))}
             </ul>
-            <Link href="/register" className="mt-6 block">
-              <Button className="w-full" variant={i === 1 ? 'primary' : 'secondary'}>
+            {/* mt-auto inside the flex-col card pins every CTA to the card bottom, so the three
+                buttons line up on one baseline however many feature lines each plan has. */}
+            <div className="mt-auto pt-6">
+              <ButtonLink href="/register" variant={i === 1 ? 'primary' : 'secondary'} className="w-full">
                 Pilih {plan.name}
-              </Button>
-            </Link>
+              </ButtonLink>
+            </div>
           </Card>
         ))}
       </div>

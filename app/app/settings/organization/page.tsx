@@ -16,11 +16,11 @@ export default async function OrganizationSettingsPage() {
   if (!org) throw new Error('Organization not found');
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div>
       <h1 className="text-xl font-semibold text-text">Organisasi</h1>
       <p className="mt-1 text-sm text-muted">Nama, zona waktu, dan aturan presensi untuk seluruh organisasi.</p>
 
-      <Card className="mt-6">
+      <Card className="mt-6 max-w-2xl">
         <OrganizationForm
           initialValues={{
             name: org.name,
@@ -32,7 +32,7 @@ export default async function OrganizationSettingsPage() {
         />
       </Card>
 
-      <Card className="mt-6">
+      <Card className="mt-6 max-w-2xl">
         <Card.Header>
           <h2 className="text-sm font-semibold text-text">Paket Saat Ini</h2>
         </Card.Header>

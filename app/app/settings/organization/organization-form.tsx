@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import Checkbox from '@/components/ui/Checkbox';
 import Select from '@/components/ui/Select';
 import { useToast } from '@/components/ui/Toast';
 import type { GeofenceMode } from '@/lib/constants/statuses';
@@ -88,15 +89,11 @@ export default function OrganizationForm({ initialValues }: OrganizationFormProp
         options={GEOFENCE_OPTIONS}
         error={fieldErrors.geofenceMode}
       />
-      <label className="flex items-center gap-2 text-sm text-text">
-        <input
-          type="checkbox"
-          checked={values.selfieRequired}
-          onChange={(e) => setValues((v) => ({ ...v, selfieRequired: e.target.checked }))}
-          className="h-4 w-4 rounded border-black/20 dark:border-white/20 accent-primary"
-        />
-        Wajibkan selfie saat check-in/out
-      </label>
+      <Checkbox
+        label="Wajibkan selfie saat check-in/out"
+        checked={values.selfieRequired}
+        onChange={(e) => setValues((v) => ({ ...v, selfieRequired: e.target.checked }))}
+      />
       <Input
         label="URL Logo"
         type="url"

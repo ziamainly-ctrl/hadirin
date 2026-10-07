@@ -2,6 +2,7 @@
 
 import { forwardRef, useId } from 'react';
 import type { InputHTMLAttributes } from 'react';
+import { FIELD_CLASSES, fieldBorderClass } from './field';
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -34,13 +35,11 @@ const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         id={inputId}
         aria-invalid={error ? true : undefined}
         aria-describedby={describedById}
-        className={`h-10 rounded-input border bg-surface px-3 text-sm text-text placeholder:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:bg-bg disabled:opacity-50 ${
-          error ? 'border-red-500' : 'border-black/10 dark:border-white/10'
-        } ${className ?? ''}`}
+        className={`h-10 ${FIELD_CLASSES} ${fieldBorderClass(error)} ${className ?? ''}`}
         {...rest}
       />
       {error ? (
-        <p id={`${inputId}-error`} className="text-sm text-red-600 dark:text-red-400">
+        <p id={`${inputId}-error`} className="text-sm text-destructive">
           {error}
         </p>
       ) : hint ? (

@@ -47,14 +47,14 @@ export default async function BranchesPage() {
             {branches.map((branch) => (
               <Table.Row key={branch.id}>
                 <Table.Cell className="font-medium text-text">{branch.name}</Table.Cell>
-                <Table.Cell className="text-muted">{branch.address ?? '—'}</Table.Cell>
+                <Table.Cell className="min-w-56 whitespace-normal text-muted">{branch.address ?? '—'}</Table.Cell>
                 <Table.Cell className="text-muted">{branch.radiusM} m</Table.Cell>
                 <Table.Cell>
                   <Badge
                     className={
                       branch.isActive
                         ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
-                        : 'bg-black/5 dark:bg-white/5 text-muted'
+                        : 'bg-accent text-muted'
                     }
                   >
                     {branch.isActive ? 'Aktif' : 'Nonaktif'}

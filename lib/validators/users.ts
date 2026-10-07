@@ -30,7 +30,7 @@ export const listUsersQuerySchema = z.object({
 
 // POST /api/users. Mirrors the ck_users_login_id CHECK: at least one of email/phone.
 export const createUserSchema = z.object(userFields).refine((data) => Boolean(data.email) || Boolean(data.phone), {
-  message: 'Either email or phone is required',
+  message: 'Isi email atau nomor telepon.',
   path: ['email'],
 });
 

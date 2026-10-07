@@ -11,9 +11,9 @@ export default function CheckInPreview() {
   return (
     <div
       aria-hidden="true"
-      className="mx-auto w-full max-w-[300px] rounded-[2.5rem] border border-black/10 bg-surface p-3 shadow-xl dark:border-white/10"
+      className="mx-auto w-full max-w-[300px] rounded-[2.5rem] border border-border bg-surface p-3 shadow-xl"
     >
-      <div className="rounded-[2rem] border border-black/5 bg-bg p-5 dark:border-white/5">
+      <div className="rounded-[2rem] border border-border bg-bg p-5">
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-xs font-medium text-muted">Hari ini</p>
@@ -24,9 +24,9 @@ export default function CheckInPreview() {
           </span>
         </div>
 
-        <div className="mt-5 flex items-center gap-2 rounded-input border border-black/5 bg-surface px-3 py-2 text-xs text-muted dark:border-white/5">
+        <div className="mt-5 flex items-center gap-2 rounded-input border border-border bg-surface px-3 py-2 text-xs text-muted">
           <MapPin className="h-3.5 w-3.5 shrink-0 text-primary" />
-          Kantor Pusat · dalam radius 100 m
+          Kantor Pusat · jarak 12 m
         </div>
 
         <div className="mt-6 flex flex-col items-center gap-3">

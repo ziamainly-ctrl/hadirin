@@ -176,7 +176,7 @@ export default function RequestForm() {
         />
       ) : null}
 
-      {errors._root ? <p className="text-sm text-red-600 dark:text-red-400">{errors._root}</p> : null}
+      {errors._root ? <p className="text-sm text-destructive">{errors._root}</p> : null}
 
       <Button type="submit" isLoading={isSubmitting} disabled={isUploading} className="w-full">
         Kirim Pengajuan

@@ -26,7 +26,7 @@ export default function BarList({ items, formatValue, className }: BarListProps)
           <span className="w-28 shrink-0 truncate text-muted" title={item.label}>
             {item.label}
           </span>
-          <span className="h-2 flex-1 overflow-hidden rounded-full bg-black/5 dark:bg-white/5">
+          <span className="h-2 flex-1 overflow-hidden rounded-full bg-accent">
             <span
               className="block h-full rounded-full"
               style={{

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Pencil, Plus } from 'lucide-react';
 import Button from '@/components/ui/Button';
+import Checkbox from '@/components/ui/Checkbox';
 import Dialog from '@/components/ui/Dialog';
 import Input from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
@@ -17,17 +18,19 @@ export interface ShiftFormDialogProps {
 interface Weekday {
   iso: number;
   label: string;
+  /** Three-letter label shown on the chip; `label` stays the accessible name. */
+  short: string;
 }
 
 // ISO weekday, 1=Mon…7=Sun (ERD.md §1.1: "shifts.work_days").
 const WEEKDAYS: Weekday[] = [
-  { iso: 1, label: 'Senin' },
-  { iso: 2, label: 'Selasa' },
-  { iso: 3, label: 'Rabu' },
-  { iso: 4, label: 'Kamis' },
-  { iso: 5, label: 'Jumat' },
-  { iso: 6, label: 'Sabtu' },
-  { iso: 7, label: 'Minggu' },
+  { iso: 1, label: 'Senin', short: 'Sen' },
+  { iso: 2, label: 'Selasa', short: 'Sel' },
+  { iso: 3, label: 'Rabu', short: 'Rab' },
+  { iso: 4, label: 'Kamis', short: 'Kam' },
+  { iso: 5, label: 'Jumat', short: 'Jum' },
+  { iso: 6, label: 'Sabtu', short: 'Sab' },
+  { iso: 7, label: 'Minggu', short: 'Min' },
 ];
 
 const DEFAULT_WORK_DAYS = [1, 2, 3, 4, 5];
@@ -177,93 +180,91 @@ export default function ShiftFormDialog({ shift }: ShiftFormDialogProps) {
       </Button>
 
       <Dialog open={open} onClose={closeDialog} title={isEdit ? 'Edit Shift' : 'Tambah Shift'}>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <Input
-            label="Nama Shift"
-            value={form.name}
-            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-            error={fieldErrors.name}
-            maxLength={60}
-            required
-          />
-          <div className="grid grid-cols-2 gap-3">
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+          <Dialog.Body className="flex flex-col gap-4">
             <Input
-              label="Jam Masuk"
-              type="time"
-              value={form.timeIn}
-              onChange={(e) => setForm((f) => ({ ...f, timeIn: e.target.value }))}
-              error={fieldErrors.timeIn}
+              label="Nama Shift"
+              value={form.name}
+              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              error={fieldErrors.name}
+              maxLength={60}
               required
             />
-            <Input
-              label="Jam Keluar"
-              type="time"
-              value={form.timeOut}
-              onChange={(e) => setForm((f) => ({ ...f, timeOut: e.target.value }))}
-              error={fieldErrors.timeOut}
-              required
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Input
-              label="Istirahat (menit)"
-              type="number"
-              min={0}
-              value={form.breakMinutes}
-              onChange={(e) => setForm((f) => ({ ...f, breakMinutes: e.target.value }))}
-              error={fieldErrors.breakMinutes}
-              required
-            />
-            <Input
-              label="Toleransi Terlambat (menit)"
-              type="number"
-              min={0}
-              value={form.lateToleranceMinutes}
-              onChange={(e) => setForm((f) => ({ ...f, lateToleranceMinutes: e.target.value }))}
-              error={fieldErrors.lateToleranceMinutes}
-              required
-            />
-          </div>
-
-          <fieldset className="flex flex-col gap-1.5 border-0 p-0">
-            <legend className="mb-0 p-0 text-sm font-medium text-text">Hari Kerja</legend>
-            <div className="flex flex-wrap gap-3">
-              {WEEKDAYS.map((day) => (
-                <label key={day.iso} className="flex items-center gap-1.5 text-sm text-text">
-                  <input
-                    type="checkbox"
-                    checked={workDays.has(day.iso)}
-                    onChange={() => toggleDay(day.iso)}
-                    className="h-4 w-4 rounded border-black/20 dark:border-white/20 accent-primary"
-                  />
-                  {day.label}
-                </label>
-              ))}
+            <div className="grid grid-cols-2 gap-3">
+              <Input
+                label="Jam Masuk"
+                type="time"
+                value={form.timeIn}
+                onChange={(e) => setForm((f) => ({ ...f, timeIn: e.target.value }))}
+                error={fieldErrors.timeIn}
+                required
+              />
+              <Input
+                label="Jam Keluar"
+                type="time"
+                value={form.timeOut}
+                onChange={(e) => setForm((f) => ({ ...f, timeOut: e.target.value }))}
+                error={fieldErrors.timeOut}
+                required
+              />
             </div>
-            {workDaysError ? <p className="text-sm text-red-600 dark:text-red-400">{workDaysError}</p> : null}
-          </fieldset>
+            <div className="grid grid-cols-2 gap-3">
+              <Input
+                label="Istirahat (menit)"
+                type="number"
+                min={0}
+                value={form.breakMinutes}
+                onChange={(e) => setForm((f) => ({ ...f, breakMinutes: e.target.value }))}
+                error={fieldErrors.breakMinutes}
+                required
+              />
+              <Input
+                label="Toleransi Terlambat (menit)"
+                type="number"
+                min={0}
+                value={form.lateToleranceMinutes}
+                onChange={(e) => setForm((f) => ({ ...f, lateToleranceMinutes: e.target.value }))}
+                error={fieldErrors.lateToleranceMinutes}
+                required
+              />
+            </div>
 
-          <label className="flex items-start gap-2 text-sm text-text">
-            <input
-              type="checkbox"
+            <fieldset className="flex flex-col gap-1.5 border-0 p-0">
+              <legend className="mb-1.5 p-0 text-sm font-medium text-text">Hari Kerja</legend>
+              <div className="grid grid-cols-7 gap-1.5">
+                {WEEKDAYS.map((day) => (
+                  <label key={day.iso} className="cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={workDays.has(day.iso)}
+                      onChange={() => toggleDay(day.iso)}
+                      aria-label={day.label}
+                      className="peer sr-only"
+                    />
+                    <span className="flex h-9 items-center justify-center rounded-input border border-input text-xs font-medium text-muted transition-colors hover:bg-accent peer-checked:border-primary peer-checked:bg-primary peer-checked:text-primary-fg peer-focus-visible:ring-[3px] peer-focus-visible:ring-ring/50">
+                      {day.short}
+                    </span>
+                  </label>
+                ))}
+              </div>
+              {workDaysError ? <p className="text-sm text-destructive">{workDaysError}</p> : null}
+            </fieldset>
+
+            <Checkbox
+              label="Shift lintas hari"
+              description="Aktifkan jika jam keluar melewati tengah malam."
               checked={form.isCrossDay}
               onChange={(e) => setForm((f) => ({ ...f, isCrossDay: e.target.checked }))}
-              className="mt-0.5 h-4 w-4 rounded border-black/20 dark:border-white/20 accent-primary"
             />
-            <span>
-              Shift lintas hari
-              <span className="block text-xs text-muted">Aktifkan jika jam keluar melewati tengah malam.</span>
-            </span>
-          </label>
-
-          <div className="mt-2 flex justify-end gap-2">
+          </Dialog.Body>
+          <Dialog.Footer>
             <Button type="button" variant="ghost" onClick={closeDialog}>
               Batal
             </Button>
             <Button type="submit" isLoading={isSubmitting} disabled={Boolean(workDaysError)}>
               {isEdit ? 'Simpan' : 'Tambah'}
             </Button>
-          </div>
+          </Dialog.Footer>
         </form>
       </Dialog>
     </>

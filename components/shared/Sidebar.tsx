@@ -26,6 +26,7 @@ import {
 import ThemeToggle from './ThemeToggle';
 import LogoutButton from './LogoutButton';
 import Logo from './Logo';
+import IconButton from '@/components/ui/IconButton';
 
 // A Server Component layout (app/app/layout.tsx, app/platform/(authenticated)/layout.tsx)
 // builds `items` and passes it into this 'use client' component — a Lucide icon is a
@@ -121,7 +122,7 @@ export default function Sidebar({ items, activePath, header, logout, className }
           aria-current={active ? 'page' : undefined}
           title={!showLabels ? item.label : undefined}
           className={`flex items-center gap-3 rounded-input px-3 py-2 text-sm font-medium transition-colors ${
-            active ? 'bg-primary text-primary-fg' : 'text-text hover:bg-bg'
+            active ? 'bg-secondary text-secondary-fg' : 'text-muted hover:bg-accent hover:text-text'
           }`}
         >
           <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
@@ -135,14 +136,15 @@ export default function Sidebar({ items, activePath, header, logout, className }
 
   return (
     <>
-      <button
-        type="button"
+      <IconButton
+        label="Buka menu"
+        size="lg"
+        variant="outline"
         onClick={() => setMobileOpen(true)}
-        aria-label="Buka menu"
-        className="fixed left-3 top-3 z-30 inline-flex h-10 w-10 items-center justify-center rounded-input border border-black/10 bg-surface text-text shadow-sm dark:border-white/10 lg:hidden"
+        className="fixed left-3 top-3 z-30 shadow-sm lg:hidden"
       >
-        <Menu className="h-5 w-5" />
-      </button>
+        <Menu className="h-5 w-5" aria-hidden="true" />
+      </IconButton>
 
       {mobileOpen ? (
         <div className="fixed inset-0 z-40 lg:hidden">
@@ -153,23 +155,18 @@ export default function Sidebar({ items, activePath, header, logout, className }
             className="absolute inset-0 bg-black/40"
           />
           <aside className="relative flex h-full w-64 flex-col bg-surface shadow-lg">
-            <div className="flex items-center justify-between border-b border-black/10 p-3 dark:border-white/10">
+            <div className="flex items-center justify-between border-b border-border p-3">
               {brand}
               <div className="flex items-center gap-1">
                 <ThemeToggle />
-                <button
-                  type="button"
-                  onClick={() => setMobileOpen(false)}
-                  aria-label="Tutup menu"
-                  className="rounded-full p-1 text-muted hover:bg-black/5 dark:hover:bg-white/10"
-                >
-                  <X className="h-5 w-5" />
-                </button>
+                <IconButton label="Tutup menu" size="sm" onClick={() => setMobileOpen(false)}>
+                  <X className="h-5 w-5" aria-hidden="true" />
+                </IconButton>
               </div>
             </div>
             <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-2">{renderNavItems(true)}</nav>
             {logout ? (
-              <div className="border-t border-black/10 p-2 dark:border-white/10">
+              <div className="border-t border-border p-2">
                 <LogoutButton logoutUrl={logout.url} redirectTo={logout.redirectTo} />
               </div>
             ) : null}
@@ -178,41 +175,31 @@ export default function Sidebar({ items, activePath, header, logout, className }
       ) : null}
 
       <aside
-        className={`sticky top-0 hidden h-screen flex-col border-r border-black/10 bg-surface transition-[width] dark:border-white/10 lg:flex ${
+        className={`sticky top-0 hidden h-screen flex-col border-r border-border bg-surface transition-[width] lg:flex ${
           collapsed ? 'w-16' : 'w-60'
         } ${className ?? ''}`}
       >
         {collapsed ? (
-          <div className="flex flex-col items-center gap-2 border-b border-black/10 p-3 dark:border-white/10">
+          <div className="flex flex-col items-center gap-2 border-b border-border p-3">
             <Logo iconOnly />
-            <button
-              type="button"
-              onClick={() => setCollapsed(false)}
-              aria-label="Perluas sidebar"
-              className="rounded-full p-1 text-muted hover:bg-black/5 dark:hover:bg-white/10"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
+            <IconButton label="Perluas sidebar" size="sm" onClick={() => setCollapsed(false)}>
+              <ChevronRight className="h-4 w-4" aria-hidden="true" />
+            </IconButton>
           </div>
         ) : (
-          <div className="flex items-center justify-between border-b border-black/10 p-3 dark:border-white/10">
+          <div className="flex items-center justify-between border-b border-border p-3">
             {brand}
             <div className="flex items-center gap-1">
               <ThemeToggle />
-              <button
-                type="button"
-                onClick={() => setCollapsed(true)}
-                aria-label="Perkecil sidebar"
-                className="rounded-full p-1 text-muted hover:bg-black/5 dark:hover:bg-white/10"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
+              <IconButton label="Perkecil sidebar" size="sm" onClick={() => setCollapsed(true)}>
+                <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+              </IconButton>
             </div>
           </div>
         )}
         <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-2">{renderNavItems(!collapsed)}</nav>
         {logout ? (
-          <div className="border-t border-black/10 p-2 dark:border-white/10">
+          <div className="border-t border-border p-2">
             <LogoutButton logoutUrl={logout.url} redirectTo={logout.redirectTo} showLabel={!collapsed} />
           </div>
         ) : null}

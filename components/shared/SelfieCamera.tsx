@@ -128,7 +128,7 @@ export default function SelfieCamera({ onCapture, onError, className }: SelfieCa
   return (
     <div className={`flex flex-col items-center gap-3 ${className ?? ''}`}>
       {status !== 'fallback' ? (
-        <div className="relative aspect-[3/4] w-full max-w-xs overflow-hidden rounded-card bg-black/80 dark:bg-white/80">
+        <div className="relative aspect-[3/4] w-full max-w-xs overflow-hidden rounded-card bg-black">
           <video ref={videoRef} autoPlay playsInline muted className="h-full w-full -scale-x-100 object-cover" />
         </div>
       ) : null}

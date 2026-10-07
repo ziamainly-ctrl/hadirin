@@ -11,7 +11,7 @@ import { buildMonthlyRecapPdf } from '@/lib/export/pdf';
 // XLSX is the universal baseline (ERD.md §4: every seeded plan has features.export_xlsx
 // true) and is never gated here; PDF requires features.export_pdf on the org's plan.
 const monthlyExportQuerySchema = z.object({
-  month: z.string().regex(/^\d{4}-\d{2}$/, 'Expected YYYY-MM'),
+  month: z.string().regex(/^\d{4}-\d{2}$/, 'Gunakan format TTTT-BB.'),
   branchId: idParam.optional(),
   format: z.enum(['xlsx', 'pdf']),
 });

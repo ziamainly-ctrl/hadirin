@@ -61,7 +61,7 @@ export default function LoginPage() {
         autoComplete="current-password"
         required
       />
-      {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
       <Button type="submit" isLoading={isLoading} className="mt-2 w-full">
         Masuk
       </Button>
