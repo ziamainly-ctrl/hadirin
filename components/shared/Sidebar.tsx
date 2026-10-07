@@ -4,13 +4,55 @@ import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ChevronLeft, ChevronRight, Menu, X } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Menu,
+  X,
+  LayoutDashboard,
+  CalendarCheck,
+  Users,
+  MapPin,
+  Clock,
+  ListChecks,
+  FileBarChart,
+  Settings,
+  Building2,
+  CreditCard,
+  Package,
+  MessageSquare,
+  CalendarDays,
+} from 'lucide-react';
+
+// A Server Component layout (app/app/layout.tsx, app/platform/(authenticated)/layout.tsx)
+// builds `items` and passes it into this 'use client' component — a Lucide icon is a
+// function (forwardRef component), and React Server Components cannot pass a function
+// across the server→client boundary ("Functions cannot be passed directly to Client
+// Components", caught against the real OWNER account: every /app/* page 500'd on this).
+// `icon` is a plain string key instead, resolved to the real component only in here,
+// client-side, where a function value is fine.
+const ICONS = {
+  LayoutDashboard,
+  CalendarCheck,
+  Users,
+  MapPin,
+  Clock,
+  ListChecks,
+  FileBarChart,
+  Settings,
+  Building2,
+  CreditCard,
+  Package,
+  MessageSquare,
+  CalendarDays,
+} as const;
+
+export type SidebarIconName = keyof typeof ICONS;
 
 export interface SidebarItem {
   href: string;
   label: string;
-  icon: LucideIcon;
+  icon: SidebarIconName;
 }
 
 export interface SidebarProps {
@@ -47,7 +89,7 @@ export default function Sidebar({ items, activePath, header, className }: Sideba
 
   function renderNavItems(showLabels: boolean) {
     return items.map((item) => {
-      const Icon = item.icon;
+      const Icon = ICONS[item.icon];
       const active = isActive(item.href);
       return (
         <Link
