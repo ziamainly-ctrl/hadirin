@@ -23,6 +23,7 @@ import {
   MessageSquare,
   CalendarDays,
 } from 'lucide-react';
+import ThemeToggle from './ThemeToggle';
 
 // A Server Component layout (app/app/layout.tsx, app/platform/(authenticated)/layout.tsx)
 // builds `items` and passes it into this 'use client' component — a Lucide icon is a
@@ -117,7 +118,7 @@ export default function Sidebar({ items, activePath, header, className }: Sideba
         type="button"
         onClick={() => setMobileOpen(true)}
         aria-label="Buka menu"
-        className="fixed left-3 top-3 z-30 inline-flex h-10 w-10 items-center justify-center rounded-input border border-black/10 bg-surface text-text shadow-sm lg:hidden"
+        className="fixed left-3 top-3 z-30 inline-flex h-10 w-10 items-center justify-center rounded-input border border-black/10 bg-surface text-text shadow-sm dark:border-white/10 lg:hidden"
       >
         <Menu className="h-5 w-5" />
       </button>
@@ -131,16 +132,19 @@ export default function Sidebar({ items, activePath, header, className }: Sideba
             className="absolute inset-0 bg-black/40"
           />
           <aside className="relative flex h-full w-64 flex-col bg-surface shadow-lg">
-            <div className="flex items-center justify-between border-b border-black/10 p-3">
+            <div className="flex items-center justify-between border-b border-black/10 p-3 dark:border-white/10">
               {brand}
-              <button
-                type="button"
-                onClick={() => setMobileOpen(false)}
-                aria-label="Tutup menu"
-                className="rounded-full p-1 text-muted hover:bg-black/5"
-              >
-                <X className="h-5 w-5" />
-              </button>
+              <div className="flex items-center gap-1">
+                <ThemeToggle />
+                <button
+                  type="button"
+                  onClick={() => setMobileOpen(false)}
+                  aria-label="Tutup menu"
+                  className="rounded-full p-1 text-muted hover:bg-black/5 dark:hover:bg-white/10"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
             </div>
             <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-2">{renderNavItems(true)}</nav>
           </aside>
@@ -148,20 +152,23 @@ export default function Sidebar({ items, activePath, header, className }: Sideba
       ) : null}
 
       <aside
-        className={`sticky top-0 hidden h-screen flex-col border-r border-black/10 bg-surface transition-[width] lg:flex ${
+        className={`sticky top-0 hidden h-screen flex-col border-r border-black/10 bg-surface transition-[width] dark:border-white/10 lg:flex ${
           collapsed ? 'w-16' : 'w-60'
         } ${className ?? ''}`}
       >
-        <div className="flex items-center justify-between border-b border-black/10 p-3">
+        <div className="flex items-center justify-between border-b border-black/10 p-3 dark:border-white/10">
           {collapsed ? null : brand}
-          <button
-            type="button"
-            onClick={() => setCollapsed((prev) => !prev)}
-            aria-label={collapsed ? 'Perluas sidebar' : 'Perkecil sidebar'}
-            className="rounded-full p-1 text-muted hover:bg-black/5"
-          >
-            {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-          </button>
+          <div className="flex items-center gap-1">
+            {collapsed ? null : <ThemeToggle />}
+            <button
+              type="button"
+              onClick={() => setCollapsed((prev) => !prev)}
+              aria-label={collapsed ? 'Perluas sidebar' : 'Perkecil sidebar'}
+              className="rounded-full p-1 text-muted hover:bg-black/5 dark:hover:bg-white/10"
+            >
+              {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+            </button>
+          </div>
         </div>
         <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-2">{renderNavItems(!collapsed)}</nav>
       </aside>

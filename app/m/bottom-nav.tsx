@@ -17,7 +17,7 @@ export default function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 mx-auto flex max-w-md border-t border-black/10 bg-surface">
+    <nav className="fixed inset-x-0 bottom-0 z-30 mx-auto flex max-w-md border-t border-black/10 bg-surface dark:border-white/10">
       {TABS.map((tab) => {
         const active = pathname === tab.href;
         const Icon = tab.icon;

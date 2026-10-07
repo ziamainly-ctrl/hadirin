@@ -1,6 +1,16 @@
 @import 'tailwindcss';
 
-/* Design tokens — TRD.md §14. Swap values here, not in components. */
+/* Dark mode is a `.dark` class on <html> (set by the inline no-FOUC script in
+   app/layout.tsx + toggled by components/shared/ThemeToggle.tsx), not bare
+   prefers-color-scheme — a user's explicit choice must override their OS setting,
+   which only a class (not a media query) can do. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Design tokens — TRD.md §14. Swap values here, not in components. Every bg-*/text-*
+   utility Tailwind generates from these (bg-bg, text-text, bg-surface, bg-primary,
+   bg-status-*, ...) repaints automatically under .dark below — components using only
+   these tokens need no dark: variant of their own. Only hardcoded colors (border-black/N,
+   bg-black/N, or a raw Tailwind palette color used directly) need one. */
 @theme {
   --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
 
@@ -22,6 +32,26 @@
 
   --radius-card: 12px;
   --radius-input: 10px;
+}
+
+/* Same token names, dark values — accents brightened a step since a saturated
+   light-mode color loses contrast on a dark surface. */
+.dark {
+  --color-primary: #18a37e;
+  --color-primary-fg: #ffffff;
+  --color-bg: #0b0d10;
+  --color-surface: #15181d;
+  --color-text: #e7e9ec;
+  --color-muted: #8b93a1;
+
+  --color-status-present: #22c55e;
+  --color-status-late: #f59e0b;
+  --color-status-absent: #ef4444;
+  --color-status-leave: #3b82f6;
+  --color-status-sick: #a78bfa;
+  --color-status-permit: #22d3ee;
+  --color-status-holiday: #94a3b8;
+  --color-status-off: #cbd5e1;
 }
 
 @layer base {
