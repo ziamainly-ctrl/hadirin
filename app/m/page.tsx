@@ -1,13 +1,28 @@
 import { CalendarOff } from 'lucide-react';
 import Card from '@/components/ui/Card';
 import EmptyState from '@/components/shared/EmptyState';
+import StatusBadge from '@/components/shared/StatusBadge';
 import { requireSession } from '@/lib/auth';
 import { getUserByIdInOrg } from '@/lib/queries/users';
 import { getOrganizationPlanContext } from '@/lib/queries/organizations';
 import { getShiftByIdInOrg } from '@/lib/queries/shifts';
 import { getLogByUserAndDate } from '@/lib/queries/attendance';
 import { computeWorkDate } from '@/lib/attendance-rules';
+import type { AttendanceStatus } from '@/lib/constants/statuses';
 import CheckInCard, { type PendingAction } from './check-in-card';
+
+// A request approval (LEAVE/SICK/PERMIT) or the close-day/holiday cron (ABSENT/HOLIDAY/OFF)
+// can create today's row with no check-in time at all and a status that isn't PRESENT/LATE —
+// there is nothing for the camera flow to do then, so the page shows this instead of ever
+// mounting CheckInCard (which would otherwise read "no check-in yet" as pending check-in).
+const NON_PUNCH_LABELS: Partial<Record<AttendanceStatus, string>> = {
+  ABSENT: 'Anda tercatat tidak hadir hari ini.',
+  LEAVE: 'Anda sedang cuti hari ini.',
+  SICK: 'Anda sedang sakit hari ini.',
+  PERMIT: 'Anda sedang izin hari ini.',
+  HOLIDAY: 'Hari ini adalah hari libur.',
+  OFF: 'Hari ini bukan hari kerja Anda.',
+};
 
 /** shifts.time_in/time_out come back as "HH:MM:SS" (or "HH:MM"); display is HH:MM only. */
 function formatScheduledTime(time: string): string {
@@ -53,6 +68,23 @@ export default async function TodayPage() {
   const shift = await getShiftByIdInOrg(orgId, context.shiftId);
   const workDate = computeWorkDate(new Date(), org.timezone, shift);
   const today = await getLogByUserAndDate(orgId, userId, workDate);
+
+  const nonPunchLabel = today && !today.checkInAt ? NON_PUNCH_LABELS[today.status] : undefined;
+  if (today && nonPunchLabel) {
+    return (
+      <div className="flex flex-col gap-4">
+        {header}
+        <Card shadow>
+          <Card.Body>
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm text-text">{nonPunchLabel}</p>
+              <StatusBadge status={today.status} />
+            </div>
+          </Card.Body>
+        </Card>
+      </div>
+    );
+  }
 
   const pendingAction: PendingAction = !today?.checkInAt ? 'check-in' : !today.checkOutAt ? 'check-out' : 'done';
 
