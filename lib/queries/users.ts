@@ -230,6 +230,7 @@ export interface UpdateUserInput {
   role?: UserRole;
   position?: string | null;
   status?: UserStatus;
+  joinedAt?: string | null;
 }
 
 const UPDATABLE_COLUMNS: Record<keyof UpdateUserInput, string> = {
@@ -243,6 +244,7 @@ const UPDATABLE_COLUMNS: Record<keyof UpdateUserInput, string> = {
   role: 'role',
   position: 'position',
   status: 'status',
+  joinedAt: 'joined_at',
 };
 
 export async function updateUserInOrg(orgId: number, userId: number, input: UpdateUserInput): Promise<UserSummary> {
