@@ -41,7 +41,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
         aria-invalid={error ? true : undefined}
         aria-describedby={describedById}
         className={`h-10 rounded-input border bg-surface px-3 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-50 ${
-          error ? 'border-red-500' : 'border-black/10'
+          error ? 'border-red-500' : 'border-black/10 dark:border-white/10'
         } ${className ?? ''}`}
         {...rest}
       >
@@ -54,7 +54,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
           : children}
       </select>
       {error ? (
-        <p id={`${selectId}-error`} className="text-sm text-red-600">
+        <p id={`${selectId}-error`} className="text-sm text-red-600 dark:text-red-400">
           {error}
         </p>
       ) : hint ? (

@@ -50,7 +50,13 @@ export default async function BranchesPage() {
                 <Table.Cell className="text-muted">{branch.address ?? '—'}</Table.Cell>
                 <Table.Cell className="text-muted">{branch.radiusM} m</Table.Cell>
                 <Table.Cell>
-                  <Badge className={branch.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-black/5 text-muted'}>
+                  <Badge
+                    className={
+                      branch.isActive
+                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+                        : 'bg-black/5 dark:bg-white/5 text-muted'
+                    }
+                  >
                     {branch.isActive ? 'Aktif' : 'Nonaktif'}
                   </Badge>
                 </Table.Cell>

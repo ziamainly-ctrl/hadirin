@@ -35,11 +35,11 @@ const INVOICE_STATUS_LABELS: Record<InvoiceStatus, string> = {
 // color chosen per status — components/shared/StatusBadge.tsx's --color-status-*
 // tokens (TRD.md §14) are reserved for attendance and don't cover billing states.
 const INVOICE_STATUS_CLASSES: Record<InvoiceStatus, string> = {
-  PENDING: 'bg-amber-100 text-amber-700',
-  PAID: 'bg-emerald-100 text-emerald-700',
-  EXPIRED: 'bg-black/5 text-muted',
-  FAILED: 'bg-red-100 text-red-700',
-  REFUNDED: 'bg-sky-100 text-sky-700',
+  PENDING: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+  PAID: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
+  EXPIRED: 'bg-black/5 dark:bg-white/5 text-muted',
+  FAILED: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
+  REFUNDED: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300',
 };
 
 function formatPeriod(periodStart: string, periodEnd: string): string {

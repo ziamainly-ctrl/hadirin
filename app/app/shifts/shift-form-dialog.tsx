@@ -234,13 +234,13 @@ export default function ShiftFormDialog({ shift }: ShiftFormDialogProps) {
                     type="checkbox"
                     checked={workDays.has(day.iso)}
                     onChange={() => toggleDay(day.iso)}
-                    className="h-4 w-4 rounded border-black/20 accent-primary"
+                    className="h-4 w-4 rounded border-black/20 dark:border-white/20 accent-primary"
                   />
                   {day.label}
                 </label>
               ))}
             </div>
-            {workDaysError ? <p className="text-sm text-red-600">{workDaysError}</p> : null}
+            {workDaysError ? <p className="text-sm text-red-600 dark:text-red-400">{workDaysError}</p> : null}
           </fieldset>
 
           <label className="flex items-start gap-2 text-sm text-text">
@@ -248,7 +248,7 @@ export default function ShiftFormDialog({ shift }: ShiftFormDialogProps) {
               type="checkbox"
               checked={form.isCrossDay}
               onChange={(e) => setForm((f) => ({ ...f, isCrossDay: e.target.checked }))}
-              className="mt-0.5 h-4 w-4 rounded border-black/20 accent-primary"
+              className="mt-0.5 h-4 w-4 rounded border-black/20 dark:border-white/20 accent-primary"
             />
             <span>
               Shift lintas hari

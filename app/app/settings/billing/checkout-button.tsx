@@ -76,7 +76,7 @@ export default function CheckoutButton({ methods }: CheckoutButtonProps) {
         {methods.map((method) => (
           <label
             key={method.id}
-            className="flex items-center justify-between gap-3 rounded-input border border-black/10 px-3 py-2 text-sm text-text"
+            className="flex items-center justify-between gap-3 rounded-input border border-black/10 dark:border-white/10 px-3 py-2 text-sm text-text"
           >
             <span className="flex items-center gap-2">
               <input

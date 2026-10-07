@@ -57,7 +57,7 @@ export default async function RequestsPage({ searchParams }: RequestsPageProps) 
         <p className="text-sm text-muted">Tinjau pengajuan koreksi, cuti, sakit, dan izin dari tim Anda.</p>
       </div>
 
-      <nav className="flex gap-4 border-b border-black/10" aria-label="Filter status pengajuan">
+      <nav className="flex gap-4 border-b border-black/10 dark:border-white/10" aria-label="Filter status pengajuan">
         {TABS.map((tab) => (
           <Link
             key={tab.value}

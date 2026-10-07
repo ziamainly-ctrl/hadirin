@@ -15,7 +15,7 @@ const ROLE_LABELS: Record<UserRole, string> = {
 
 function ProfileRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-3 border-b border-black/5 py-2.5 last:border-0">
+    <div className="flex items-center justify-between gap-3 border-b border-black/5 py-2.5 last:border-0 dark:border-white/5">
       <span className="text-sm text-muted">{label}</span>
       <span className="text-right text-sm font-medium text-text">{value}</span>
     </div>

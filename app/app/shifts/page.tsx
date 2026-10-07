@@ -82,7 +82,13 @@ export default async function ShiftsPage() {
                 <Table.Cell className="text-muted">{formatWorkDays(shift.workDays)}</Table.Cell>
                 <Table.Cell className="text-muted">{shift.lateToleranceMinutes} menit</Table.Cell>
                 <Table.Cell>
-                  <Badge className={shift.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-black/5 text-muted'}>
+                  <Badge
+                    className={
+                      shift.isActive
+                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+                        : 'bg-black/5 dark:bg-white/5 text-muted'
+                    }
+                  >
                     {shift.isActive ? 'Aktif' : 'Nonaktif'}
                   </Badge>
                 </Table.Cell>

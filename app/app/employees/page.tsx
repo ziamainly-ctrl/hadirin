@@ -28,8 +28,8 @@ const USER_STATUS_LABELS: Record<UserStatus, string> = {
 };
 
 const USER_STATUS_BADGE_CLASSES: Record<UserStatus, string> = {
-  ACTIVE: 'bg-emerald-100 text-emerald-700',
-  INACTIVE: 'bg-black/5 text-muted',
+  ACTIVE: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
+  INACTIVE: 'bg-black/5 dark:bg-white/5 text-muted',
 };
 
 function lookupName(map: Map<number, string>, id: number | null): string {

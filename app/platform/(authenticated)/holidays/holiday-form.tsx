@@ -81,7 +81,7 @@ export default function HolidayForm() {
             type="checkbox"
             checked={isCollectiveLeave}
             onChange={(e) => setIsCollectiveLeave(e.target.checked)}
-            className="h-4 w-4 rounded border-black/20 accent-primary"
+            className="h-4 w-4 rounded border-black/20 dark:border-white/20 accent-primary"
           />
           Cuti bersama
         </label>
@@ -131,7 +131,7 @@ export function DeleteHolidayButton({ holidayId, holidayName }: DeleteHolidayBut
       size="sm"
       onClick={handleDelete}
       isLoading={isDeleting}
-      className="gap-1.5 text-red-600"
+      className="gap-1.5 text-red-600 dark:text-red-400"
     >
       <Trash2 className="h-4 w-4" aria-hidden="true" />
       Hapus

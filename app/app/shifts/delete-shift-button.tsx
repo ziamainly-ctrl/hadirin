@@ -49,7 +49,7 @@ export default function DeleteShiftButton({ shiftId, shiftName }: DeleteShiftBut
       size="sm"
       onClick={handleDelete}
       isLoading={isDeleting}
-      className="gap-1.5 text-red-600"
+      className="gap-1.5 text-red-600 dark:text-red-400"
     >
       <Trash2 className="h-4 w-4" aria-hidden="true" />
       Hapus

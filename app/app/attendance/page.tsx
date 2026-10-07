@@ -187,7 +187,7 @@ export default async function AttendancePage({ searchParams }: AttendancePagePro
                     <Table.Cell>
                       {isOutside ? (
                         <TriangleAlert
-                          className="h-4 w-4 text-amber-600"
+                          className="h-4 w-4 text-amber-600 dark:text-amber-400"
                           aria-label="Di luar radius cabang"
                         />
                       ) : null}

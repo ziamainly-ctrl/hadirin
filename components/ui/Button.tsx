@@ -12,8 +12,8 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   primary: 'bg-primary text-primary-fg hover:opacity-90',
-  secondary: 'bg-surface text-text border border-black/10 hover:bg-bg',
-  ghost: 'bg-transparent text-text hover:bg-black/5',
+  secondary: 'bg-surface text-text border border-black/10 dark:border-white/10 hover:bg-bg',
+  ghost: 'bg-transparent text-text hover:bg-black/5 dark:hover:bg-white/5',
   // No dedicated "danger" design token exists (TRD.md §14 reserves the
   // --color-status-* tokens for StatusBadge only), so this uses Tailwind's
   // own default red scale rather than a hardcoded hex value.

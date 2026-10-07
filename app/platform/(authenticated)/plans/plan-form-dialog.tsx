@@ -222,7 +222,7 @@ export default function PlanFormDialog({ plan, nextSortOrder = 0 }: PlanFormDial
                   onChange={(e) =>
                     setForm((f) => ({ ...f, features: { ...f.features, [key]: e.target.checked } }))
                   }
-                  className="h-4 w-4 rounded border-black/20 accent-primary"
+                  className="h-4 w-4 rounded border-black/20 dark:border-white/20 accent-primary"
                 />
                 {FEATURE_LABELS[key]}
               </label>
@@ -234,7 +234,7 @@ export default function PlanFormDialog({ plan, nextSortOrder = 0 }: PlanFormDial
               type="checkbox"
               checked={form.isActive}
               onChange={(e) => setForm((f) => ({ ...f, isActive: e.target.checked }))}
-              className="h-4 w-4 rounded border-black/20 accent-primary"
+              className="h-4 w-4 rounded border-black/20 dark:border-white/20 accent-primary"
             />
             Aktif
           </label>
@@ -284,7 +284,7 @@ function SortablePlanRow({ plan }: { plan: Plan }) {
       <Table.Cell>{plan.maxEmployees}</Table.Cell>
       <Table.Cell>{plan.maxBranches}</Table.Cell>
       <Table.Cell>
-        <Badge className={plan.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-black/5 text-muted'}>
+        <Badge className={plan.isActive ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-black/5 dark:bg-white/5 text-muted'}>
           {plan.isActive ? 'Aktif' : 'Nonaktif'}
         </Badge>
       </Table.Cell>

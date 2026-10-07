@@ -93,7 +93,7 @@ export default function OrganizationForm({ initialValues }: OrganizationFormProp
           type="checkbox"
           checked={values.selfieRequired}
           onChange={(e) => setValues((v) => ({ ...v, selfieRequired: e.target.checked }))}
-          className="h-4 w-4 rounded border-black/20 accent-primary"
+          className="h-4 w-4 rounded border-black/20 dark:border-white/20 accent-primary"
         />
         Wajibkan selfie saat check-in/out
       </label>

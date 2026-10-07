@@ -174,10 +174,10 @@ export default function EmployeeFormDialog({ branches, shifts, existingUser }: E
       >
         {temporaryPassword ? (
           <div className="flex flex-col gap-4">
-            <div className="rounded-input border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+            <div className="rounded-input border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 p-3 text-sm text-amber-800 dark:text-amber-300">
               <p className="font-medium">Kata sandi sementara:</p>
               <p className="mt-1 select-all break-all font-mono text-base">{temporaryPassword}</p>
-              <p className="mt-2 text-amber-700">
+              <p className="mt-2 text-amber-700 dark:text-amber-300">
                 Catat kata sandi ini sekarang. Kata sandi ini tidak akan ditampilkan lagi setelah dialog ini ditutup.
               </p>
             </div>

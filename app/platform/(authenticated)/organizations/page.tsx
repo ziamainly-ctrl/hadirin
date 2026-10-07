@@ -14,10 +14,10 @@ const STATUS_LABELS: Record<OrgStatus, string> = {
 };
 
 const STATUS_BADGE_CLASSES: Record<OrgStatus, string> = {
-  TRIAL: 'bg-sky-100 text-sky-700',
-  ACTIVE: 'bg-emerald-100 text-emerald-700',
-  PAST_DUE: 'bg-amber-100 text-amber-700',
-  SUSPENDED: 'bg-red-100 text-red-700',
+  TRIAL: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300',
+  ACTIVE: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
+  PAST_DUE: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+  SUSPENDED: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
 };
 
 // Pure calendar display for a TIMESTAMPTZ column — day-level precision is enough here,

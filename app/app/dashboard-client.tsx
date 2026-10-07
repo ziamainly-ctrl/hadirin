@@ -234,13 +234,13 @@ function DashboardContent({ orgTimezone }: DashboardClientProps) {
 // it gets its own plain Badge instead of being forced through StatusBadge.
 function StatusCell({ status }: { status: AttendanceStatus | 'NOT_YET_IN' }) {
   if (status === 'NOT_YET_IN') {
-    return <Badge className="bg-black/5 text-muted">Belum Masuk</Badge>;
+    return <Badge className="bg-black/5 dark:bg-white/5 text-muted">Belum Masuk</Badge>;
   }
   return <StatusBadge status={status} />;
 }
 
 function OutsideFlag({ label }: { label: string }) {
-  return <TriangleAlert className="h-3.5 w-3.5 shrink-0 text-amber-600" role="img" aria-label={label} />;
+  return <TriangleAlert className="h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" role="img" aria-label={label} />;
 }
 
 function DashboardSkeleton() {

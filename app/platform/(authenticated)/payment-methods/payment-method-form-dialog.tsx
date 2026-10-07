@@ -250,7 +250,7 @@ export default function PaymentMethodFormDialog({ method, nextSortOrder = 0 }: P
               type="checkbox"
               checked={form.isActive}
               onChange={(e) => setForm((f) => ({ ...f, isActive: e.target.checked }))}
-              className="h-4 w-4 rounded border-black/20 accent-primary"
+              className="h-4 w-4 rounded border-black/20 dark:border-white/20 accent-primary"
             />
             Aktif
           </label>
@@ -297,7 +297,7 @@ function SortablePaymentMethodRow({ method }: { method: PaymentMethod }) {
       <Table.Cell className="text-muted">{TYPE_LABELS[method.type]}</Table.Cell>
       <Table.Cell>{formatFee(method.adminFeeFlat, method.adminFeePct)}</Table.Cell>
       <Table.Cell>
-        <Badge className={method.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-black/5 text-muted'}>
+        <Badge className={method.isActive ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-black/5 dark:bg-white/5 text-muted'}>
           {method.isActive ? 'Aktif' : 'Nonaktif'}
         </Badge>
       </Table.Cell>

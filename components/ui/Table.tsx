@@ -8,7 +8,7 @@ export type TableProps = TableHTMLAttributes<HTMLTableElement>;
  */
 function Table({ className, children, ...rest }: TableProps) {
   return (
-    <div className="w-full overflow-x-auto rounded-card border border-black/10 bg-surface">
+    <div className="w-full overflow-x-auto rounded-card border border-black/10 dark:border-white/10 bg-surface">
       <table className={`w-full border-collapse text-left text-sm ${className ?? ''}`} {...rest}>
         {children}
       </table>
@@ -26,7 +26,7 @@ function TableHead({ className, children, ...rest }: HTMLAttributes<HTMLTableSec
 
 function TableBody({ className, children, ...rest }: HTMLAttributes<HTMLTableSectionElement>) {
   return (
-    <tbody className={`divide-y divide-black/5 ${className ?? ''}`} {...rest}>
+    <tbody className={`divide-y divide-black/5 dark:divide-white/5 ${className ?? ''}`} {...rest}>
       {children}
     </tbody>
   );

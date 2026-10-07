@@ -196,7 +196,7 @@ export default function CheckInCard({ log, pendingAction, orgTimezone }: CheckIn
 
           if (geoStatus === 'denied') {
             return (
-              <div role="alert" className="flex flex-col items-center gap-2 text-center text-sm text-red-700">
+              <div role="alert" className="flex flex-col items-center gap-2 text-center text-sm text-red-700 dark:text-red-300">
                 <ShieldAlert className="h-8 w-8" aria-hidden="true" />
                 <p>
                   Izin lokasi ditolak. Aktifkan izin lokasi untuk situs ini di pengaturan browser atau perangkat Anda,
@@ -208,7 +208,7 @@ export default function CheckInCard({ log, pendingAction, orgTimezone }: CheckIn
 
           if (geoStatus === 'error') {
             return (
-              <div role="alert" className="flex flex-col items-center gap-2 text-center text-sm text-red-700">
+              <div role="alert" className="flex flex-col items-center gap-2 text-center text-sm text-red-700 dark:text-red-300">
                 <MapPinOff className="h-8 w-8" aria-hidden="true" />
                 <p>Tidak dapat mendeteksi lokasi Anda. Pastikan GPS aktif, lalu coba lagi.</p>
               </div>
@@ -218,8 +218,8 @@ export default function CheckInCard({ log, pendingAction, orgTimezone }: CheckIn
           // geoStatus is 'ok' or 'weak-signal' below — both are allowed to proceed.
           if (step.kind === 'business-error') {
             return (
-              <div role="alert" className="w-full space-y-3 rounded-input border border-red-200 bg-red-50 p-3 text-center">
-                <div className="flex items-center justify-center gap-2 text-sm text-red-800">
+              <div role="alert" className="w-full space-y-3 rounded-input border border-red-200 bg-red-50 p-3 text-center dark:border-red-900 dark:bg-red-950/40">
+                <div className="flex items-center justify-center gap-2 text-sm text-red-800 dark:text-red-300">
                   <XCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
                   {step.message}
                 </div>
@@ -233,7 +233,7 @@ export default function CheckInCard({ log, pendingAction, orgTimezone }: CheckIn
           if (step.kind === 'result') {
             const isLate = step.status === 'LATE';
             return (
-              <p role="status" className={`text-base font-semibold ${isLate ? 'text-amber-700' : 'text-emerald-700'}`}>
+              <p role="status" className={`text-base font-semibold ${isLate ? 'text-amber-700 dark:text-amber-300' : 'text-emerald-700 dark:text-emerald-300'}`}>
                 {isLate ? `Terlambat ${step.lateMinutes} menit` : 'Tepat waktu'}
               </p>
             );
@@ -255,7 +255,7 @@ export default function CheckInCard({ log, pendingAction, orgTimezone }: CheckIn
               {geoStatus === 'weak-signal' ? (
                 <div
                   role="status"
-                  className="flex items-center gap-2 rounded-input border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800"
+                  className="flex items-center gap-2 rounded-input border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300"
                 >
                   <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
                   Sinyal GPS terlalu lemah. Pindah ke tempat yang lebih terbuka agar lokasi lebih akurat.

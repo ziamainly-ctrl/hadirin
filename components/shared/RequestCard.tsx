@@ -36,10 +36,10 @@ const STATUS_LABELS: Record<RequestStatus, string> = {
 };
 
 const STATUS_BADGE_CLASSES: Record<RequestStatus, string> = {
-  PENDING: 'bg-amber-100 text-amber-700',
-  APPROVED: 'bg-emerald-100 text-emerald-700',
-  REJECTED: 'bg-red-100 text-red-700',
-  CANCELLED: 'bg-black/5 text-muted',
+  PENDING: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+  APPROVED: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
+  REJECTED: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
+  CANCELLED: 'bg-black/5 text-muted dark:bg-white/5',
 };
 
 // timeZone: 'UTC' keeps a pure calendar date (no time component) from
