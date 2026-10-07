@@ -184,7 +184,7 @@ All responses are JSON `{ data }` or `{ error: { code, message, fields? } }`. St
 | `/api/reports/monthly` | GET | OWNER, ADMIN | `?month=2026-10&branchId=` |
 | `/api/reports/monthly/export` | GET | OWNER, ADMIN | `?format=xlsx|pdf`; PDF requires `features.export_pdf` |
 | `/api/holidays`, `/[id]` | GET, POST, DELETE | write: OWNER, ADMIN (org rows only) | |
-| `/api/notification-templates`, `/[id]` | GET, PATCH | OWNER, ADMIN | Needs `features.template_override` |
+| `/api/notification-templates` | GET, PATCH | OWNER, ADMIN | Needs `features.template_override`. PATCH is an upsert keyed by `(eventTrigger, channel)` (`uq_notif_tpl_scope`), not a numeric id — no `/[id]` route |
 | `/api/uploads` | POST | any | Receives the file body directly, `put()`s it to Blob server-side with `access:'private'` (§15) |
 | `/api/files/[...path]` | GET | per file owner rules | Streams private blobs (selfies, attachments) after a role + tenant check |
 | `/api/billing/invoices` | GET | OWNER | |

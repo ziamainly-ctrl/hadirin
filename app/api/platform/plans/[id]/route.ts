@@ -3,7 +3,6 @@ import { requirePlatformSession } from '@/lib/auth';
 import { upsertPlanSchema } from '@/lib/validators/plans';
 import { idParam } from '@/lib/validators/common';
 import { updatePlan } from '@/lib/queries/plans';
-import { parsePlanFeatures } from '@/lib/constants/plan-features';
 import { bust, cacheKeys } from '@/lib/redis';
 
 // PATCH /api/platform/plans/[id] — the UI submits the full plan object; same cache-bust
@@ -14,14 +13,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const id = idParam.parse((await params).id);
     const body = upsertPlanSchema.parse(await request.json());
 
-    // planFeaturesSchema is `.partial()` (lib/validators/plans.ts) — if the UI submits
-    // `features`, coerce it to a complete PlanFeatures the same way reads do
-    // (parsePlanFeatures defaults an absent key to `false`). Omitted entirely,
-    // `undefined` passes through so updatePlan leaves the existing features untouched.
-    const result = await updatePlan(id, {
-      ...body,
-      features: body.features ? parsePlanFeatures(body.features) : undefined,
-    });
+    // updatePlan(id, input) merges a provided `features` onto the existing row's value
+    // at the SQL level (jsonb `||`), atomically — passing the partial object straight
+    // through is correct; "completing" it here first would turn the merge into a full
+    // replacement (every omitted flag would arrive as an explicit `false`).
+    const result = await updatePlan(id, body);
     await bust(cacheKeys.plansPublic());
 
     return apiOk({ plan: result });
