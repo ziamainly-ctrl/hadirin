@@ -11,7 +11,7 @@ export default function Radio({ className, ...rest }: RadioProps) {
   return (
     <input
       type="radio"
-      className={`h-4 w-4 shrink-0 cursor-pointer appearance-none rounded-full border border-field bg-transparent shadow-xs transition-[border-width,border-color] checked:border-[5px] checked:border-primary focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed dark:bg-input/30 dark:checked:bg-surface ${className ?? ''}`}
+      className={`h-4 w-4 shrink-0 cursor-pointer appearance-none rounded-full border border-field bg-transparent shadow-xs transition-[border-width,border-color,box-shadow,transform] duration-150 ease-[cubic-bezier(0.34,1.4,0.64,1)] active:scale-90 checked:border-[5px] checked:border-primary focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed dark:bg-input/30 dark:checked:bg-surface ${className ?? ''}`}
       {...rest}
     />
   );

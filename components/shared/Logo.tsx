@@ -19,8 +19,8 @@ export interface LogoProps {
  */
 export default function Logo({ className, iconOnly = false, suffix }: LogoProps) {
   return (
-    <span className={`inline-flex items-center gap-2 ${className ?? ''}`}>
-      <Mascot className="h-[2em] w-[2em] shrink-0" />
+    <span className={`logo inline-flex items-center gap-2 ${className ?? ''}`}>
+      <Mascot animated className="h-[2em] w-[2em] shrink-0" />
       {!iconOnly ? (
         <span className="flex flex-col leading-none">
           <span className="font-bold tracking-tight text-text">Hadirin</span>

@@ -119,7 +119,7 @@ export async function getRequestByIdInOrg(orgId: number, id: number): Promise<At
     orgId,
   ]);
   const row = rows[0] as AttendanceRequestRow | undefined;
-  if (!row) throw new NotFoundError('Request not found');
+  if (!row) throw new NotFoundError('Pengajuan tidak ditemukan');
   return row;
 }
 
@@ -144,7 +144,7 @@ export async function getRequestWithRequesterInOrg(orgId: number, id: number): P
     [id, orgId],
   );
   const row = rows[0] as RequestWithRequester | undefined;
-  if (!row) throw new NotFoundError('Request not found');
+  if (!row) throw new NotFoundError('Pengajuan tidak ditemukan');
   return row;
 }
 
@@ -176,6 +176,6 @@ export async function cancelRequestInOrg(orgId: number, userId: number, id: numb
     [id, orgId, userId],
   );
   const row = rows[0] as AttendanceRequestRow | undefined;
-  if (!row) throw new NotFoundError('Request not found or not cancellable');
+  if (!row) throw new NotFoundError('Pengajuan tidak ditemukan atau tidak dapat dibatalkan');
   return row;
 }

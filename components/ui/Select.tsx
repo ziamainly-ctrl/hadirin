@@ -55,7 +55,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
           : children}
       </select>
       {error ? (
-        <p id={`${selectId}-error`} className="text-sm text-destructive">
+        <p id={`${selectId}-error`} className="animate-rise-sm text-sm text-destructive">
           {error}
         </p>
       ) : hint ? (

@@ -37,7 +37,7 @@ export default async function EmployeeLayout({ children }: { children: React.Rea
           the window and the tab bar never move. */}
       <div className="mx-auto flex min-h-dvh max-w-md flex-col md:border-x md:border-border lg:h-dvh lg:min-h-0 lg:overflow-hidden [@media(min-width:1024px)_and_(max-height:860px)]:max-w-2xl">
         <header className="sticky top-0 z-20 shrink-0 border-b border-border bg-surface pt-[env(safe-area-inset-top)]">
-          <div className="flex h-14 items-center justify-between px-4 [@media(min-width:1024px)_and_(max-height:860px)]:h-12">
+          <div className="fit-slim-bar flex h-14 items-center justify-between px-4 [@media(min-width:1024px)_and_(max-height:860px)]:h-12">
             <Logo className="text-base" />
             <ThemeToggle />
           </div>
@@ -50,7 +50,7 @@ export default async function EmployeeLayout({ children }: { children: React.Rea
             19rem when the viewfinder has its own column), and how small it may get (a phone
             scrolls, so it keeps a usable preview; the desktop shell must not, so it may shrink
             further). */}
-        <main className="flex min-w-0 flex-1 flex-col overflow-x-hidden px-4 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-5 [--today-chrome-wide:19rem] [--today-chrome:33rem] lg:min-h-0 lg:overflow-y-auto lg:pb-4 lg:pt-4 lg:[--vf-min:8rem] [@media(min-width:1024px)_and_(max-height:860px)]:py-3">
+        <main className="fit-slim-main flex min-w-0 flex-1 flex-col overflow-x-hidden px-4 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-5 [--today-chrome-wide:19rem] [--today-chrome:33rem] lg:min-h-0 lg:overflow-y-auto lg:pb-4 lg:pt-4 lg:[--vf-min:8rem] [@media(min-width:1024px)_and_(max-height:860px)]:py-3">
           {children}
         </main>
         <BottomNav />

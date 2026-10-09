@@ -31,6 +31,10 @@ function hrefForPage(
  *
  * Server Component: list pages in this app read `?page=` via searchParams, so
  * pagination is plain <Link> navigation rather than an onClick handler.
+ *
+ * This is the OUTER pager (a chunk of up to ~100 rows from the server). Inside a chunk the rows are
+ * split into screen-sized pages by the client fit pager, so on desktop nothing scrolls. It renders
+ * nothing while the data fits one chunk.
  */
 export default function Pagination({ page, pageSize, total, basePath, searchParams, className }: PaginationProps) {
   const totalPages = Math.max(1, Math.ceil(total / Math.max(1, pageSize)));
@@ -39,6 +43,11 @@ export default function Pagination({ page, pageSize, total, basePath, searchPara
   const hasNext = current < totalPages;
   const from = total === 0 ? 0 : (current - 1) * pageSize + 1;
   const to = Math.min(current * pageSize, total);
+
+  // One chunk of data: the list's own fit pager (components/shared/FitPager) already shows
+  // "13-24 dari 36 data" and pages through it, so a second bar saying "Halaman 1 dari 1" would
+  // only cost desktop height. This server pager appears only when the data outgrows one chunk.
+  if (totalPages <= 1) return null;
 
   return (
     <nav

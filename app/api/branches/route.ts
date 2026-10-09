@@ -3,6 +3,7 @@ import { apiOk, apiCreated, apiError, handleApiError } from '@/lib/api-response'
 import { requireActiveSession } from '@/lib/auth';
 import { upsertBranchSchema } from '@/lib/validators/branches';
 import { bust, cacheKeys } from '@/lib/redis';
+import { bustTodayDashboard } from '@/lib/dashboard-cache';
 import { listBranches, insertBranch, countActiveBranches } from '@/lib/queries/branches';
 import { getOrganizationPlanContext } from '@/lib/queries/organizations';
 
@@ -32,11 +33,11 @@ export async function POST(request: Request) {
     const body = upsertBranchSchema.parse(await request.json());
 
     const plan = await getOrganizationPlanContext(orgId);
-    if (!plan) return apiError(500, 'INTERNAL_ERROR', 'Organization not found.');
+    if (!plan) return apiError(500, 'INTERNAL_ERROR', 'Organisasi tidak ditemukan.');
 
     const activeBranches = await countActiveBranches(orgId);
     if (activeBranches >= plan.maxBranches) {
-      return apiError(422, 'SEAT_LIMIT_REACHED', `This plan allows up to ${plan.maxBranches} branches.`);
+      return apiError(422, 'SEAT_LIMIT_REACHED', `Paket Anda mengizinkan maksimal ${plan.maxBranches} cabang. Naikkan paket untuk menambah.`);
     }
 
     const branch = await insertBranch(orgId, {
@@ -48,6 +49,8 @@ export async function POST(request: Request) {
     });
 
     await bust(cacheKeys.orgMaster(orgId));
+    // Branch and shift names are on the live dashboard rows (TRD.md §10).
+    await bustTodayDashboard(orgId);
 
     return apiCreated({ branch });
   } catch (error) {

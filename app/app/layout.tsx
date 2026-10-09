@@ -2,35 +2,23 @@ import { redirect } from 'next/navigation';
 import { requireSession } from '@/lib/auth';
 import { ToastProvider } from '@/components/ui/Toast';
 import Sidebar from '@/components/shared/Sidebar';
-import type { SidebarItem } from '@/components/shared/Sidebar';
-import { ORG_WIDE_ROLES } from '@/lib/constants/roles';
-
-const OWNER_ADMIN_ITEMS: SidebarItem[] = [
-  { href: '/app', label: 'Dashboard', icon: 'LayoutDashboard' },
-  { href: '/app/requests', label: 'Persetujuan', icon: 'CalendarCheck' },
-  { href: '/app/employees', label: 'Karyawan', icon: 'Users' },
-  { href: '/app/branches', label: 'Cabang', icon: 'MapPin' },
-  { href: '/app/shifts', label: 'Shift', icon: 'Clock' },
-  { href: '/app/attendance', label: 'Absensi', icon: 'ListChecks' },
-  { href: '/app/reports', label: 'Laporan', icon: 'FileBarChart' },
-  { href: '/app/settings', label: 'Pengaturan', icon: 'Settings' },
-];
-
-const MANAGER_ITEMS: SidebarItem[] = [
-  { href: '/app', label: 'Dashboard', icon: 'LayoutDashboard' },
-  { href: '/app/requests', label: 'Persetujuan', icon: 'CalendarCheck' },
-  { href: '/app/attendance', label: 'Absensi', icon: 'ListChecks' },
-];
+import { navItemsForRole } from '@/lib/constants/admin-nav';
 
 // Server Component: reads the session directly (TRD.md §5), no self-fetch. Uses
 // requireSession() (not requireActiveSession()) and redirects explicitly instead of
 // throwing, so a stale /app tab sends a must-change-password user to the right place
 // instead of an error page (proxy.ts only checked that a session cookie exists at all).
+//
+// Who sees what: OWNER/ADMIN get the 19-item org-wide menu, MANAGER the 12-item team subset
+// (lib/constants/admin-nav.ts). An EMPLOYEE has no business in the admin shell at all (they live
+// in /m and /check-in), so they are sent there instead of being shown a manager menu whose pages
+// would only answer 403.
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const { role, context } = await requireSession();
   if (context.mustChangePassword) redirect('/change-password');
+  if (role === 'EMPLOYEE') redirect('/m');
 
-  const items = ORG_WIDE_ROLES.includes(role) ? OWNER_ADMIN_ITEMS : MANAGER_ITEMS;
+  const items = navItemsForRole(role);
 
   return (
     <ToastProvider>
@@ -39,7 +27,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         {/* min-w-0 lets wide tables scroll inside their own wrapper instead of widening the
             page; the inner max-w keeps tiles and tables from stretching edge to edge on a
             2000px+ monitor; the column is centered in the space beside the sidebar. */}
-        <main className="min-w-0 flex-1 overflow-x-hidden p-4 pt-16 lg:h-dvh lg:p-5 lg:pt-5">
+        <main className="fit-pad min-w-0 flex-1 overflow-x-hidden p-4 pt-16 lg:h-dvh lg:p-5 lg:pt-5">
           {/* lg:h-full + overflow-y-auto: on desktop the shell is exactly one viewport tall and the page
               never scrolls; pages built on components/shared/Page keep their header fixed and scroll
               only their own body. This wrapper is the safety net for any page that is still taller.

@@ -1,8 +1,10 @@
 import { apiOk, apiCreated, apiError, handleApiError } from '@/lib/api-response';
-import { requireActiveSession, hashPassword, generateTemporaryPassword } from '@/lib/auth';
+import { AuthError, requireActiveSession, hashPassword, generateTemporaryPassword } from '@/lib/auth';
 import { createUserSchema, listUsersQuerySchema } from '@/lib/validators/users';
-import { listUsers, insertUser, countActiveSeats } from '@/lib/queries/users';
+import { listUsers, insertUser, countActiveSeats, assertUserRefsInOrg } from '@/lib/queries/users';
 import { getOrganizationPlanContext } from '@/lib/queries/organizations';
+import { userChangeViolation } from '@/lib/user-guards';
+import { bustTodayDashboard } from '@/lib/dashboard-cache';
 
 // GET /api/users — TRD.md §6: OWNER/ADMIN list the whole org; MANAGER gets read-only
 // access to their own team only ("MANAGER read own team"), scoped via listUsers's
@@ -27,13 +29,19 @@ export async function GET(request: Request) {
 // sets must_change_password" (insertUser already defaults that column to TRUE).
 export async function POST(request: Request) {
   try {
-    const { orgId } = await requireActiveSession(['OWNER', 'ADMIN']);
+    const { orgId, userId, role } = await requireActiveSession(['OWNER', 'ADMIN']);
     const body = createUserSchema.parse(await request.json());
 
+    // Only an OWNER creates an OWNER or an ADMIN (lib/user-guards.ts); the branch, shift and manager
+    // must be this organisation's own (AGENTS.md domain rules #3 and #7).
+    const violation = userChangeViolation({ actorRole: role, actorId: userId, target: null, role: body.role, activeOwners: 0 });
+    if (violation) throw new AuthError('FORBIDDEN', violation.message);
+    await assertUserRefsInOrg(orgId, body);
+
     const [plan, activeSeats] = await Promise.all([getOrganizationPlanContext(orgId), countActiveSeats(orgId)]);
-    if (!plan) return apiError(500, 'INTERNAL_ERROR', 'Organization not found.');
+    if (!plan) return apiError(500, 'INTERNAL_ERROR', 'Organisasi tidak ditemukan.');
     if (activeSeats >= plan.maxEmployees) {
-      return apiError(422, 'SEAT_LIMIT_REACHED', `This plan allows up to ${plan.maxEmployees} employees.`);
+      return apiError(422, 'SEAT_LIMIT_REACHED', `Paket Anda mengizinkan maksimal ${plan.maxEmployees} karyawan. Naikkan paket untuk menambah.`);
     }
 
     const tempPassword = generateTemporaryPassword();
@@ -52,6 +60,9 @@ export async function POST(request: Request) {
       joinedAt: body.joinedAt ?? null,
       passwordHash,
     });
+
+    // A newly scheduled person joins today's dashboard rows (TRD.md §10).
+    if (created.shiftId !== null) await bustTodayDashboard(orgId);
 
     // The plaintext password appears in this one response and nowhere else (TRD.md §6
     // "returns it once") — never logged, never persisted beyond passwordHash.

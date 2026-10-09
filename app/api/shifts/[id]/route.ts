@@ -3,6 +3,7 @@ import { requireActiveSession } from '@/lib/auth';
 import { upsertShiftSchema } from '@/lib/validators/shifts';
 import { idParam } from '@/lib/validators/common';
 import { bust, cacheKeys } from '@/lib/redis';
+import { bustTodayDashboard } from '@/lib/dashboard-cache';
 import { getShiftByIdInOrg, updateShiftInOrg, deactivateShiftInOrg } from '@/lib/queries/shifts';
 
 // GET /api/shifts/[id] — any active role may read (TRD.md §6).
@@ -27,6 +28,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
     const shift = await updateShiftInOrg(orgId, id, body);
     await bust(cacheKeys.orgMaster(orgId));
+    // Branch and shift names are on the live dashboard rows (TRD.md §10).
+    await bustTodayDashboard(orgId);
 
     return apiOk({ shift });
   } catch (error) {
@@ -44,6 +47,8 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
 
     await deactivateShiftInOrg(orgId, id);
     await bust(cacheKeys.orgMaster(orgId));
+    // Branch and shift names are on the live dashboard rows (TRD.md §10).
+    await bustTodayDashboard(orgId);
 
     return apiOk(null);
   } catch (error) {

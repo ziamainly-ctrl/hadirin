@@ -10,6 +10,10 @@ export interface MascotProps {
   framing?: MascotFraming;
   /** Accessible name. Omit when the mark sits next to the "Hadirin" wordmark (decorative). */
   title?: string;
+  /** Idle blink every 6 seconds and a small tilt when the surrounding link or button is hovered
+   * (CSS only: `.mascot-eye` and `.mascot-svg` in app/globals.css, both off under reduced motion).
+   * For the logo lockup; the larger illustrations stay still. */
+  animated?: boolean;
 }
 
 /**
@@ -19,7 +23,7 @@ export interface MascotProps {
  * hidden (display:none) parent — the collapsed sidebar, the mobile drawer — can lose
  * gradients it shares by id with a visible copy.
  */
-export default function Mascot({ className, framing = 'tight', title }: MascotProps) {
+export default function Mascot({ className, framing = 'tight', title, animated = false }: MascotProps) {
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
   return (
     <svg
@@ -28,8 +32,8 @@ export default function Mascot({ className, framing = 'tight', title }: MascotPr
       role={title ? 'img' : undefined}
       aria-label={title}
       aria-hidden={title ? undefined : true}
-      className={className}
-      dangerouslySetInnerHTML={{ __html: mascotInner({ idPrefix: `m${uid}`, framing }) }}
+      className={animated ? `mascot-svg ${className ?? ''}` : className}
+      dangerouslySetInnerHTML={{ __html: mascotInner({ idPrefix: `m${uid}`, framing, animated }) }}
     />
   );
 }

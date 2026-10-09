@@ -30,7 +30,7 @@ export default async function MarketingLayout({ children }: { children: React.Re
         Lewati ke konten utama
       </a>
       <header className="sticky top-0 z-40 shrink-0 border-b border-border bg-surface/90 backdrop-blur-md lg:static">
-        <div className="mx-auto flex h-16 max-w-6xl items-center gap-6 px-4">
+        <div className="fit-slim-head mx-auto flex h-16 max-w-6xl items-center gap-6 px-4">
           <Link
             href="/"
             aria-label="Hadirin — beranda"
@@ -45,7 +45,7 @@ export default async function MarketingLayout({ children }: { children: React.Re
         {children}
       </main>
       <footer className="shrink-0 border-t border-border bg-surface/90 backdrop-blur-md">
-        <div className="mx-auto flex max-w-6xl flex-col items-center gap-2 px-4 py-3 text-xs text-muted sm:flex-row sm:justify-between">
+        <div className="fit-slim-foot mx-auto flex max-w-6xl flex-col items-center gap-2 px-4 py-3 text-xs text-muted sm:flex-row sm:justify-between">
           <p>
             © {new Date().getFullYear()} Hadirin<span className="hidden sm:inline">. Absensi GPS + selfie untuk UMKM Indonesia.</span>
           </p>

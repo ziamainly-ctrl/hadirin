@@ -16,6 +16,10 @@ export interface StatTileProps {
   /** PRD.md A1/US-03: "Clicking a count opens the filtered list". */
   onClick?: () => void;
   className?: string;
+  /** Drop the sub-line on a short desktop window (<= 760px of height, zero-scroll tiers, TRD.md §14).
+   * For a page whose tiles must fit under other content; every tile of the row should set it, so
+   * the numbers still sit on one baseline. */
+  hideSubOnShort?: boolean;
 }
 
 const TREND_CLASSES: Record<StatTileTrendDirection, string> = {
@@ -39,7 +43,7 @@ const TILE_CLASSES = 'flex min-w-0 flex-col rounded-card border border-border bg
  * window a tile is ~130px wide, and an icon next to the label left it no room for "Total
  * Karyawan" on one line.
  */
-export default function StatTile({ label, value, subLabel, trend, icon, onClick, className }: StatTileProps) {
+export default function StatTile({ label, value, subLabel, trend, icon, onClick, className, hideSubOnShort = false }: StatTileProps) {
   const content = (
     <>
       <span className="text-sm leading-5 font-medium text-muted">{label}</span>
@@ -50,7 +54,7 @@ export default function StatTile({ label, value, subLabel, trend, icon, onClick,
         {icon ? <span className="flex shrink-0 items-center text-muted">{icon}</span> : null}
       </div>
       {subLabel || trend ? (
-        <div className="mt-1 flex items-center gap-2 text-xs">
+        <div className={`mt-1 flex items-center gap-2 text-xs ${hideSubOnShort ? 'fit-hide-short' : ''}`}>
           {trend ? <span className={TREND_CLASSES[trend.direction ?? 'neutral']}>{trend.value}</span> : null}
           {subLabel ? <span className="text-muted">{subLabel}</span> : null}
         </div>

@@ -123,7 +123,7 @@ export async function getUserByIdInOrg(orgId: number, userId: number): Promise<U
     orgId,
   ]);
   const row = rows[0] as UserSummary | undefined;
-  if (!row) throw new NotFoundError('User not found');
+  if (!row) throw new NotFoundError('Pengguna tidak ditemukan');
   return row;
 }
 
@@ -149,6 +149,40 @@ export async function countActiveSeats(orgId: number): Promise<number> {
     orgId,
   ]);
   return (rows[0] as { n: number }).n;
+}
+
+/** ACTIVE owners of the organisation: the last one can never be demoted or deactivated (lib/user-guards.ts). */
+export async function countActiveOwners(orgId: number): Promise<number> {
+  const rows = await sql.query(
+    `SELECT count(*)::int as n FROM users WHERE org_id = $1 AND status = 'ACTIVE' AND role = 'OWNER'`,
+    [orgId],
+  );
+  return (rows[0] as { n: number }).n;
+}
+
+/**
+ * A branch, shift or manager id that arrives in a request body must belong to the caller's organisation
+ * (AGENTS.md domain rules #3 and #7). Without this an admin could attach another tenant's shift, branch or
+ * manager to a user. Throws NotFoundError (404) for the first one that is not in `orgId`.
+ */
+export async function assertUserRefsInOrg(
+  orgId: number,
+  refs: { branchId?: number | null; shiftId?: number | null; managerId?: number | null },
+): Promise<void> {
+  const branchId = refs.branchId ?? null;
+  const shiftId = refs.shiftId ?? null;
+  const managerId = refs.managerId ?? null;
+  if (branchId === null && shiftId === null && managerId === null) return;
+  const rows = await sql.query(
+    `SELECT ($2::bigint IS NULL OR EXISTS (SELECT 1 FROM branches WHERE id = $2 AND org_id = $1)) AS "branchOk",
+            ($3::bigint IS NULL OR EXISTS (SELECT 1 FROM shifts WHERE id = $3 AND org_id = $1)) AS "shiftOk",
+            ($4::bigint IS NULL OR EXISTS (SELECT 1 FROM users WHERE id = $4 AND org_id = $1)) AS "managerOk"`,
+    [orgId, branchId, shiftId, managerId],
+  );
+  const row = rows[0] as { branchOk: boolean; shiftOk: boolean; managerOk: boolean };
+  if (!row.branchOk) throw new NotFoundError('Cabang tidak ditemukan.');
+  if (!row.shiftOk) throw new NotFoundError('Shift tidak ditemukan.');
+  if (!row.managerOk) throw new NotFoundError('Atasan tidak ditemukan.');
 }
 
 export interface InsertUserInput {
@@ -265,7 +299,7 @@ export async function updateUserInOrg(orgId: number, userId: number, input: Upda
     params,
   );
   const row = rows[0] as UserSummary | undefined;
-  if (!row) throw new NotFoundError('User not found');
+  if (!row) throw new NotFoundError('Pengguna tidak ditemukan');
   return row;
 }
 
@@ -275,7 +309,7 @@ export async function deactivateUserInOrg(orgId: number, userId: number): Promis
     `UPDATE users SET status = 'INACTIVE', updated_at = now() WHERE id = $1 AND org_id = $2 RETURNING id`,
     [userId, orgId],
   );
-  if (rows.length === 0) throw new NotFoundError('User not found');
+  if (rows.length === 0) throw new NotFoundError('Pengguna tidak ditemukan');
 }
 
 export async function setTemporaryPasswordInOrg(orgId: number, userId: number, passwordHash: string): Promise<void> {
@@ -284,7 +318,7 @@ export async function setTemporaryPasswordInOrg(orgId: number, userId: number, p
       WHERE id = $2 AND org_id = $3 RETURNING id`,
     [passwordHash, userId, orgId],
   );
-  if (rows.length === 0) throw new NotFoundError('User not found');
+  if (rows.length === 0) throw new NotFoundError('Pengguna tidak ditemukan');
 }
 
 /** Self-service change-password's "verify current password" step. */

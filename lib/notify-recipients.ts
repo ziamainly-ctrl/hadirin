@@ -19,13 +19,17 @@ export interface NotifyFallbackInput {
   variables: Record<string, string>;
   relatedAttendanceLogId?: number | null;
   relatedRequestId?: number | null;
+  /** Never notify this user, even if they are the manager or an owner/admin: a late person is not told
+   * about their own lateness (the check-in route passes the person who just punched). */
+  excludeUserId?: number;
 }
 
 /** Fire-and-forget — call from inside `after()`, same as notify() itself. */
 export async function notifyManagerOrOrgAdmins(input: NotifyFallbackInput): Promise<void> {
-  const recipients = input.managerId
+  const candidates = input.managerId
     ? [await getUserByIdInOrg(input.orgId, input.managerId).catch(() => null)].filter((r) => r !== null)
     : await listActiveOwnersAndAdmins(input.orgId);
+  const recipients = candidates.filter((recipient) => recipient.id !== input.excludeUserId);
 
   await Promise.all(
     recipients.flatMap((recipient) => {

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
+import FitPager from '@/components/shared/FitPager';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import Textarea from '@/components/ui/Textarea';
@@ -158,9 +159,15 @@ export default function TemplateForm({ existingTemplates: unsortedTemplates }: T
         {existingTemplates.length > 0 ? (
           <>
             <p className="text-sm text-muted">Pilih salah satu untuk mengubahnya.</p>
-            {/* -m-1 + p-1: the list is its own scroll box on desktop, which would clip the
-                focus ring of the first/last/edge items. */}
-            <ul className="flex flex-col gap-2 lg:-m-1 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:p-1">
+            {/* Desktop: paginated to the height of the pane (FitPager); -m-1 + p-1 keep the focus ring of
+                an edge item from being clipped by the pager's own overflow box. */}
+            <FitPager
+              as="ul"
+              label="Template tersimpan"
+              noun="template"
+              className="flex flex-col gap-2 fit-gap lg:-m-1 lg:p-1"
+              frameClassName="lg:min-h-0 lg:flex-1"
+            >
               {existingTemplates.map((template) => {
                 const key = `${template.eventTrigger}:${template.channel}`;
                 const selected = key === selectedKey;
@@ -182,7 +189,7 @@ export default function TemplateForm({ existingTemplates: unsortedTemplates }: T
                   </li>
                 );
               })}
-            </ul>
+            </FitPager>
           </>
         ) : (
           <p className="text-sm text-muted">Belum ada template. Buat yang pertama lewat formulir ini.</p>
@@ -230,7 +237,7 @@ export default function TemplateForm({ existingTemplates: unsortedTemplates }: T
               hint="Teks dalam {{...}}, misalnya {{employee_name}}, otomatis diganti dengan data asli saat pesan dikirim."
               rows={8}
               wrapperClassName="lg:min-h-0 lg:flex-auto"
-              className="min-h-28 font-mono leading-relaxed lg:flex-auto"
+              className="min-h-28 font-mono leading-relaxed lg:flex-auto [@media(min-width:1024px)_and_(max-height:700px)]:min-h-16"
               required
             />
             <Button type="submit" isLoading={isSubmitting} className="self-start">

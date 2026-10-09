@@ -62,8 +62,8 @@ export default async function OrganizationsPage() {
                 <Table.HeadCell>Organisasi</Table.HeadCell>
                 <Table.HeadCell>Paket</Table.HeadCell>
                 <Table.HeadCell>Status</Table.HeadCell>
-                <Table.HeadCell className="text-right">Kursi Terpakai</Table.HeadCell>
-                <Table.HeadCell>Berlaku Sampai</Table.HeadCell>
+                <Table.HeadCell priority={1} className="text-right">Kursi Terpakai</Table.HeadCell>
+                <Table.HeadCell priority={2}>Berlaku Sampai</Table.HeadCell>
               </Table.Row>
             </Table.Head>
             <Table.Body>

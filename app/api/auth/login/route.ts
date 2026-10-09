@@ -15,14 +15,14 @@ export async function POST(request: Request) {
 
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
     const { success } = await loginRatelimit.limit(`${ip}:${body.identifier.toLowerCase()}`);
-    if (!success) return apiError(429, 'RATE_LIMITED', 'Too many login attempts. Try again later.');
+    if (!success) return apiError(429, 'RATE_LIMITED', 'Terlalu banyak percobaan masuk. Coba lagi nanti.');
 
     const identifier = body.identifier.includes('@') ? body.identifier.toLowerCase() : normalizePhone(body.identifier);
-    if (!identifier) return apiError(401, 'INVALID_CREDENTIALS', 'Invalid email/phone or password.');
+    if (!identifier) return apiError(401, 'INVALID_CREDENTIALS', 'Email/No. HP atau kata sandi tidak cocok.');
 
     const user = await getUserByLoginIdentifier(identifier);
     if (!user || user.status !== 'ACTIVE' || !(await verifyPassword(body.password, user.passwordHash))) {
-      return apiError(401, 'INVALID_CREDENTIALS', 'Invalid email/phone or password.');
+      return apiError(401, 'INVALID_CREDENTIALS', 'Email/No. HP atau kata sandi tidak cocok.');
     }
 
     await setSessionCookie({ kind: 'user', sub: user.id, org: user.orgId, role: user.role });

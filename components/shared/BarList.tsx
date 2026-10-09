@@ -1,3 +1,5 @@
+import FitPager from '@/components/shared/FitPager';
+
 export interface BarListItem {
   /** Stable React key when labels can repeat (two employees with the same name). */
   id?: string | number;
@@ -10,6 +12,9 @@ export interface BarListProps {
   items: BarListItem[];
   formatValue?: (value: number) => string;
   className?: string;
+  /** Desktop zero-scroll: paginate the bars to the height of the box this list sits in (a
+   * height-bound flex column) instead of letting it grow. `label` names the pager, `noun` its count. */
+  fit?: { label: string; noun?: string };
 }
 
 /**
@@ -17,7 +22,7 @@ export interface BarListProps {
  * DonutChart.tsx) — each bar's width is proportional to the largest value in the list,
  * for ranking/comparison reads (e.g. "top N employees by lateness").
  */
-export default function BarList({ items, formatValue, className }: BarListProps) {
+export default function BarList({ items, formatValue, className, fit }: BarListProps) {
   const max = Math.max(1, ...items.map((item) => item.value));
   const format = formatValue ?? ((value: number) => String(value));
 
@@ -25,8 +30,8 @@ export default function BarList({ items, formatValue, className }: BarListProps)
   // longest label (capped, then truncated) and the value column as wide as the longest value, so
   // every bar starts and ends at the same x and bar lengths stay comparable, and the bar still
   // gets the rest of a narrow card instead of a 40px sliver.
-  return (
-    <ul className={`grid grid-cols-[auto_minmax(3rem,1fr)_auto] gap-x-3 gap-y-3 text-sm ${className ?? ''}`}>
+  const rows = (
+    <>
       {items.map((item) => (
         <li key={item.id ?? item.label} className="col-span-3 grid grid-cols-subgrid items-center">
           <span className="max-w-32 truncate text-muted sm:max-w-44" title={item.label}>
@@ -46,6 +51,16 @@ export default function BarList({ items, formatValue, className }: BarListProps)
           <span className="whitespace-nowrap text-right font-semibold tabular-nums text-text">{format(item.value)}</span>
         </li>
       ))}
-    </ul>
+    </>
   );
+  const gridClass = `grid grid-cols-[auto_minmax(3rem,1fr)_auto] content-start gap-x-3 gap-y-3 text-sm ${className ?? ''}`;
+
+  if (fit) {
+    return (
+      <FitPager as="ul" label={fit.label} noun={fit.noun} className={gridClass} frameClassName="lg:min-h-0 lg:flex-1" footerClassName="mt-2 rounded-card border bg-surface">
+        {rows}
+      </FitPager>
+    );
+  }
+  return <ul className={gridClass}>{rows}</ul>;
 }

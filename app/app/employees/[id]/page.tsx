@@ -11,6 +11,9 @@ import { idParam } from '@/lib/validators/common';
 import { getUserByIdInOrg } from '@/lib/queries/users';
 import { listBranches } from '@/lib/queries/branches';
 import { listShifts } from '@/lib/queries/shifts';
+import { getOrganizationPlanContext } from '@/lib/queries/organizations';
+import { safeTimezone } from '@/lib/safe-timezone';
+import EmployeeAttendance from './employee-attendance';
 import EmployeeFormDialog from '../employee-form-dialog';
 import ResetPasswordButton from '../reset-password-button';
 import { toCalendarDate } from '../../attendance/format';
@@ -64,7 +67,8 @@ export default async function EmployeeDetailPage({ params }: EmployeeDetailPageP
   const joinedAt = employee.joinedAt ? toCalendarDate(employee.joinedAt) : null;
   const employeeForForm = { ...employee, joinedAt };
 
-  const [branches, shifts] = await Promise.all([listBranches(orgId), listShifts(orgId)]);
+  const [branches, shifts, org] = await Promise.all([listBranches(orgId), listShifts(orgId), getOrganizationPlanContext(orgId)]);
+  const timeZone = safeTimezone(org?.timezone ?? 'Asia/Jakarta');
   const branchOptions = branches.map((branch) => ({ id: branch.id, name: branch.name, isActive: branch.isActive }));
   const shiftOptions = shifts.map((shift) => ({ id: shift.id, name: shift.name, isActive: shift.isActive }));
   const branchName = employee.branchId != null ? branches.find((b) => b.id === employee.branchId)?.name ?? '—' : '—';
@@ -103,7 +107,7 @@ export default async function EmployeeDetailPage({ params }: EmployeeDetailPageP
         actions={
           isOrgWide ? (
             <>
-              <EmployeeFormDialog existingUser={employeeForForm} branches={branchOptions} shifts={shiftOptions} />
+              <EmployeeFormDialog existingUser={employeeForForm} branches={branchOptions} shifts={shiftOptions} actorRole={role} />
               <ResetPasswordButton userId={employee.id} userName={employee.name} />
             </>
           ) : null
@@ -111,8 +115,8 @@ export default async function EmployeeDetailPage({ params }: EmployeeDetailPageP
       />
 
       <Page.Body>
-        <Card>
-          <dl className="grid gap-x-6 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
+        <Card className="fit-pad shrink-0">
+          <dl className="grid gap-x-6 gap-y-5 fit-gap-y sm:grid-cols-2 lg:grid-cols-3 [@media(min-width:1024px)_and_(max-height:700px)]:grid-cols-4">
             {details.map((item) => (
               <div key={item.label} className="min-w-0">
                 <dt className="text-xs font-medium uppercase tracking-wide text-muted">{item.label}</dt>
@@ -121,6 +125,9 @@ export default async function EmployeeDetailPage({ params }: EmployeeDetailPageP
             ))}
           </dl>
         </Card>
+        {/* What this person's check-ins look like: the month at a glance and their latest rows, from the
+            same queries the Absensi table and Riwayat Saya use. */}
+        <EmployeeAttendance orgId={orgId} employeeId={employee.id} timeZone={timeZone} tracked={employee.shiftId != null} />
       </Page.Body>
     </Page>
   );

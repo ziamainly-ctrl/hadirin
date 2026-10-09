@@ -10,7 +10,7 @@
  * the keyboard closes — every filter and form on a phone did that at 14px.
  */
 export const FIELD_CLASSES =
-  'rounded-input border bg-transparent px-3 text-base text-text md:text-sm shadow-xs transition-colors placeholder:text-muted focus-visible:border-ring focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30';
+  'rounded-input border bg-transparent px-3 text-base text-text md:text-sm shadow-xs transition-[color,background-color,border-color,box-shadow] duration-150 placeholder:text-muted focus-visible:border-ring focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30';
 
 export function fieldBorderClass(error?: string): string {
   return error ? 'border-destructive focus-visible:border-destructive focus-visible:ring-destructive/30' : 'border-field';

@@ -41,7 +41,7 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textare
         {...rest}
       />
       {error ? (
-        <p id={`${textareaId}-error`} className="text-sm text-destructive">
+        <p id={`${textareaId}-error`} className="animate-rise-sm text-sm text-destructive">
           {error}
         </p>
       ) : hint ? (

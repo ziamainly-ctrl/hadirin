@@ -51,7 +51,7 @@ export async function getInvoiceByIdInOrg(orgId: number, id: number): Promise<In
     [id, orgId],
   );
   const row = rows[0] as Invoice | undefined;
-  if (!row) throw new NotFoundError('Invoice not found');
+  if (!row) throw new NotFoundError('Tagihan tidak ditemukan');
   return row;
 }
 
@@ -148,7 +148,7 @@ export async function attachMidtransCheckout(
     ],
   );
   const row = rows[0] as Invoice | undefined;
-  if (!row) throw new NotFoundError('Pending invoice not found');
+  if (!row) throw new NotFoundError('Tagihan tertunda tidak ditemukan');
   return row;
 }
 
@@ -177,7 +177,7 @@ export async function markInvoicePaid(invoiceId: number, input: MarkInvoicePaidI
       RETURNING id`,
     [input.midtransTransactionId, invoiceId],
   );
-  if (rows.length === 0) throw new NotFoundError('Invoice not found');
+  if (rows.length === 0) throw new NotFoundError('Tagihan tidak ditemukan');
 }
 
 /** EXPIRED/FAILED transitions (TRD.md §9 steps 4–5). */
@@ -186,7 +186,7 @@ export async function markInvoiceStatus(invoiceId: number, status: InvoiceStatus
     status,
     invoiceId,
   ]);
-  if (rows.length === 0) throw new NotFoundError('Invoice not found');
+  if (rows.length === 0) throw new NotFoundError('Tagihan tidak ditemukan');
 }
 
 /**

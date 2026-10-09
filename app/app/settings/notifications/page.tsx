@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { Lock } from 'lucide-react';
-import { requireSession } from '@/lib/auth';
+import { requirePageRole } from '@/lib/page-guard';
 import { getOrganizationPlanContext } from '@/lib/queries/organizations';
 import { listGlobalTemplates, listOrgTemplateOverrides } from '@/lib/queries/notification-templates';
 import type { NotificationTemplate } from '@/lib/queries/notification-templates';
@@ -26,7 +26,7 @@ function toEditorTemplate(template: NotificationTemplate): TemplateEditorTemplat
 // Server Component (TRD.md §5). OWNER/ADMIN only, then further gated by the org's
 // plan feature flag (features.template_override) rather than an additional role check.
 export default async function NotificationSettingsPage() {
-  const { orgId } = await requireSession(['OWNER', 'ADMIN']);
+  const { orgId } = await requirePageRole(['OWNER', 'ADMIN']);
 
   const org = await getOrganizationPlanContext(orgId);
   if (!org) throw new Error('Organization not found');

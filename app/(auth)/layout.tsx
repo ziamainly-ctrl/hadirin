@@ -15,7 +15,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className="flex min-h-dvh flex-col lg:h-dvh lg:overflow-hidden">
       <header className="shrink-0">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
+        <div className="fit-slim-head mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
           <Link
             href="/"
             aria-label="Hadirin — beranda"

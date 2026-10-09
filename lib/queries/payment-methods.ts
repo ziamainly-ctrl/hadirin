@@ -121,7 +121,7 @@ export async function updatePaymentMethod(id: number, input: UpdatePaymentMethod
   }
   if (sets.length === 0) {
     const row = await getPaymentMethodById(id);
-    if (!row) throw new NotFoundError('Payment method not found');
+    if (!row) throw new NotFoundError('Metode pembayaran tidak ditemukan');
     return row;
   }
   sets.push('updated_at = now()');
@@ -132,7 +132,7 @@ export async function updatePaymentMethod(id: number, input: UpdatePaymentMethod
     params,
   );
   const row = rows[0] as PaymentMethod | undefined;
-  if (!row) throw new NotFoundError('Payment method not found');
+  if (!row) throw new NotFoundError('Metode pembayaran tidak ditemukan');
   return row;
 }
 

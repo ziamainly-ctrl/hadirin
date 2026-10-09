@@ -32,6 +32,9 @@ export interface EmployeeFormDialogProps {
   shifts: EmployeeFormShiftOption[];
   /** Present → PATCHes /api/users/[id] (edit). Absent → POSTs /api/users (create). */
   existingUser?: UserSummary;
+  /** The signed-in role. An ADMIN may assign MANAGER or EMPLOYEE only (lib/user-guards.ts), so the other roles
+   * are not offered; the server refuses them anyway. */
+  actorRole?: UserRole;
 }
 
 const ROLE_OPTIONS: { value: UserRole; label: string }[] = USER_ROLES.map((value) => ({ value, label: ROLE_LABELS[value] }));
@@ -62,6 +65,11 @@ function toFormState(existingUser?: UserSummary): FormState {
   };
 }
 
+function roleOptionsFor(actorRole: UserRole | undefined, current: UserRole | undefined) {
+  if (actorRole !== 'ADMIN') return ROLE_OPTIONS;
+  return ROLE_OPTIONS.filter((option) => option.value === 'MANAGER' || option.value === 'EMPLOYEE' || option.value === current);
+}
+
 /** '' from a blank text input should persist as NULL, not an empty string. */
 function blankToNull(value: string): string | null {
   const trimmed = value.trim();
@@ -73,7 +81,7 @@ function blankToNull(value: string): string | null {
  * (there is no separate trigger component in this feature) and the Dialog it opens.
  * TRD.md §6 / §14: fields mirror createUserSchema/updateUserSchema (lib/validators/users.ts).
  */
-export default function EmployeeFormDialog({ branches, shifts, existingUser }: EmployeeFormDialogProps) {
+export default function EmployeeFormDialog({ branches, shifts, existingUser, actorRole }: EmployeeFormDialogProps) {
   const isEdit = Boolean(existingUser);
   const router = useRouter();
   const { show } = useToast();
@@ -206,7 +214,8 @@ export default function EmployeeFormDialog({ branches, shifts, existingUser }: E
                   label="Peran"
                   value={form.role}
                   onChange={(e) => setForm((f) => ({ ...f, role: e.target.value as UserRole }))}
-                  options={ROLE_OPTIONS}
+                  options={roleOptionsFor(actorRole, existingUser?.role)}
+                  disabled={actorRole === 'ADMIN' && existingUser?.role === 'OWNER'}
                   error={fieldErrors.role}
                 />
                 <Select

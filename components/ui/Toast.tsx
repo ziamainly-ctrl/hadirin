@@ -11,6 +11,8 @@ export interface ToastItem {
   id: string;
   message: string;
   variant: ToastVariant;
+  /** True while the exit animation plays (140ms); the item is removed right after. */
+  leaving?: boolean;
 }
 
 export interface ToastProviderProps {
@@ -27,6 +29,9 @@ const ToastContext = createContext<ToastContextValue | null>(null);
 // An error or warning says something the person has to act on, so it stays longer than a
 // confirmation (WCAG 2.2.1 asks for enough time to read; the X is there for impatient people).
 const AUTO_DISMISS_MS: Record<ToastVariant, number> = { success: 5000, info: 5000, warning: 8000, error: 8000 };
+
+// Matches the toast-out animation in app/globals.css.
+const TOAST_EXIT_MS = 140;
 
 // Every variant is the same neutral card (bg-surface + border + normal text): the product owner
 // wants no tinted panels, so the variant is carried by the icon color alone. The fill is
@@ -78,8 +83,13 @@ export function ToastProvider({ children }: ToastProviderProps) {
     if (toasts.length > 0) el.showPopover();
   }, [toasts]);
 
+  // Two steps so a toast animates out instead of vanishing: flag it (the card plays toast-out),
+  // then drop it once the 140ms animation is done. With reduced motion there is no animation to
+  // wait for, so it goes at once. Calling it twice (the timer and the X) is harmless.
   const dismiss = useCallback((id: string) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
+    setToasts((prev) => prev.map((t) => (t.id === id && !t.leaving ? { ...t, leaving: true } : t)));
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), reduce ? 0 : TOAST_EXIT_MS);
   }, []);
 
   const show = useCallback(
@@ -106,7 +116,7 @@ export function ToastProvider({ children }: ToastProviderProps) {
               <div
                 key={toast.id}
                 role={toast.variant === 'error' ? 'alert' : 'status'}
-                className="toast-in pointer-events-auto flex w-full max-w-sm items-start gap-2.5 rounded-input border border-input bg-surface px-3 py-2.5 text-sm text-text shadow-lg"
+                className={`${toast.leaving ? 'toast-out pointer-events-none' : 'toast-in pointer-events-auto'} flex w-full max-w-sm items-start gap-2.5 rounded-input border border-input bg-surface px-3 py-2.5 text-sm text-text shadow-lg`}
               >
                 <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${VARIANT_ICON_CLASSES[toast.variant]}`} aria-hidden="true" />
                 <p className="min-w-0 flex-1 break-words">{toast.message}</p>
@@ -117,7 +127,7 @@ export function ToastProvider({ children }: ToastProviderProps) {
                   type="button"
                   onClick={() => dismiss(toast.id)}
                   aria-label="Tutup notifikasi"
-                  className="-m-1 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-input text-muted transition-colors hover:text-text focus-visible:text-text focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                  className="-m-1 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-input text-muted transition-[color,transform] hover:text-text focus-visible:text-text active:scale-90 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
                 >
                   <X className="h-4 w-4" aria-hidden="true" />
                 </button>

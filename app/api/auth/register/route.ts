@@ -8,6 +8,7 @@ import { getPlanByCode } from '@/lib/queries/plans';
 import { getOrganizationBySlug, insertOrganizationTx } from '@/lib/queries/organizations';
 import { insertUserTx } from '@/lib/queries/users';
 import { registerRatelimit } from '@/lib/redis';
+import { todayWorkDateFor } from '@/lib/dashboard-cache';
 
 const bodySchema = z.object({
   companyName: z.string().trim().min(2).max(120),
@@ -24,12 +25,12 @@ export async function POST(request: Request) {
   try {
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
     const { success } = await registerRatelimit.limit(ip);
-    if (!success) return apiError(429, 'RATE_LIMITED', 'Too many signups from this network. Try again later.');
+    if (!success) return apiError(429, 'RATE_LIMITED', 'Terlalu banyak pendaftaran dari jaringan ini. Coba lagi nanti.');
 
     const body = bodySchema.parse(await request.json());
 
     const plan = await getPlanByCode('STARTER');
-    if (!plan) return apiError(500, 'INTERNAL_ERROR', 'Starter plan is not configured.');
+    if (!plan) return apiError(500, 'INTERNAL_ERROR', 'Paket Starter belum dikonfigurasi. Hubungi dukungan Hadirin.');
 
     const baseSlug = slugify(body.companyName) || 'org';
     let slug = baseSlug;
@@ -59,7 +60,9 @@ export async function POST(request: Request) {
         passwordHash,
         role: 'OWNER',
         position: null,
-        joinedAt: new Date().toISOString().slice(0, 10),
+        // The new organisation's timezone is the column default, so "today" is the owner's local date.
+        // toISOString() is UTC: an owner registering at 06:00 WIB on the 8th was "joined on the 7th".
+        joinedAt: todayWorkDateFor(organization.timezone),
       });
       return { organization, user };
     });

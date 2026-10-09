@@ -13,9 +13,11 @@ import type { HTMLAttributes, ReactNode } from 'react';
  *   </Page>
  *
  * A <Table> placed directly in Page.Body does not make the body scroll: the table card shrinks
- * to the space that is left and its rows scroll under a pinned header row (ui/TableFrame).
- * Content that is not a table (cards, a form) scrolls the Page.Body itself, and a page that
- * wants several independently scrolling columns puts them in a grid inside Page.Body.
+ * to the space that is left and its rows are paginated to fit it (ui/TableFrame + FitPager).
+ * Content that is not a table must FIT on desktop (>= 1024x560): use the density tiers in
+ * app/globals.css ("Desktop fit tiers": .fit-gap, .fit-hide-short, .fit-cell-y), a FitPager for
+ * cards and grids, and two columns for forms. Page.Body still has `overflow-y-auto` as a safety
+ * net for a window nobody tested, but a scrollbar there is a bug in the page, not a feature.
  *
  * Focus-ring room: a scroll container clips everything outside its padding box, and a control
  * that sits flush with the page edge (the first filter, the last header button) has a 3px ring.
@@ -25,7 +27,7 @@ import type { HTMLAttributes, ReactNode } from 'react';
  */
 function Page({ className, children, ...rest }: HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={`flex flex-col gap-4 lg:h-full lg:min-h-0 ${className ?? ''}`} {...rest}>
+    <div className={`flex flex-col gap-4 fit-gap lg:h-full lg:min-h-0 ${className ?? ''}`} {...rest}>
       {children}
     </div>
   );
@@ -48,8 +50,10 @@ function PageHeader({ title, description, actions, inlineActions = false, classN
       className={`flex shrink-0 gap-3 ${inlineActions ? 'items-start justify-between' : 'flex-col sm:flex-row sm:items-start sm:justify-between'} ${className ?? ''}`}
     >
       <div className="min-w-0">
-        <h1 className="text-xl font-semibold tracking-tight text-text">{title}</h1>
-        {description ? <p className="mt-1 max-w-3xl text-sm text-muted">{description}</p> : null}
+        <h1 className="text-xl font-semibold tracking-tight text-text [@media(min-width:1024px)_and_(max-height:700px)]:text-lg">{title}</h1>
+        {/* The description is the first thing to go on a short desktop window (fit-hide-short:
+            <= 760px of height, app/globals.css "Desktop fit tiers"): the title says what the page is. */}
+        {description ? <p className="fit-hide-short mt-1 max-w-3xl text-sm text-muted">{description}</p> : null}
       </div>
       {actions ? <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div> : null}
     </div>
@@ -72,7 +76,7 @@ function PageToolbar({ className, children, ...rest }: HTMLAttributes<HTMLDivEle
 function PageBody({ className, children, ...rest }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={`flex flex-col gap-4 lg:-mx-1 lg:-mt-1 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:p-1 ${className ?? ''}`}
+      className={`flex flex-col gap-4 fit-gap lg:-mx-1 lg:-mt-1 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:p-1 ${className ?? ''}`}
       {...rest}
     >
       {children}

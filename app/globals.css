@@ -11,58 +11,93 @@
    bg-secondary, border-border, ...) repaints automatically under .dark below, so
    components using only these tokens need no dark: variant of their own.
 
-   The palette is the neutral oklch scale used by shadcn/ui and tweakcn. The primary and
-   secondary pairs under .dark are the exact values the product owner picked
-   (primary oklch(0.922 0 0) on oklch(0.205 0 0), secondary oklch(0.269 0 0) on
-   oklch(0.985 0 0)); the light values are the matching shadcn neutral light theme, i.e.
-   the same two roles flipped (near-black primary, light-gray secondary). */
+   The palette is a neutral (chroma 0) oklch scale. The primary and secondary pairs under
+   .dark are the exact values the product owner picked (primary oklch(0.922 0 0) on
+   oklch(0.205 0 0), secondary oklch(0.269 0 0) on oklch(0.985 0 0)). Light mode is a GRAY
+   theme, not a white one: the canvas runs oklch(0.945) at the top to oklch(0.85) at the
+   bottom and cards sit on it at 0.972 to 0.928, so a card still lifts off the page without any
+   surface being near-white. The steps follow Radix Colors' scale roles (step 2 card and sidebar,
+   3 to 5 control fills, 6 to 8 borders, 11 low-contrast text); every text and non-text pair is
+   measured in TRD.md §14 against every gradient stop, not eyeballed. */
 @theme {
   --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
 
-  --color-bg: oklch(0.985 0 0);
-  --color-surface: oklch(1 0 0);
+  /* Flat fallbacks and the base for contrast maths and translucent variants (bg-surface/90).
+     Backgrounds paint the gradients in :root below instead. */
+  --color-bg: oklch(0.9 0 0);
+  --color-surface: oklch(0.95 0 0);
   --color-text: oklch(0.145 0 0);
-  /* 0.5, not shadcn's 0.556: muted text sits straight on the page gradient (descriptions,
-     empty states), whose bottom is oklch(0.93). 0.556 on 0.93 is 3.9:1 and on the table header
-     fill 4.3:1, both under AA; 0.5 is 4.9:1 and 5.5:1. */
-  --color-muted: oklch(0.5 0 0);
+  /* Muted text sits straight on the page gradient (descriptions, empty states), whose bottom is
+     oklch(0.85). 0.45 is 4.7:1 there and 5.5:1 on the accent fill; the old 0.5 (made for a
+     near-white page) was 3.9:1 on this canvas. Measured in TRD.md §14. */
+  --color-muted: oklch(0.45 0 0);
 
   --color-primary: oklch(0.205 0 0);
   --color-primary-fg: oklch(0.985 0 0);
-  --color-secondary: oklch(0.97 0 0);
+  --color-secondary: oklch(0.89 0 0);
   --color-secondary-fg: oklch(0.205 0 0);
-  --color-accent: oklch(0.97 0 0);
+  /* Hover fill, neutral badges, the (opaque) table header fill. Darker than the bottom of the
+     card gradient (0.928) so a hovered sidebar row or table row still reads at the foot of the
+     screen, not only at the top. */
+  --color-accent: oklch(0.9 0 0);
 
-  --color-border: oklch(0.922 0 0);
-  --color-input: oklch(0.922 0 0);
+  /* Radix steps 7 to 8: visible on both the card gradient and the page gradient. */
+  --color-border: oklch(0.8 0 0);
+  --color-input: oklch(0.8 0 0);
   /* Boundary of a form control that has no fill of its own (text input, select, textarea,
-     checkbox, radio). WCAG 1.4.11 asks 3:1 against the surface it sits on (the W3C example of a
-     passing field is #767676 on white): shadcn's --color-input is 1.26:1, so a field read as a
-     faint smudge on the card gradient. 0.64 is 3.4:1 on white and 3.1:1 at the bottom of the
-     card gradient. Outline buttons keep the lighter --color-input (their label identifies them). */
-  --color-field: oklch(0.64 0 0);
-  /* Focus indicator: 3:1 against white and the page gradient (WCAG 1.4.11). The old 0.708 was
-     2.6:1 before the 50% alpha the ring utility applies on top. */
-  --color-ring: oklch(0.6 0 0);
-  --color-destructive: oklch(0.577 0.245 27.325);
-  /* Semantic accents for small icons and dots only (toast icon, badge dot). Never a
-     background: the product owner wants every panel neutral gray. Same hues as the
-     attendance status colors below, so "green" means one thing everywhere. */
-  --color-success: #16a34a;
-  --color-warning: #d97706;
+     checkbox, radio). WCAG 1.4.11 asks 3:1 against the surface it sits on: 0.53 is 4.3:1 at the
+     bottom of the card gradient and 3.3:1 at the bottom of the page gradient. Outline buttons
+     keep the lighter --color-input (their label identifies them). */
+  --color-field: oklch(0.53 0 0);
+  /* Focus indicator: 3:1 against every gradient stop (3.8:1 at the bottom of the page). */
+  --color-ring: oklch(0.5 0 0);
+  /* Error text is 12-14px, often straight on the page canvas: 0.46 is 6.2:1 on the foot of a card
+     and 4.8:1 at the very bottom of the page gradient (the shadcn 0.577 was 3.2:1 there, 4.06:1 on a card). */
+  --color-destructive: oklch(0.46 0.2 27);
+  /* Semantic accents for small icons and dots only (toast icon, badge dot, chart marks). Never a
+     background: the product owner wants every panel neutral gray. Darker than the usual
+     Tailwind 600s so a dot stays 3:1 (WCAG 1.4.11) on the gray canvas, not only on white.
+     Same hues as the attendance status colors below, so "green" means one thing everywhere. */
+  --color-success: #15803d;
+  --color-warning: #b45309;
   --color-info: #2563eb;
 
-  --color-status-present: #16a34a;
-  --color-status-late: #d97706;
-  --color-status-absent: #dc2626;
+  /* The same two hues as TEXT (a late time, an "outside the area" flag, a positive delta): the dots
+     above are only 3:1 and are too pale to read at 12-14px on a gray canvas. 4.8:1 and 5.0:1 on the
+     worst stop (the bottom of the page gradient). Dark switches to the 400s (7:1 and up). */
+  --color-warning-text: oklch(0.44 0.125 48);
+  --color-success-text: oklch(0.42 0.11 163);
+  /* Pages written before those tokens colour such text with Tailwind's own `text-amber-700` /
+     `text-emerald-600` and icons with `text-amber-600`, which measure 3.2:1, 2.3:1 and 2.0:1 on this
+     canvas (they were made for white). Re-pointing the three palette steps here repairs every call
+     site at once; new code should use the tokens above. */
+  --color-amber-700: oklch(0.44 0.125 48);
+  --color-amber-600: oklch(0.55 0.13 50);
+  --color-emerald-600: oklch(0.42 0.11 163);
+
+  --color-status-present: #15803d;
+  --color-status-late: #b45309;
+  --color-status-absent: #b91c1c;
   --color-status-leave: #2563eb;
   --color-status-sick: #7c3aed;
-  --color-status-permit: #0891b2;
-  --color-status-holiday: #64748b;
-  --color-status-off: #94a3b8;
+  --color-status-permit: #0e7490;
+  --color-status-holiday: #475569;
+  --color-status-off: #5b6b82;
 
   --radius-card: 12px;
   --radius-input: 10px;
+}
+
+/* Motion utilities that Tailwind generates as `animate-*` (they take variants:
+   `motion-reduce:animate-none`, `hover:animate-pop-in`). The keyframes are plain top-level
+   @keyframes in the Motion section at the bottom of this file. Every one of them uses
+   `backwards` fill, never `both`/`forwards`: after it ends the element goes back to its own
+   styles, so a hover:translate or a transform class on the same element still works. */
+@theme {
+  --animate-rise: rise 220ms var(--motion-ease) backwards;
+  --animate-rise-sm: rise-sm 180ms var(--motion-ease) backwards;
+  --animate-fade-in: fade-in 180ms ease-out backwards;
+  --animate-pop-in: pop-in 200ms var(--motion-spring) backwards;
 }
 
 /* Plain custom property, not a @theme color: this backs .bg-dot-grid below (a one-off
@@ -73,24 +108,35 @@
    override). Getting that backwards here would make dark mode silently keep the light
    dot color, the kind of bug that only shows up by actually toggling the theme. */
 :root {
-  --dot-color: oklch(0.145 0 0 / 6%);
-  --scroll-shadow: oklch(0 0 0 / 14%);
-  /* Neutral gradients (the owner asked for white-to-gray in light, black-to-gray in dark).
+  --dot-color: oklch(0.145 0 0 / 7%);
+  --scroll-shadow: oklch(0 0 0 / 16%);
+  /* Skeleton shimmer highlight (the Motion section). */
+  --shimmer: oklch(1 0 0 / 55%);
+  /* Neutral gradients (the owner asked for gray in light, black-to-gray in dark).
      Page = the canvas behind everything; surface = cards, sidebar, dialogs; primary and
      secondary = filled buttons and selected chips. Flat --color-* tokens stay the source
      for text/border/ring math; these only paint backgrounds. */
-  --gradient-page: linear-gradient(180deg, oklch(0.995 0 0) 0%, oklch(0.93 0 0) 100%);
-  --gradient-surface: linear-gradient(180deg, oklch(1 0 0) 0%, oklch(0.975 0 0) 100%);
+  --gradient-page: linear-gradient(180deg, oklch(0.945 0 0) 0%, oklch(0.85 0 0) 100%);
+  --gradient-surface: linear-gradient(180deg, oklch(0.972 0 0) 0%, oklch(0.928 0 0) 100%);
   --gradient-primary: linear-gradient(180deg, oklch(0.38 0 0) 0%, oklch(0.16 0 0) 100%);
-  --gradient-secondary: linear-gradient(180deg, oklch(0.985 0 0) 0%, oklch(0.925 0 0) 100%);
+  --gradient-secondary: linear-gradient(180deg, oklch(0.915 0 0) 0%, oklch(0.865 0 0) 100%);
   /* Hover states. A gradient is a background-image, and image paints over any hover:bg-*
      color, so every filled control that wants a hover look needs its own gradient. */
   --gradient-primary-hover: linear-gradient(180deg, oklch(0.46 0 0) 0%, oklch(0.24 0 0) 100%);
-  --gradient-secondary-hover: linear-gradient(180deg, oklch(0.96 0 0) 0%, oklch(0.89 0 0) 100%);
+  --gradient-secondary-hover: linear-gradient(180deg, oklch(0.89 0 0) 0%, oklch(0.84 0 0) 100%);
   /* Tells the browser which scheme native controls (date/time pickers, scrollbars,
      select popups, autofill) should draw in; without it a time input's clock icon stays
      black on a dark surface. */
   color-scheme: light;
+
+  /* Motion tokens (see the Motion section). Names avoid Tailwind's own --ease-* theme keys. */
+  --motion-ease: cubic-bezier(0.22, 1, 0.36, 1); /* ease-out-quint: quick start, soft landing */
+  --motion-ease-io: cubic-bezier(0.65, 0, 0.35, 1);
+  --motion-spring: cubic-bezier(0.34, 1.4, 0.64, 1); /* a hair of overshoot: small elements only */
+  --motion-fast: 120ms; /* hover, press, focus */
+  --motion-base: 180ms; /* enter/exit of a surface, route enter */
+  --motion-slow: 240ms; /* the longest a UI transition may take */
+  --motion-stagger: 40ms; /* per item; <Reveal> / .stagger cap the index at 6, so 240ms in total */
 }
 
 /* Same token names, dark values. */
@@ -116,6 +162,8 @@
   --color-success: #22c55e;
   --color-warning: #f59e0b;
   --color-info: #3b82f6;
+  --color-warning-text: oklch(0.828 0.189 84.429);
+  --color-success-text: oklch(0.765 0.177 163.223);
 
   --color-status-present: #22c55e;
   --color-status-late: #f59e0b;
@@ -128,6 +176,7 @@
 
   --dot-color: oklch(1 0 0 / 7%);
   --scroll-shadow: oklch(0 0 0 / 60%);
+  --shimmer: oklch(1 0 0 / 8%);
   /* Page is the darkest layer and surfaces sit above it (Material: elevation = lighter in
      dark mode), so the page top is kept below the surface top; at 0.27 vs 0.265 a card was
      indistinguishable from the canvas behind it. */
@@ -165,10 +214,20 @@
 
   body {
     background-color: var(--color-bg);
-    background-image: var(--gradient-page);
-    background-attachment: fixed;
-    background-repeat: no-repeat;
     color: var(--color-text);
+  }
+
+  /* The page gradient lives on a fixed layer of its own, not on `body` with
+     `background-attachment: fixed`: a fixed background is repainted on every scroll frame (and is
+     ignored by iOS Safari), a fixed pseudo-element is composited once and never repaints. It sits
+     behind everything (z-index -1) and takes no clicks. */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-image: var(--gradient-page);
+    pointer-events: none;
   }
 }
 
@@ -203,10 +262,14 @@
    @layer (so the `focus-visible:outline-none` the components carry cannot remove it) without
    anyone having to edit those class strings. Form fields hug their border (offset 0); everything
    else floats 2px off the control. :where() keeps the specificity at zero so a one-off
-   `focus-visible:outline-*` in a component is the only thing that could still beat it. */
+   `focus-visible:outline-*` in a component is the only thing that could still beat it. The ring
+   eases in (it closes from 5px to 2px in 140ms, see focus-ring-in). Being unlayered it also
+   replaces a Tailwind `animate-*` on the same element while that element has focus; nothing
+   focusable carries an animation of its own, and a one-shot enter has long finished by then. */
 :where(a, button, summary, [role='button'], [role='tab'], [tabindex]:not([tabindex='-1'])):focus-visible {
   outline: 2px solid var(--color-ring);
   outline-offset: 2px;
+  animation: focus-ring-in 140ms var(--motion-ease);
 }
 
 :where(input, select, textarea):focus-visible {
@@ -218,6 +281,7 @@
    its outline is drawn inward so the card doesn't clip it. */
 [data-scroll-region]:focus-visible {
   outline-offset: -2px;
+  animation: none;
 }
 
 /* Slim scrollbars for the inner scroll regions (Page.Body, tables, lists): the window never
@@ -241,45 +305,9 @@
 }
 
 /* Native <dialog> modals (components/ui/Dialog.tsx): freeze the page behind an open
-   dialog so wheel/touch scrolling can't move the page under the backdrop, and ease the
-   dialog + backdrop in. Both are skipped for users who ask for reduced motion. */
+   dialog so wheel/touch scrolling can't move the page under the backdrop. */
 body:has(dialog[open]) {
   overflow: hidden;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  dialog[open] {
-    animation: dialog-in 160ms ease-out;
-  }
-  dialog[open]::backdrop {
-    animation: dialog-backdrop-in 160ms ease-out;
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .toast-in {
-    animation: toast-in 140ms ease-out;
-  }
-}
-
-@keyframes toast-in {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-}
-
-@keyframes dialog-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px) scale(0.98);
-  }
-}
-
-@keyframes dialog-backdrop-in {
-  from {
-    opacity: 0;
-  }
 }
 
 /* Subtle full-bleed texture for sparse, narrow-column marketing pages (pricing, about,
@@ -294,22 +322,680 @@ body:has(dialog[open]) {
   background-size: 28px 28px;
 }
 
-/* Mobile nav drawer (components/shared/Sidebar.tsx) is a modal <dialog> that slides in from the
-   left instead of popping in; skipped for reduced motion like the dialog animation above.
-   dialog.drawer-in[open] is more specific than the generic dialog[open] fade-and-scale, so the
-   drawer gets the slide, not the centered-dialog entrance. */
-@media (prefers-reduced-motion: no-preference) {
-  dialog.drawer-in[open],
-  .drawer-in:not(dialog) {
-    animation: drawer-in 180ms ease-out;
+/* ==========================================================================================
+   Motion  (TRD.md §14 "Motion")
+
+   Rules: a UI transition is 120 to 240ms and never blocks input or delays content; only
+   `transform` and `opacity` move (no layout properties); every animation uses `backwards`
+   fill so it leaves no residue; nothing animates on the first paint of a hard load (the
+   page is already visible, see PageTransition); reduced motion removes the movement but never
+   the state change (the reset at the end of this section).
+
+   Building blocks for pages (all of them also work from a Server Component, no JS):
+     animate-rise / animate-rise-sm / animate-fade-in / animate-pop-in   one-shot enter
+     <Reveal index={i}> or .reveal + style="--i: 2"                       staggered enter
+     .stagger on a parent                                                 its children stagger by :nth-child
+     <CountUp value={n}>                                                  animated number (components/shared/motion)
+     .draw-in  (svg path with pathLength="1")                             line chart draws left to right
+     .arc-in   (svg circle, style="--circ: <circumference>")              donut segment sweeps in
+     .grow-x / .grow-y  (--i for a stagger)                               horizontal / vertical bars grow
+     .wipe-in                                                             area chart reveals left to right
+     .hover-lift                                                          interactive card lifts 2px
+     .skeleton                                                            shimmering placeholder block
+   ========================================================================================== */
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
   }
-  .drawer-backdrop-in {
-    animation: dialog-backdrop-in 180ms ease-out;
+}
+@keyframes rise-sm {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+}
+@keyframes shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+@keyframes focus-ring-in {
+  from {
+    outline-color: transparent;
+    outline-offset: 5px;
+  }
+}
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.97);
+  }
+}
+@keyframes toast-out {
+  to {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
+}
+/* Charts. draw-in needs pathLength="1" on the <path> so the dash maths is resolution-free. */
+@keyframes draw-in {
+  from {
+    stroke-dashoffset: 1;
+  }
+}
+@keyframes arc-in {
+  from {
+    stroke-dasharray: 0 var(--circ, 1000);
+  }
+}
+@keyframes grow-x {
+  from {
+    transform: scaleX(0);
+  }
+}
+@keyframes grow-y {
+  from {
+    transform: scaleY(0);
+  }
+}
+@keyframes wipe-in {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+@keyframes mascot-blink {
+  0%,
+  92%,
+  100% {
+    transform: scaleY(1);
+  }
+  96% {
+    transform: scaleY(0.08);
   }
 }
 
-@keyframes drawer-in {
-  from {
-    transform: translateX(-100%);
+/* Staggered enter. --i is the item's index (0, 1, 2 ...); the delay caps at index 6, so the last
+   item starts 240ms in and a whole grid is settled in under half a second. */
+@utility reveal {
+  animation: rise var(--motion-slow) var(--motion-ease) backwards;
+  animation-delay: calc(min(var(--i, 0), 6) * var(--motion-stagger));
+}
+/* Parent form: every direct child staggers by position, so a Server Component can animate a
+   grid without wrapping each tile. Items past the sixth share the last delay. */
+@utility stagger {
+  & > * {
+    animation: rise var(--motion-slow) var(--motion-ease) backwards;
+    animation-delay: calc(min(var(--i, 0), 6) * var(--motion-stagger));
+  }
+  & > :nth-child(2) {
+    --i: 1;
+  }
+  & > :nth-child(3) {
+    --i: 2;
+  }
+  & > :nth-child(4) {
+    --i: 3;
+  }
+  & > :nth-child(5) {
+    --i: 4;
+  }
+  & > :nth-child(6) {
+    --i: 5;
+  }
+  & > :nth-child(n + 7) {
+    --i: 6;
   }
 }
+
+@utility draw-in {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  animation: draw-in 700ms var(--motion-ease) backwards;
+  animation-delay: calc(var(--i, 0) * var(--motion-stagger));
+}
+@utility arc-in {
+  animation: arc-in 700ms var(--motion-ease) backwards;
+  animation-delay: calc(var(--i, 0) * var(--motion-stagger));
+}
+@utility grow-x {
+  transform-origin: left center;
+  animation: grow-x 500ms var(--motion-ease) backwards;
+  animation-delay: calc(min(var(--i, 0), 6) * var(--motion-stagger));
+}
+@utility grow-y {
+  transform-origin: center bottom;
+  animation: grow-y 500ms var(--motion-ease) backwards;
+  animation-delay: calc(min(var(--i, 0), 6) * var(--motion-stagger));
+}
+@utility wipe-in {
+  animation: wipe-in 700ms var(--motion-ease) backwards;
+}
+
+/* Interactive card (a tile that is a link or a button): 2px lift and a stronger border on hover,
+   settles back when pressed. Hover-capable pointers only, so a phone tap never leaves it lifted. */
+@utility hover-lift {
+  transition:
+    transform var(--motion-base) var(--motion-ease),
+    box-shadow var(--motion-base) var(--motion-ease),
+    border-color var(--motion-base) var(--motion-ease);
+  @media (hover: hover) {
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px -6px oklch(0 0 0 / 22%);
+      border-color: var(--color-field);
+    }
+  }
+  &:active {
+    transform: translateY(0) scale(0.995);
+    box-shadow: none;
+  }
+}
+
+/* Shimmering placeholder (components/ui/Skeleton.tsx). The sweep is an ::after overlay moving
+   with transform only, clipped by the block itself. Under reduced motion it stays a still block. */
+@utility skeleton {
+  position: relative;
+  overflow: hidden;
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(90deg, transparent, var(--shimmer), transparent);
+    animation: shimmer 1.3s var(--motion-ease-io) infinite;
+  }
+}
+
+/* Toasts (components/ui/Toast.tsx): in on show, out for 140ms before the node is removed. */
+.toast-in {
+  animation: toast-in var(--motion-base) var(--motion-ease) backwards;
+}
+.toast-out {
+  animation: toast-out 140ms ease-in forwards;
+}
+
+/* Native <dialog> modals and the mobile drawer: enter AND exit with CSS only (Baseline since 2024:
+   @starting-style for the way in, transition-behavior: allow-discrete on `display` and `overlay`
+   for the way out, so the element stays rendered and in the top layer while it fades). The base
+   state is the "closed" look; `[open]` is the resting look; @starting-style is where the entry
+   begins. Browsers without allow-discrete just close instantly. */
+@media (prefers-reduced-motion: no-preference) {
+  dialog {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+    transition:
+      opacity var(--motion-base) var(--motion-ease),
+      transform var(--motion-base) var(--motion-ease),
+      overlay var(--motion-base) allow-discrete,
+      display var(--motion-base) allow-discrete;
+  }
+  dialog[open] {
+    opacity: 1;
+    transform: none;
+  }
+  @starting-style {
+    dialog[open] {
+      opacity: 0;
+      transform: translateY(8px) scale(0.98);
+    }
+  }
+  dialog::backdrop {
+    opacity: 0;
+    transition:
+      opacity var(--motion-base) ease-out,
+      overlay var(--motion-base) allow-discrete,
+      display var(--motion-base) allow-discrete;
+  }
+  dialog[open]::backdrop {
+    opacity: 1;
+  }
+  @starting-style {
+    dialog[open]::backdrop {
+      opacity: 0;
+    }
+  }
+
+  /* The left drawer (components/shared/Sidebar.tsx, class drawer-in) slides instead of scaling. */
+  dialog.drawer-in {
+    opacity: 1;
+    transform: translateX(-100%);
+    transition:
+      transform var(--motion-slow) var(--motion-ease),
+      overlay var(--motion-slow) allow-discrete,
+      display var(--motion-slow) allow-discrete;
+  }
+  dialog.drawer-in[open] {
+    transform: none;
+  }
+  @starting-style {
+    dialog.drawer-in[open] {
+      transform: translateX(-100%);
+    }
+  }
+}
+
+/* Route enter (components/shared/motion/PageTransition): for the 180ms the new page rises 8px, the
+   shell region it sits in (the direct parent, which is the safety-net scroller on desktop) must not
+   notice: a transformed child poking past the bottom edge would flash a scrollbar and shift the
+   layout. `overflow: clip` shows no scrollbar and cannot be scrolled; it lasts only that long. */
+@media (min-width: 1024px) {
+  :has(> [data-route-entering]) {
+    overflow: clip !important;
+  }
+}
+
+/* Checkbox tick (components/ui/Checkbox.tsx): the check draws itself in 180ms when the input is
+   checked (pathLength="1" so the dash maths is size-independent). */
+.check-mark {
+  /* Hidden until checked: a round-capped dash of zero visible length can still leave a dot. The
+     opacity flips off only after the draw-out has finished (the 180ms delay). */
+  opacity: 0;
+  transition: opacity 0s linear var(--motion-base);
+}
+.check-mark path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset var(--motion-base) var(--motion-ease) 30ms;
+}
+input:checked ~ .check-mark {
+  opacity: 1;
+  transition-delay: 0s;
+}
+input:checked ~ .check-mark path {
+  stroke-dashoffset: 0;
+}
+
+/* Mascot (components/shared/Mascot.tsx with `animated`): both eyes blink together every 6 seconds
+   (a 140ms close) and the head tilts a few degrees when the logo is hovered. */
+.mascot-eye {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: mascot-blink 6s ease-in-out infinite;
+}
+.mascot-svg {
+  transform-origin: 50% 85%;
+  transition: transform var(--motion-base) var(--motion-spring);
+}
+@media (hover: hover) {
+  :is(a, button, .logo):hover .mascot-svg {
+    transform: rotate(-6deg) scale(1.07);
+  }
+}
+
+/* Theme switch (components/shared/ThemeToggle.tsx): the new theme grows out of the toggle as a
+   circle over the old one. The clip-path itself is animated from JS (it needs the button's
+   position); this only turns the browser's default cross-fade off and stacks the two layers. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-old(root) {
+  z-index: 1;
+}
+::view-transition-new(root) {
+  z-index: 2;
+}
+
+/* Reduced motion: the movement goes, the state change stays. Every animation and transition
+   collapses to a single frame (0.01ms, not 0, so animationend/transitionend still fire for code
+   that waits on them) and every delay is dropped, so a staggered list is never left invisible
+   while it waits its turn. The loading spinner is exempt: it is feedback, not decoration, and a
+   frozen spinner reads as a hang (WCAG 2.3.3 allows essential motion). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+  }
+  .animate-spin {
+    animation-duration: 1.2s !important;
+    animation-iteration-count: infinite !important;
+  }
+}
+
+/* ==========================================================================
+   Desktop fit tiers (owner: shell-fit). TRD.md §14 "Desktop fit tiers".
+
+   The product owner's rule: on DESKTOP (>= 1024px wide and >= 560px tall) nothing scrolls, in
+   the window or in any region of the page chrome. Content therefore has to FIT by design, and
+   "fit" is decided by the viewport HEIGHT, not by hiding a scrollbar. Three tools:
+
+   1. Density tokens (--fit-*): gaps, padding and table-cell padding step down at <= 860px and
+      <= 700px of height. Components use the .fit-* utilities below instead of fixed spacing.
+   2. .fit-hide-short / .fit-hide-tiny: drop low-value text (descriptions, helper copy) at
+      <= 760px / <= 660px of height. Never use them on a control or on the only copy that
+      explains an error.
+   3. components/shared/FitPager (+ ui/TableFrame, which is built on it): rows, cards and grids
+      are paginated into pages that fit the measured box, so a list is never taller than its
+      region.
+   Below 1024px (phones, tablets) none of this applies and the page scrolls normally.
+   Everything here is UNLAYERED on purpose: it must win over Tailwind utilities that set the
+   mobile spacing (gap-4, py-3) without every call site needing a lg:/height variant.
+   ========================================================================== */
+
+/* -- 1. Density tokens -- */
+:root {
+  --fit-gap: 1rem;
+  --fit-pad: 1.25rem;
+  --fit-cell-y: 0.75rem;
+  --fit-empty-y: 3rem;
+}
+
+@media (min-width: 1024px) and (max-height: 860px) {
+  :root {
+    --fit-gap: 0.75rem;
+    --fit-pad: 1rem;
+    --fit-cell-y: 0.5rem;
+    --fit-empty-y: 2rem;
+  }
+}
+
+@media (min-width: 1024px) and (max-height: 700px) {
+  :root {
+    --fit-gap: 0.5rem;
+    --fit-pad: 0.75rem;
+    --fit-cell-y: 0.375rem;
+    --fit-empty-y: 1.25rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .fit-gap {
+    gap: var(--fit-gap);
+  }
+  .fit-pad {
+    padding: var(--fit-pad);
+  }
+  .fit-cell-y {
+    padding-block: var(--fit-cell-y);
+  }
+}
+
+@media (min-width: 1024px) {
+  /* Row gap only (a grid whose column gap must stay): the density token's value. */
+  .fit-gap-y {
+    row-gap: var(--fit-gap);
+  }
+}
+
+@media (min-width: 1024px) {
+  /* EmptyState: 48px above and below on a tall window, 32px / 20px as it gets shorter. */
+  .fit-empty {
+    padding-block: var(--fit-empty-y);
+  }
+}
+
+/* A list of rows (a <dl> of label/value pairs) whose vertical padding follows the density
+   token: half of --fit-cell-y per side; the first row has no top and the last no bottom padding. */
+@media (min-width: 1024px) {
+  .fit-rows > * {
+    padding-block: calc(var(--fit-cell-y) / 2);
+  }
+  .fit-rows > :first-child {
+    padding-top: 0;
+  }
+  .fit-rows > :last-child {
+    padding-bottom: 0;
+  }
+}
+
+@media (min-width: 1024px) and (max-height: 760px) {
+  .fit-hide-short {
+    display: none !important;
+  }
+}
+
+@media (min-width: 1024px) and (max-height: 660px) {
+  .fit-hide-tiny {
+    display: none !important;
+  }
+}
+
+/* -- 2. Sidebar rail (components/shared/Sidebar.tsx) --
+   Sidebar passes --sb-n (items), --sb-g (sections) and --sb-rows (ceil(n / 2)) inline; the
+   row height is solved here from the viewport height, so the server-rendered paint already
+   fits. Priority as the window shrinks: rows go from 40px down to 32px first, then section
+   headings get the slack above 32px rows (22px), then rows may drop to their 28px floor while
+   the headings shrink to a hairline and vanish. Below 630px the 19-item menu turns into a
+   two-column grid. */
+@media (min-width: 1024px) {
+  .sb {
+    --sb-head: 56px;
+    --sb-foot: 56px;
+    --sb-fpad: 8px;
+    --sb-pad: 16px;
+    --sb-min: 28px;
+    --sb-max: 40px;
+    --sb-hmax: 22px;
+    --sb-avail: calc(100dvh - var(--sb-head) - var(--sb-foot) - var(--sb-pad));
+  }
+  /* Collapsed icon rail: logo + expand + theme stack in the header, so it is taller. */
+  .sb[data-collapsed='true'] {
+    --sb-head: 116px;
+    --sb-min: 22px;
+    --sb-max: 36px;
+  }
+
+  .sb-head {
+    height: var(--sb-head);
+  }
+  .sb-foot {
+    height: var(--sb-foot);
+    padding: var(--sb-fpad) 8px;
+  }
+  .sb-foot > button {
+    height: 100%;
+    padding-block: 0;
+  }
+
+  .sb-nav {
+    --sb-slack: calc(var(--sb-avail) - var(--sb-n) * var(--sb-min));
+    --sb-hd: clamp(0px, calc((var(--sb-slack) - var(--sb-n) * 4px) / var(--sb-g)), var(--sb-hmax));
+    --sb-it: clamp(
+      var(--sb-min),
+      calc((var(--sb-avail) - var(--sb-g) * var(--sb-hd)) / var(--sb-n)),
+      var(--sb-max)
+    );
+    overflow: hidden;
+    padding-block: calc(var(--sb-pad) / 2);
+  }
+
+  .sb-link {
+    height: calc(var(--sb-it) - 2px);
+    margin-block: 1px;
+    padding-block: 0;
+    font-size: clamp(12.5px, calc(var(--sb-it) * 0.42), 14px);
+  }
+  .sb-link > svg {
+    width: clamp(16px, calc(var(--sb-it) * 0.55), 20px);
+    height: clamp(16px, calc(var(--sb-it) * 0.55), 20px);
+  }
+  .sb[data-collapsed='true'] .sb-link {
+    justify-content: center;
+    padding-inline: 0;
+  }
+
+  /* Section heading: its height is the slack it is allowed. The text shows only while the
+     heading is tall enough to hold it (the font-size step trick: a length times 1000 is huge
+     or negative, and clamp() turns that into 11px or 0); in between, a hairline marks the
+     boundary of the group. */
+  .sb-heading {
+    position: relative;
+    display: flex;
+    flex: none;
+    align-items: flex-end;
+    overflow: hidden;
+    height: var(--sb-hd);
+    /* Bottom padding only while the label is visible: padding is a floor under the height. */
+    padding: 0 12px clamp(0px, calc((var(--sb-hd) - 15px) * 1000), 4px);
+    line-height: 1;
+    font-size: clamp(0px, calc((var(--sb-hd) - 15px) * 1000), 11px);
+  }
+  .sb-heading::before {
+    content: '';
+    position: absolute;
+    inset-inline: 12px;
+    top: 50%;
+    height: clamp(0px, calc((15px - var(--sb-hd)) * 1000), 1px);
+    background: var(--color-border);
+  }
+  .sb-heading[data-first='true']::before {
+    display: none;
+  }
+  .sb[data-collapsed='true'] .sb-heading::before {
+    inset-inline: 6px;
+  }
+}
+
+@media (min-width: 1024px) and (max-height: 860px) {
+  .sb {
+    --sb-head: 44px;
+    --sb-foot: 44px;
+    --sb-fpad: 6px;
+    --sb-pad: 8px;
+  }
+  .sb[data-collapsed='true'] {
+    --sb-head: 84px;
+  }
+  .sb[data-collapsed='true'] .sb-logo-c {
+    display: none;
+  }
+}
+
+/* Short label variants exist only for the two-column tier below. */
+.sb-short {
+  display: none;
+}
+
+/* The org-wide menu (19 items) can no longer be one column of 28px rows: two columns, labels
+   kept (truncated, with a tooltip), headings dropped. 10 rows of up to 36px. */
+@media (min-width: 1024px) and (max-height: 629px) {
+  .sb[data-nav-size='lg']:not([data-collapsed='true']) {
+    --sb-itg: clamp(26px, calc(var(--sb-avail) / var(--sb-rows)), 36px);
+  }
+  .sb[data-nav-size='lg']:not([data-collapsed='true']) .sb-nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: var(--sb-itg);
+    align-content: start;
+    column-gap: 2px;
+  }
+  .sb[data-nav-size='lg']:not([data-collapsed='true']) .sb-group {
+    display: contents;
+  }
+  .sb[data-nav-size='lg']:not([data-collapsed='true']) .sb-heading {
+    display: none;
+  }
+  .sb[data-nav-size='lg']:not([data-collapsed='true']) .sb-link {
+    height: calc(var(--sb-itg) - 2px);
+    gap: 6px;
+    padding-inline: 8px;
+    font-size: 12.5px;
+  }
+  .sb[data-nav-size='lg']:not([data-collapsed='true']) .sb-link > svg {
+    width: 16px;
+    height: 16px;
+  }
+  /* Three labels are too long for a ~75px column: show their short form (the full one is the tooltip). */
+  .sb[data-nav-size='lg']:not([data-collapsed='true']) .sb-long {
+    display: none;
+  }
+  .sb[data-nav-size='lg']:not([data-collapsed='true']) .sb-short {
+    display: inline;
+  }
+}
+
+/* The collapsed icon rail of the 19-item menu is 22px rows at 560-630px of height, under the 24px
+   target size of WCAG 2.5.8: two columns of 28px icon buttons instead (10 rows of up to 34px). */
+@media (min-width: 1024px) and (max-height: 629px) {
+  .sb[data-nav-size='lg'][data-collapsed='true'] {
+    --sb-itg: clamp(26px, calc(var(--sb-avail) / var(--sb-rows)), 34px);
+  }
+  .sb[data-nav-size='lg'][data-collapsed='true'] .sb-nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: var(--sb-itg);
+    align-content: start;
+    padding-inline: 4px;
+  }
+  .sb[data-nav-size='lg'][data-collapsed='true'] .sb-group {
+    display: contents;
+  }
+  .sb[data-nav-size='lg'][data-collapsed='true'] .sb-heading {
+    display: none;
+  }
+  .sb[data-nav-size='lg'][data-collapsed='true'] .sb-link {
+    height: calc(var(--sb-itg) - 2px);
+  }
+}
+
+/* Slim page chrome on a very short window: the marketing / auth header row 64 -> 48px and the
+   footer's padding halves (app/(marketing)/layout.tsx, app/(auth)/layout.tsx). */
+@media (min-width: 1024px) and (max-height: 620px) {
+  .fit-slim-head {
+    height: 3rem;
+  }
+  .fit-slim-foot {
+    padding-block: 0.375rem;
+  }
+  /* /m shell (app/m/layout.tsx): header row 48 -> 40px, <main> padding 12 -> 8px. Plain classes,
+     not a second arbitrary max-height variant: Tailwind sorts those so the <= 860px one wins. */
+  .fit-slim-bar {
+    height: 2.5rem;
+  }
+  .fit-slim-main {
+    padding-block: 0.5rem;
+  }
+}
+
+/* Safety net below the desktop definition (a landscape tablet 1024x500): the rail may scroll
+   there, because the zero-scroll rule starts at 560px of height. */
+@media (min-width: 1024px) and (max-height: 559px) {
+  .sb-nav {
+    overflow-y: auto;
+  }
+}
+/* ===== end Desktop fit tiers ===== */
+
+/* -- 3. Fit pager (components/shared/FitPager, components/ui/TableFrame) -- */
+/* Before hydration the pager has not measured yet; clip instead of showing a scrollbar. The
+   table scroller still scrolls SIDEWAYS (overflow-x stays auto). */
+@media (min-width: 1024px) and (min-height: 560px) {
+  .fit-clip {
+    overflow-y: hidden;
+  }
+}
+/* The last row on a page has no divider under it (the card's border is the edge). */
+tr[data-fit-last] {
+  border-bottom-width: 0;
+}
+/* Controls that only make sense where the list scrolls with the page (the plain server pager under
+   a table on phones/tablets): the fit footer replaces them on desktop. */
+@media (min-width: 1024px) and (min-height: 560px) {
+  .fit-hide-desktop {
+    display: none !important;
+  }
+}
+/* ===== end Desktop fit tiers (3) ===== */

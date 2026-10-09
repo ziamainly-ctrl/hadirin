@@ -62,15 +62,15 @@ export interface RequireSessionResult {
 export async function requireSession(roles?: readonly UserRole[]): Promise<RequireSessionResult> {
   const store = await cookies();
   const token = store.get(SESSION_COOKIE)?.value;
-  if (!token) throw new AuthError('NO_SESSION', 'No session');
+  if (!token) throw new AuthError('NO_SESSION', 'Sesi Anda berakhir. Silakan masuk lagi.');
 
   const payload = await verifySessionToken(token);
-  if (!payload || payload.kind !== 'user') throw new AuthError('NO_SESSION', 'No session');
+  if (!payload || payload.kind !== 'user') throw new AuthError('NO_SESSION', 'Sesi Anda berakhir. Silakan masuk lagi.');
 
   const context = await cached(cacheKeys.userCtx(payload.sub), 60, () => getUserAuthContext(payload.sub));
-  if (!context) throw new AuthError('NO_SESSION', 'No session');
-  if (context.status !== 'ACTIVE') throw new AuthError('INACTIVE', 'User is inactive');
-  if (roles && !roles.includes(context.role)) throw new AuthError('FORBIDDEN', 'Wrong role');
+  if (!context) throw new AuthError('NO_SESSION', 'Sesi Anda berakhir. Silakan masuk lagi.');
+  if (context.status !== 'ACTIVE') throw new AuthError('INACTIVE', 'Akun Anda tidak aktif. Hubungi admin perusahaan Anda.');
+  if (roles && !roles.includes(context.role)) throw new AuthError('FORBIDDEN', 'Anda tidak memiliki akses ke halaman ini.');
 
   return { userId: context.id, orgId: context.orgId, role: context.role, context };
 }
@@ -82,7 +82,7 @@ export async function requireSession(roles?: readonly UserRole[]): Promise<Requi
 export async function requireActiveSession(roles?: readonly UserRole[]): Promise<RequireSessionResult> {
   const result = await requireSession(roles);
   if (result.context.mustChangePassword) {
-    throw new AuthError('PASSWORD_CHANGE_REQUIRED', 'Password change required');
+    throw new AuthError('PASSWORD_CHANGE_REQUIRED', 'Ganti kata sandi sementara Anda terlebih dahulu.');
   }
   return result;
 }
@@ -99,17 +99,17 @@ export async function requirePlatformSession(
 ): Promise<RequirePlatformSessionResult> {
   const store = await cookies();
   const token = store.get(SESSION_COOKIE)?.value;
-  if (!token) throw new AuthError('NO_SESSION', 'No session');
+  if (!token) throw new AuthError('NO_SESSION', 'Sesi Anda berakhir. Silakan masuk lagi.');
 
   const payload = await verifySessionToken(token);
-  if (!payload || payload.kind !== 'platform') throw new AuthError('NO_SESSION', 'No session');
+  if (!payload || payload.kind !== 'platform') throw new AuthError('NO_SESSION', 'Sesi Anda berakhir. Silakan masuk lagi.');
 
   const context = await cached(cacheKeys.platformAdminCtx(payload.sub), 60, () =>
     getPlatformAdminAuthContext(payload.sub),
   );
-  if (!context) throw new AuthError('NO_SESSION', 'No session');
-  if (context.status !== 'ACTIVE') throw new AuthError('INACTIVE', 'Admin is inactive');
-  if (roles && !roles.includes(context.role)) throw new AuthError('FORBIDDEN', 'Wrong role');
+  if (!context) throw new AuthError('NO_SESSION', 'Sesi Anda berakhir. Silakan masuk lagi.');
+  if (context.status !== 'ACTIVE') throw new AuthError('INACTIVE', 'Akun admin tidak aktif.');
+  if (roles && !roles.includes(context.role)) throw new AuthError('FORBIDDEN', 'Anda tidak memiliki akses ke halaman ini.');
 
   return { adminId: context.id, role: context.role };
 }

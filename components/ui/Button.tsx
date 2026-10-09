@@ -17,17 +17,18 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 // The filled roles paint a gradient (a background-image), and an image sits on top of any
 // hover:bg-* color, so their hover state is a second gradient token, not a bg color. outline
 // is a bg-surface: the global rule in app/globals.css drops that gradient on hover so
-// hover:bg-accent shows. Active (pressed) is a 1px nudge down, which reads on every variant.
+// hover:bg-accent shows. Active (pressed) scales to 97%, which reads on every variant; the transition list names
+// box-shadow too, so the focus halo and the hover shadow ease in instead of snapping.
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
-  primary: 'bg-primary text-primary-fg shadow-xs hover:bg-[image:var(--gradient-primary-hover)]',
-  secondary: 'bg-secondary text-secondary-fg shadow-xs hover:bg-[image:var(--gradient-secondary-hover)]',
-  outline: 'border border-input bg-surface text-text shadow-xs hover:bg-accent',
+  primary: 'bg-primary text-primary-fg shadow-xs hover:bg-[image:var(--gradient-primary-hover)] hover:shadow-sm',
+  secondary: 'bg-secondary text-secondary-fg shadow-xs hover:bg-[image:var(--gradient-secondary-hover)] hover:shadow-sm',
+  outline: 'border border-input bg-surface text-text shadow-xs hover:bg-accent hover:shadow-sm',
   ghost: 'bg-transparent text-text hover:bg-accent',
   // Neutral surface with red text and a red-tinted border (never a red fill: the product owner
   // wants no colored panels, color only as a small text/icon accent). It reads as destructive
   // from the red label alone and stays AA in both themes because text-destructive is the
   // theme's own text-safe red.
-  danger: 'border border-destructive/50 bg-surface text-destructive shadow-xs hover:bg-accent',
+  danger: 'border border-destructive/50 bg-surface text-destructive shadow-xs hover:bg-accent hover:shadow-sm',
   // A quiet destructive action in a table row ("Hapus"): ghost chrome, red text. Its own
   // variant because `variant="ghost" className="text-destructive"` cannot work — both
   // color utilities have the same specificity, so the stylesheet order (not the class
@@ -58,7 +59,7 @@ export function buttonClasses({
   size?: ButtonSize;
   className?: string;
 } = {}): string {
-  return `inline-flex items-center justify-center whitespace-nowrap rounded-input font-medium transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 active:translate-y-px disabled:pointer-events-none disabled:opacity-50 ${SIZE_CLASSES[size]} ${VARIANT_CLASSES[variant]} ${className ?? ''}`;
+  return `inline-flex items-center justify-center whitespace-nowrap rounded-input font-medium transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-150 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 ${SIZE_CLASSES[size]} ${VARIANT_CLASSES[variant]} ${className ?? ''}`;
 }
 
 /**

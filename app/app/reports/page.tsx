@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { FileBarChart } from 'lucide-react';
-import { requireSession } from '@/lib/auth';
+import { requirePageRole } from '@/lib/page-guard';
 import { getMonthlyRecap } from '@/lib/queries/reports';
 import { getOrganizationPlanContext } from '@/lib/queries/organizations';
 import { listBranches } from '@/lib/queries/branches';
@@ -56,7 +56,7 @@ const NUM = 'text-right tabular-nums';
  * org's export_pdf plan feature, to decide whether that link even renders.
  */
 export default async function ReportsPage({ searchParams }: ReportsPageProps) {
-  const { orgId } = await requireSession(['OWNER', 'ADMIN']);
+  const { orgId } = await requirePageRole(['OWNER', 'ADMIN']);
   const params = await searchParams;
 
   const branchIdRaw = firstValue(params.branchId);
@@ -190,11 +190,11 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
                       <Table.HeadCell className={NUM}>Tepat Waktu</Table.HeadCell>
                       <Table.HeadCell className={NUM}>Terlambat</Table.HeadCell>
                       <Table.HeadCell className={NUM}>Tidak Hadir</Table.HeadCell>
-                      <Table.HeadCell className={NUM}>Cuti</Table.HeadCell>
-                      <Table.HeadCell className={NUM}>Sakit</Table.HeadCell>
-                      <Table.HeadCell className={NUM}>Izin</Table.HeadCell>
-                      <Table.HeadCell className={NUM}>Total Keterlambatan</Table.HeadCell>
-                      <Table.HeadCell className={NUM}>Total Jam Kerja</Table.HeadCell>
+                      <Table.HeadCell priority={2} className={NUM}>Cuti</Table.HeadCell>
+                      <Table.HeadCell priority={2} className={NUM}>Sakit</Table.HeadCell>
+                      <Table.HeadCell priority={2} className={NUM}>Izin</Table.HeadCell>
+                      <Table.HeadCell priority={3} className={NUM}>Total Keterlambatan</Table.HeadCell>
+                      <Table.HeadCell priority={3} className={NUM}>Total Jam Kerja</Table.HeadCell>
                     </Table.Row>
                   </Table.Head>
                   <Table.Body>

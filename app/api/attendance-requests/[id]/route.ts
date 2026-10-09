@@ -27,16 +27,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const target = await getRequestWithRequesterInOrg(orgId, id);
 
     if (target.userId === userId) {
-      return apiError(403, 'FORBIDDEN', 'You cannot review your own request.');
+      return apiError(403, 'FORBIDDEN', 'Anda tidak dapat meninjau pengajuan Anda sendiri.');
     }
     const isOrgWide = role === 'OWNER' || role === 'ADMIN';
     const isOwnReport = role === 'MANAGER' && target.requesterManagerId === userId;
     if (!isOrgWide && !isOwnReport) {
-      return apiError(403, 'FORBIDDEN', 'You can only review requests from your own reports.');
+      return apiError(403, 'FORBIDDEN', 'Anda hanya dapat meninjau pengajuan dari anggota tim Anda.');
     }
 
     const org = await getOrganizationPlanContext(orgId);
-    if (!org) return apiError(500, 'INTERNAL_ERROR', 'Organization not found.');
+    if (!org) return apiError(500, 'INTERNAL_ERROR', 'Organisasi tidak ditemukan.');
 
     const newStatus = body.action === 'approve' ? 'APPROVED' : 'REJECTED';
 
@@ -48,7 +48,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         status: newStatus,
         note: body.note ?? null,
       });
-      if (!updated) throw new ConflictError('ALREADY_REVIEWED', 'This request has already been reviewed.');
+      if (!updated) throw new ConflictError('ALREADY_REVIEWED', 'Pengajuan ini sudah ditinjau.');
 
       if (body.action === 'approve') {
         if (!target.requesterShiftId) {
@@ -57,7 +57,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           return updated;
         }
         const shift = await getShiftRuleById(target.requesterShiftId);
-        if (!shift) throw new BusinessRuleError('SHIFT_MISSING', "Requester's shift no longer exists.");
+        if (!shift) throw new BusinessRuleError('SHIFT_MISSING', 'Shift pemohon sudah tidak ada.');
 
         if (target.type === 'CORRECTION') {
           const workDate = target.dateFrom;
@@ -177,7 +177,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     const isOwner = target.userId === userId;
     const isManagerOfOwner = role === 'MANAGER' && target.requesterManagerId === userId;
     if (!isOrgWide && !isOwner && !isManagerOfOwner) {
-      return apiError(404, 'NOT_FOUND', 'Request not found');
+      return apiError(404, 'NOT_FOUND', 'Pengajuan tidak ditemukan');
     }
 
     return apiOk({ request: target });

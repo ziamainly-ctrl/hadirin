@@ -26,6 +26,25 @@ export function apiError(
   return NextResponse.json({ error: { code, message, ...(fields ? { fields } : {}) } }, { status });
 }
 
+// Postgres unique violation (SQLSTATE 23505) -> the field the person can fix. Keys are the index names in
+// drizzle/*.sql; an index not listed here still answers 409, just without a field.
+const UNIQUE_VIOLATION = '23505';
+const DUPLICATE_FIELDS: Record<string, { field: string; message: string }> = {
+  uq_branches_org_name: { field: 'name', message: 'Nama cabang sudah dipakai.' },
+  uq_shifts_org_name: { field: 'name', message: 'Nama shift sudah dipakai.' },
+  uq_users_email: { field: 'email', message: 'Email ini sudah terdaftar.' },
+  uq_users_phone: { field: 'phone', message: 'Nomor telepon ini sudah terdaftar.' },
+  uq_users_org_code: { field: 'employeeCode', message: 'Kode karyawan sudah dipakai.' },
+  uq_holidays_scope_date: { field: 'holidayDate', message: 'Tanggal ini sudah ada di daftar libur.' },
+};
+
+function uniqueViolation(error: unknown): { constraint: string | undefined } | null {
+  if (typeof error !== 'object' || error === null) return null;
+  const { code, constraint } = error as { code?: unknown; constraint?: unknown };
+  if (code !== UNIQUE_VIOLATION) return null;
+  return { constraint: typeof constraint === 'string' ? constraint : undefined };
+}
+
 const AUTH_ERROR_STATUS: Record<AuthError['code'], number> = {
   NO_SESSION: 401,
   FORBIDDEN: 403,
@@ -53,11 +72,22 @@ export function handleApiError(error: unknown): NextResponse {
     }
     return apiError(400, 'VALIDATION_ERROR', 'Data tidak valid. Periksa isian yang ditandai.', fields);
   }
+  if (error instanceof SyntaxError) {
+    // request.json() on a body that is not JSON: the caller's mistake, not a server fault.
+    return apiError(400, 'VALIDATION_ERROR', 'Isi permintaan bukan JSON yang valid.');
+  }
   if (error instanceof BusinessRuleError) {
     return apiError(422, error.code, error.message);
   }
   if (error instanceof ConflictError) {
     return apiError(409, error.code, error.message);
+  }
+  const duplicate = uniqueViolation(error);
+  if (duplicate) {
+    const hit = duplicate.constraint ? DUPLICATE_FIELDS[duplicate.constraint] : undefined;
+    return hit
+      ? apiError(409, 'DUPLICATE', hit.message, { [hit.field]: hit.message })
+      : apiError(409, 'DUPLICATE', 'Data ini sudah ada. Periksa isian Anda.');
   }
   console.error(error);
   return apiError(500, 'INTERNAL_ERROR', 'Terjadi kesalahan di server. Coba lagi.');

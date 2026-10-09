@@ -19,7 +19,7 @@ export async function POST(request: Request) {
 
     const currentHash = await getPasswordHashById(userId);
     if (!currentHash || !(await verifyPassword(body.currentPassword, currentHash))) {
-      return apiError(400, 'INVALID_CURRENT_PASSWORD', 'Current password is incorrect.');
+      return apiError(400, 'INVALID_CURRENT_PASSWORD', 'Kata sandi saat ini salah.');
     }
 
     await setOwnPassword(userId, await hashPassword(body.newPassword));

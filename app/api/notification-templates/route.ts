@@ -16,9 +16,9 @@ export async function GET() {
     const { orgId } = await requireActiveSession(['OWNER', 'ADMIN']);
 
     const org = await getOrganizationPlanContext(orgId);
-    if (!org) return apiError(500, 'INTERNAL_ERROR', 'Organization not found.');
+    if (!org) return apiError(500, 'INTERNAL_ERROR', 'Organisasi tidak ditemukan.');
     if (!org.features.template_override) {
-      return apiError(403, 'PLAN_UPGRADE_REQUIRED', 'Custom notification templates require a paid plan.');
+      return apiError(403, 'PLAN_UPGRADE_REQUIRED', 'Template notifikasi kustom memerlukan paket berbayar.');
     }
 
     const templates = await listOrgTemplateOverrides(orgId);
@@ -37,9 +37,9 @@ export async function PATCH(request: Request) {
     const { orgId } = await requireActiveSession(['OWNER', 'ADMIN']);
 
     const org = await getOrganizationPlanContext(orgId);
-    if (!org) return apiError(500, 'INTERNAL_ERROR', 'Organization not found.');
+    if (!org) return apiError(500, 'INTERNAL_ERROR', 'Organisasi tidak ditemukan.');
     if (!org.features.template_override) {
-      return apiError(403, 'PLAN_UPGRADE_REQUIRED', 'Custom notification templates require a paid plan.');
+      return apiError(403, 'PLAN_UPGRADE_REQUIRED', 'Template notifikasi kustom memerlukan paket berbayar.');
     }
 
     const body = upsertTemplateSchema.parse(await request.json());

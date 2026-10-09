@@ -8,6 +8,7 @@ import Input from '@/components/ui/Input';
 import Textarea from '@/components/ui/Textarea';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
+import FitPager from '@/components/shared/FitPager';
 import { useToast } from '@/components/ui/Toast';
 import { NOTIFICATION_EVENT_TRIGGERS } from '@/lib/constants/events';
 import type { NotificationEventTrigger } from '@/lib/constants/events';
@@ -206,22 +207,23 @@ export default function TemplateEditor({ existingTemplates, defaultTemplates }: 
   // of the form, exactly as the page always ordered them.
   return (
     <div className="grid gap-4 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_16rem] lg:grid-rows-[minmax(0,1fr)]">
-      <aside className="contents lg:col-start-2 lg:row-start-1 lg:flex lg:min-h-0 lg:flex-col lg:gap-4 lg:overflow-y-auto">
+      <aside className="contents lg:col-start-2 lg:row-start-1 lg:flex lg:min-h-0 lg:flex-col lg:gap-4 fit-gap">
         <Card className="hidden shrink-0 lg:block">
           <h2 className="text-sm font-semibold text-text">Data Otomatis</h2>
-          <p className="mb-3 mt-1 text-pretty text-sm text-muted">Ketuk untuk menyisipkannya ke isi pesan.</p>
+          <p className="fit-hide-short mb-3 mt-1 text-pretty text-sm text-muted">Ketuk untuk menyisipkannya ke isi pesan.</p>
           {variableChips}
         </Card>
 
         {existingTemplates.length > 0 ? (
-          <section className="flex shrink-0 flex-col gap-2" aria-labelledby="saved-templates-title">
-            <div>
+          <section className="flex flex-col gap-2 lg:min-h-0 lg:flex-1" aria-labelledby="saved-templates-title">
+            <div className="shrink-0">
               <h2 id="saved-templates-title" className="text-sm font-semibold text-text">
                 Template yang Sudah Diubah
               </h2>
-              <p className="text-pretty text-sm text-muted">Pilih salah satu untuk membukanya lagi.</p>
+              <p className="fit-hide-short text-pretty text-sm text-muted">Pilih salah satu untuk membukanya lagi.</p>
             </div>
-            <div className="flex flex-col gap-2">
+            {/* Desktop: paginated to the room left under "Data Otomatis" (FitPager), so the side column never scrolls. */}
+            <FitPager label="Template yang sudah diubah" noun="template" className="flex flex-col gap-2 fit-gap" frameClassName="lg:min-h-0 lg:flex-1">
               {existingTemplates.map((template) => {
                 const isSelected = template.eventTrigger === form.eventTrigger && template.channel === form.channel;
                 return (
@@ -239,7 +241,7 @@ export default function TemplateEditor({ existingTemplates, defaultTemplates }: 
                   </button>
                 );
               })}
-            </div>
+            </FitPager>
           </section>
         ) : null}
       </aside>

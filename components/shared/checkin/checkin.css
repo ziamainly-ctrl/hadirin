@@ -1,0 +1,245 @@
+/* Motion for the check-in screen (SelfieCamera, CheckInCard and friends). Plain CSS on purpose:
+   keyframes cannot be written as Tailwind utilities, and this file is imported by the components
+   that use it, so app/globals.css stays untouched. Every rule uses the theme tokens
+   (var(--color-*)) and every animation sits inside `prefers-reduced-motion: no-preference`: with
+   reduced motion the element simply shows its final state (state is always carried by text and
+   icons, never by motion alone). Durations stay at or under 250 ms except the one-off success
+   check, so nothing ever makes the person wait. */
+
+/* ---- final states first (what reduced-motion users see) ---------------------------------- */
+
+.ci-check-circle,
+.ci-check-tick {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* A step of the flow (idle -> camera -> review) slides in from the side it came from. */
+  .ci-enter {
+    animation: ci-enter 200ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  .ci-enter-back {
+    animation: ci-enter-back 200ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  .ci-fade {
+    animation: ci-fade 160ms ease-out both;
+  }
+  /* Children appear one after another, 45 ms apart: the timeline, then the week strip. */
+  .ci-stagger > * {
+    animation: ci-enter 220ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    animation-delay: calc(var(--ci-i, 0) * 45ms);
+  }
+  .ci-stagger > *:nth-child(1) { --ci-i: 0; }
+  .ci-stagger > *:nth-child(2) { --ci-i: 1; }
+  .ci-stagger > *:nth-child(3) { --ci-i: 2; }
+  .ci-stagger > *:nth-child(4) { --ci-i: 3; }
+  .ci-stagger > *:nth-child(5) { --ci-i: 4; }
+
+  /* The shutter: a white flash over the viewfinder that fades in 220 ms. */
+  .ci-flash {
+    animation: ci-flash 240ms ease-out both;
+  }
+  /* The still drops in as the live picture freezes. */
+  .ci-shot-in {
+    animation: ci-shot-in 220ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  /* Countdown digit: scales down from big while fading in. */
+  .ci-count {
+    animation: ci-count 900ms ease-out both;
+  }
+  /* The oval breathes while the light is good, asking for a face. */
+  .ci-guide-ready {
+    animation: ci-guide-breathe 1800ms ease-in-out infinite;
+  }
+  /* Hint chip changes text: a small nudge so the eye notices. */
+  .ci-chip {
+    animation: ci-chip 180ms ease-out both;
+  }
+  /* Success: the ring draws, then the tick, then one soft pulse leaves the circle. */
+  .ci-check-circle {
+    stroke-dasharray: 100;
+    stroke-dashoffset: 100;
+    animation: ci-draw 420ms 40ms cubic-bezier(0.65, 0, 0.35, 1) forwards;
+  }
+  .ci-check-tick {
+    stroke-dasharray: 100;
+    stroke-dashoffset: 100;
+    animation: ci-draw 300ms 380ms cubic-bezier(0.65, 0, 0.35, 1) forwards;
+  }
+  .ci-check-pulse {
+    animation: ci-pulse 900ms 520ms ease-out both;
+  }
+  .ci-pop {
+    animation: ci-pop 320ms 120ms cubic-bezier(0.3, 1.4, 0.5, 1) both;
+  }
+  /* A bar that fills toward a width (GPS accuracy meter, shift progress). */
+  .ci-grow {
+    transform-origin: left center;
+    animation: ci-grow 420ms 80ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  /* Loading placeholder inside the viewfinder: a slow light sweep, not a spinner alone. */
+  .ci-sweep::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(100deg, transparent 30%, oklch(1 0 0 / 14%) 50%, transparent 70%);
+    transform: translateX(-100%);
+    animation: ci-sweep 1400ms ease-in-out infinite;
+  }
+  /* The location dot of the step indicator: a live ping while it is the active step. */
+  .ci-ping {
+    animation: ci-ping 1400ms ease-out infinite;
+  }
+  /* Indeterminate stripe for "mencatat absen" when there is no byte progress to show. */
+  .ci-indeterminate {
+    animation: ci-indeterminate 1100ms ease-in-out infinite;
+  }
+  /* Full-screen camera sheet on phones. */
+  dialog.ci-sheet[open] {
+    animation: ci-sheet-in 220ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  dialog.ci-sheet[open]::backdrop {
+    animation: ci-fade 200ms ease-out both;
+  }
+}
+
+dialog.ci-sheet {
+  /* Preflight zeroes margins and the UA gives a dialog a border, padding and max sizes: this is a
+     full-bleed surface, so all of that goes. */
+  margin: 0;
+  padding: 0;
+  border: 0;
+  width: 100%;
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  background: var(--color-bg);
+  background-image: var(--gradient-page);
+  color: var(--color-text);
+}
+dialog.ci-sheet::backdrop {
+  background: oklch(0 0 0 / 60%);
+}
+
+@keyframes ci-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@keyframes ci-enter-back {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+@keyframes ci-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes ci-flash {
+  0% {
+    opacity: 0.95;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes ci-shot-in {
+  from {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+}
+@keyframes ci-count {
+  0% {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+  25% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  80% {
+    opacity: 1;
+    transform: scale(0.94);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+}
+@keyframes ci-guide-breathe {
+  0%,
+  100% {
+    opacity: 0.85;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+@keyframes ci-chip {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+@keyframes ci-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes ci-pulse {
+  from {
+    opacity: 0.5;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.5);
+  }
+}
+@keyframes ci-pop {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.92);
+  }
+}
+@keyframes ci-grow {
+  from {
+    transform: scaleX(0);
+  }
+}
+@keyframes ci-sweep {
+  to {
+    transform: translateX(100%);
+  }
+}
+@keyframes ci-ping {
+  from {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(2.4);
+  }
+}
+@keyframes ci-indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(250%);
+  }
+}
+@keyframes ci-sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+}

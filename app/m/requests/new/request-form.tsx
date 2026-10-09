@@ -140,8 +140,8 @@ export default function RequestForm() {
   // column of a short desktop window (>= 36rem) the fields sit two to a row, so the whole form
   // is about half as tall and still fits above the tab bar.
   return (
-    <form onSubmit={handleSubmit} className="@container flex flex-col gap-4">
-      <div className="grid grid-cols-2 gap-x-3 gap-y-3.5 @xl:grid-cols-4">
+    <form onSubmit={handleSubmit} className="@container flex flex-col gap-4 fit-gap">
+      <div className="grid grid-cols-2 gap-x-3 gap-y-3.5 fit-gap-y @xl:grid-cols-4">
         <Select
           label="Jenis Pengajuan"
           value={type}

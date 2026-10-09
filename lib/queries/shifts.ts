@@ -54,7 +54,7 @@ export async function getShiftByIdInOrg(orgId: number, id: number): Promise<Shif
     orgId,
   ]);
   const row = rows[0] as ShiftSummary | undefined;
-  if (!row) throw new NotFoundError('Shift not found');
+  if (!row) throw new NotFoundError('Shift tidak ditemukan');
   return row;
 }
 
@@ -127,7 +127,7 @@ export async function updateShiftInOrg(orgId: number, id: number, input: UpdateS
     params,
   );
   const row = rows[0] as ShiftSummary | undefined;
-  if (!row) throw new NotFoundError('Shift not found');
+  if (!row) throw new NotFoundError('Shift tidak ditemukan');
   return row;
 }
 
@@ -149,11 +149,11 @@ export async function deactivateShiftInOrg(orgId: number, id: number): Promise<v
       `UPDATE shifts SET is_active = FALSE, updated_at = now() WHERE id = $1 AND org_id = $2 RETURNING id`,
       [id, orgId],
     );
-    if (rows.length === 0) throw new NotFoundError('Shift not found');
+    if (rows.length === 0) throw new NotFoundError('Shift tidak ditemukan');
     return;
   }
   const rows = await sql.query(`DELETE FROM shifts WHERE id = $1 AND org_id = $2 RETURNING id`, [id, orgId]);
-  if (rows.length === 0) throw new NotFoundError('Shift not found');
+  if (rows.length === 0) throw new NotFoundError('Shift tidak ditemukan');
 }
 
 /**

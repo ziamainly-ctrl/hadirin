@@ -76,7 +76,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         input
       )}
       {error ? (
-        <p id={`${inputId}-error`} className="text-sm text-destructive">
+        <p id={`${inputId}-error`} className="animate-rise-sm text-sm text-destructive">
           {error}
         </p>
       ) : hint ? (

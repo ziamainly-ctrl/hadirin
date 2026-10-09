@@ -11,7 +11,7 @@ import { buildMonthlyRecapPdf } from '@/lib/export/pdf';
 // XLSX is the universal baseline (ERD.md §4: every seeded plan has features.export_xlsx
 // true) and is never gated here; PDF requires features.export_pdf on the org's plan.
 const monthlyExportQuerySchema = z.object({
-  month: z.string().regex(/^\d{4}-\d{2}$/, 'Gunakan format TTTT-BB.'),
+  month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Gunakan format TTTT-BB (bulan 01-12).'),
   branchId: idParam.optional(),
   format: z.enum(['xlsx', 'pdf']),
 });
@@ -24,9 +24,9 @@ export async function GET(request: Request) {
     );
 
     const org = await getOrganizationPlanContext(orgId);
-    if (!org) return apiError(500, 'INTERNAL_ERROR', 'Organization not found.');
+    if (!org) return apiError(500, 'INTERNAL_ERROR', 'Organisasi tidak ditemukan.');
     if (format === 'pdf' && !org.features.export_pdf) {
-      return apiError(403, 'PLAN_UPGRADE_REQUIRED', 'PDF export requires a paid plan.');
+      return apiError(403, 'PLAN_UPGRADE_REQUIRED', 'Ekspor PDF memerlukan paket berbayar.');
     }
 
     const [recap, detail] = await Promise.all([

@@ -35,7 +35,7 @@ export default async function PlatformAuthenticatedLayout({ children }: { childr
             of main's padding, so the gutter is still 24px) is room for Page.Body's 4px bleed and the
             3px focus ring of a control that sits flush with the page edge: overflow-y-auto also
             clips on x. */}
-        <main className="min-w-0 flex-1 overflow-x-hidden p-4 pt-18 lg:h-dvh lg:p-5">
+        <main className="fit-pad min-w-0 flex-1 overflow-x-hidden p-4 pt-18 lg:h-dvh lg:p-5">
           <div className="mx-auto w-full max-w-[1600px] lg:h-full lg:overflow-y-auto lg:p-1">{children}</div>
         </main>
       </div>

@@ -16,13 +16,16 @@ export interface EmptyStateProps {
  * (dashed, the shadcn "Empty" pattern) instead of floating bare on the page background.
  * Inside something that already is a card (Card, Table, Dialog — all `rounded-card`) the
  * frame drops away via `in-[.rounded-card]`, so callers never get a box in a box.
+ * On a short desktop window (zero-scroll rule, TRD.md §14) its vertical padding follows the
+ * density tokens (`fit-empty`) and the icon disc is dropped below 660px of height.
  */
 export default function EmptyState({ icon: Icon, message, action, className }: EmptyStateProps) {
   return (
     <div
-      className={`flex flex-col items-center gap-3 rounded-card border border-dashed border-border bg-surface px-6 py-12 text-center in-[.rounded-card]:border-0 in-[.rounded-card]:bg-transparent ${className ?? ''}`}
+      className={`fit-empty flex flex-col items-center gap-3 rounded-card border border-dashed border-border bg-surface px-6 py-12 text-center in-[.rounded-card]:border-0 in-[.rounded-card]:bg-transparent ${className ?? ''}`}
     >
-      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-accent">
+      {/* The disc is the first thing to go on a very short desktop window (fit-hide-tiny): the message stays. */}
+      <span className="fit-hide-tiny flex h-12 w-12 items-center justify-center rounded-full bg-accent">
         <Icon className="h-6 w-6 text-muted" aria-hidden="true" />
       </span>
       <p className="max-w-sm text-sm text-muted">{message}</p>

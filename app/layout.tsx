@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 import ThemeSync from '@/components/shared/ThemeSync';
+import NavigationProgress from '@/components/shared/motion/NavigationProgress';
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -24,12 +25,12 @@ export const metadata: Metadata = {
 };
 
 // Browser UI color (mobile address bar) per OS scheme; the top of the page gradient in each
-// theme (app/globals.css --gradient-page: oklch(0.995) light, oklch(0.225) dark), as hex, so
+// theme (app/globals.css --gradient-page: oklch(0.945) light, oklch(0.225) dark), as hex, so
 // the bar melts into the page. An explicit in-app theme choice can't change this static tag.
 export const viewport: Viewport = {
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#fdfdfd' },
-    { media: '(prefers-color-scheme: dark)', color: '#252525' },
+    { media: '(prefers-color-scheme: light)', color: '#ededed' },
+    { media: '(prefers-color-scheme: dark)', color: '#1c1c1c' },
   ],
 };
 
@@ -51,6 +52,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="font-sans antialiased">
         {/* Re-applies the theme after a server error, when the script above never runs (see ThemeSync). */}
         <ThemeSync />
+        {/* Top progress bar + "Memuat…" pill for every navigation, redirects included (see NavigationProgress). */}
+        <NavigationProgress />
         {children}
       </body>
     </html>

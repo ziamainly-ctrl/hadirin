@@ -95,7 +95,7 @@ export async function updateOrganization(orgId: number, input: UpdateOrganizatio
   }
   if (sets.length === 0) {
     const row = await getOrganizationById(orgId);
-    if (!row) throw new NotFoundError('Organization not found');
+    if (!row) throw new NotFoundError('Organisasi tidak ditemukan');
     return row;
   }
   sets.push('updated_at = now()');
@@ -106,7 +106,7 @@ export async function updateOrganization(orgId: number, input: UpdateOrganizatio
     params,
   );
   const row = rows[0] as OrganizationRow | undefined;
-  if (!row) throw new NotFoundError('Organization not found');
+  if (!row) throw new NotFoundError('Organisasi tidak ditemukan');
   return row;
 }
 

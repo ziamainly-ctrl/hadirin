@@ -130,7 +130,7 @@ export async function updatePlan(id: number, input: UpdatePlanInput): Promise<Pl
   }
   if (sets.length === 0) {
     const row = await getPlanById(id);
-    if (!row) throw new NotFoundError('Plan not found');
+    if (!row) throw new NotFoundError('Paket tidak ditemukan');
     return row;
   }
   sets.push('updated_at = now()');
@@ -140,7 +140,7 @@ export async function updatePlan(id: number, input: UpdatePlanInput): Promise<Pl
     params,
   );
   const row = rows[0] as PlanRow | undefined;
-  if (!row) throw new NotFoundError('Plan not found');
+  if (!row) throw new NotFoundError('Paket tidak ditemukan');
   return toPlan(row);
 }
 

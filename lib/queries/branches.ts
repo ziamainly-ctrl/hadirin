@@ -64,7 +64,7 @@ export async function getBranchByIdInOrg(orgId: number, id: number): Promise<Bra
     [id, orgId],
   );
   const row = rows[0] as BranchRow | undefined;
-  if (!row) throw new NotFoundError('Branch not found');
+  if (!row) throw new NotFoundError('Cabang tidak ditemukan');
   return mapBranchRow(row);
 }
 
@@ -122,7 +122,7 @@ export async function updateBranchInOrg(orgId: number, id: number, input: Update
     params,
   );
   const row = rows[0] as BranchRow | undefined;
-  if (!row) throw new NotFoundError('Branch not found');
+  if (!row) throw new NotFoundError('Cabang tidak ditemukan');
   return mapBranchRow(row);
 }
 
@@ -143,11 +143,11 @@ export async function deactivateBranchInOrg(orgId: number, id: number): Promise<
       `UPDATE branches SET is_active = FALSE, updated_at = now() WHERE id = $1 AND org_id = $2 RETURNING id`,
       [id, orgId],
     );
-    if (rows.length === 0) throw new NotFoundError('Branch not found');
+    if (rows.length === 0) throw new NotFoundError('Cabang tidak ditemukan');
     return;
   }
   const rows = await sql.query(`DELETE FROM branches WHERE id = $1 AND org_id = $2 RETURNING id`, [id, orgId]);
-  if (rows.length === 0) throw new NotFoundError('Branch not found');
+  if (rows.length === 0) throw new NotFoundError('Cabang tidak ditemukan');
 }
 
 /**

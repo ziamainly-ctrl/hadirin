@@ -8,7 +8,7 @@ import { getMonthlyRecap } from '@/lib/queries/reports';
 // recap table. Available regardless of the org's plan — `features.export_xlsx`/`export_pdf`
 // only gate which FILE FORMATS /api/reports/monthly/export can produce, not this endpoint.
 const monthlyRecapQuerySchema = z.object({
-  month: z.string().regex(/^\d{4}-\d{2}$/, 'Gunakan format TTTT-BB.'),
+  month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Gunakan format TTTT-BB (bulan 01-12).'),
   branchId: idParam.optional(),
 });
 

@@ -17,26 +17,51 @@ export interface BranchLocation {
   latitude: number;
   longitude: number;
   radiusM: number;
+  /** Optional so the bare geofence rows keep working; callers that show a branch pass it. */
+  name?: string;
 }
 
-export interface NearestBranchResult {
-  branch: BranchLocation;
+export interface NearestBranchResult<T extends BranchLocation = BranchLocation> {
+  branch: T;
   distanceM: number;
   isOutside: boolean;
 }
 
-/** Nearest active branch by straight-line distance, flagged if outside its own radius. */
-export function nearestBranch(
+/**
+ * The branch a punch belongs to (ERD.md §3.2: "a tracked user may check in at any active
+ * branch of the org; the nearest one within radius wins").
+ *
+ * 1. Branches whose radius CONTAINS the point: the nearest of those wins, `isOutside = false`.
+ *    A user standing inside a large-radius branch is never rejected because a smaller branch's
+ *    centre happens to be closer.
+ * 2. Otherwise the globally nearest branch, flagged `isOutside = true` (the caller decides
+ *    whether STRICT mode refuses it or FLAG mode records the flag).
+ */
+export function nearestBranch<T extends BranchLocation>(
   lat: number,
   lng: number,
-  branches: readonly BranchLocation[],
-): NearestBranchResult | null {
-  let best: NearestBranchResult | null = null;
+  branches: readonly T[],
+): NearestBranchResult<T> | null {
+  let nearestInside: NearestBranchResult<T> | null = null;
+  let nearestAny: NearestBranchResult<T> | null = null;
   for (const branch of branches) {
     const d = distanceM(lat, lng, branch.latitude, branch.longitude);
-    if (!best || d < best.distanceM) {
-      best = { branch, distanceM: d, isOutside: d > branch.radiusM };
+    const inside = d <= branch.radiusM;
+    if (!nearestAny || d < nearestAny.distanceM) {
+      nearestAny = { branch, distanceM: d, isOutside: !inside };
+    }
+    if (inside && (!nearestInside || d < nearestInside.distanceM)) {
+      nearestInside = { branch, distanceM: d, isOutside: false };
     }
   }
-  return best;
+  return nearestInside ?? nearestAny;
+}
+
+/** 85 -> "85 m", 1234 -> "1,2 km" (id-ID decimal comma), 12000 -> "12 km". */
+export function formatDistance(meters: number): string {
+  if (!Number.isFinite(meters) || meters < 0) return '-';
+  if (meters < 1000) return `${Math.round(meters)} m`;
+  const km = meters / 1000;
+  const text = km >= 10 ? String(Math.round(km)) : km.toFixed(1).replace('.', ',');
+  return `${text.replace(/,0$/, '')} km`;
 }

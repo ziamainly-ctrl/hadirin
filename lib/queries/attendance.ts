@@ -4,20 +4,53 @@ import type { AttendanceStatus, AttendanceSource } from '../constants/statuses';
 // Security/correctness-critical (AGENTS.md domain rules #1, #4, #5, #6, #9) — written
 // directly rather than delegated. Mirrors the exact flow in TRD.md §7 and §12.
 
-const LOG_COLUMNS = `
-  id, org_id as "orgId", user_id as "userId", shift_id as "shiftId", request_id as "requestId",
-  work_date as "workDate", scheduled_in as "scheduledIn", scheduled_out as "scheduledOut",
-  check_in_at as "checkInAt", check_in_branch_id as "checkInBranchId",
-  check_in_lat as "checkInLat", check_in_lng as "checkInLng", check_in_accuracy_m as "checkInAccuracyM",
-  check_in_distance_m as "checkInDistanceM", check_in_photo_url as "checkInPhotoUrl",
-  check_in_is_outside as "checkInIsOutside",
-  check_out_at as "checkOutAt", check_out_branch_id as "checkOutBranchId",
-  check_out_lat as "checkOutLat", check_out_lng as "checkOutLng", check_out_accuracy_m as "checkOutAccuracyM",
-  check_out_distance_m as "checkOutDistanceM", check_out_photo_url as "checkOutPhotoUrl",
-  check_out_is_outside as "checkOutIsOutside",
-  status, late_minutes as "lateMinutes", early_leave_minutes as "earlyLeaveMinutes",
-  work_minutes as "workMinutes", note, source, created_at as "createdAt", updated_at as "updatedAt"
-`;
+// One column list for every query that returns a whole log, so a column added to the table is
+// added here once instead of in three copy-pasted SELECTs. `work_date` is cast to text: the
+// driver would otherwise hand a DATE back as a JS Date at server-local midnight, which JSON
+// serialises a day early on any server east of UTC ("2026-10-07T17:00:00.000Z" for the 8th).
+// Numeric lat/lng stay NUMERIC(9,6) strings, as the row interface says.
+const LOG_FIELDS: readonly [column: string, alias: string][] = [
+  ['id', 'id'],
+  ['org_id', 'orgId'],
+  ['user_id', 'userId'],
+  ['shift_id', 'shiftId'],
+  ['request_id', 'requestId'],
+  ['work_date::text', 'workDate'],
+  ['scheduled_in', 'scheduledIn'],
+  ['scheduled_out', 'scheduledOut'],
+  ['check_in_at', 'checkInAt'],
+  ['check_in_branch_id', 'checkInBranchId'],
+  ['check_in_lat', 'checkInLat'],
+  ['check_in_lng', 'checkInLng'],
+  ['check_in_accuracy_m', 'checkInAccuracyM'],
+  ['check_in_distance_m', 'checkInDistanceM'],
+  ['check_in_photo_url', 'checkInPhotoUrl'],
+  ['check_in_is_outside', 'checkInIsOutside'],
+  ['check_out_at', 'checkOutAt'],
+  ['check_out_branch_id', 'checkOutBranchId'],
+  ['check_out_lat', 'checkOutLat'],
+  ['check_out_lng', 'checkOutLng'],
+  ['check_out_accuracy_m', 'checkOutAccuracyM'],
+  ['check_out_distance_m', 'checkOutDistanceM'],
+  ['check_out_photo_url', 'checkOutPhotoUrl'],
+  ['check_out_is_outside', 'checkOutIsOutside'],
+  ['status', 'status'],
+  ['late_minutes', 'lateMinutes'],
+  ['early_leave_minutes', 'earlyLeaveMinutes'],
+  ['work_minutes', 'workMinutes'],
+  ['note', 'note'],
+  ['source', 'source'],
+  ['created_at', 'createdAt'],
+  ['updated_at', 'updatedAt'],
+];
+
+/** The explicit column list of a whole log; pass the table alias when the query joins. */
+export function logColumns(alias = ''): string {
+  const prefix = alias ? `${alias}.` : '';
+  return LOG_FIELDS.map(([column, alias2]) => `${prefix}${column} as "${alias2}"`).join(', ');
+}
+
+const LOG_COLUMNS = logColumns();
 
 export interface AttendanceLogRow {
   id: number;
@@ -70,6 +103,8 @@ export interface CheckInInput {
   isOutside: boolean;
   status: AttendanceStatus;
   lateMinutes: number;
+  /** The person's own note, or the "Akurasi GPS rendah" flag for a weak fix (lowAccuracyNote). */
+  note?: string | null;
 }
 
 /** Idempotent: ON CONFLICT (user_id, work_date) DO NOTHING. Null means already checked in — the
@@ -79,8 +114,8 @@ export async function insertCheckIn(input: CheckInInput): Promise<AttendanceLogR
     `INSERT INTO attendance_logs (
        org_id, user_id, shift_id, work_date, scheduled_in, scheduled_out,
        check_in_at, check_in_branch_id, check_in_lat, check_in_lng, check_in_accuracy_m,
-       check_in_distance_m, check_in_photo_url, check_in_is_outside, status, late_minutes, source
-     ) VALUES ($1,$2,$3,$4,$5,$6, now(), $7,$8,$9,$10,$11,$12,$13,$14,$15,'APP')
+       check_in_distance_m, check_in_photo_url, check_in_is_outside, status, late_minutes, note, source
+     ) VALUES ($1,$2,$3,$4,$5,$6, now(), $7,$8,$9,$10,$11,$12,$13,$14,$15,$16,'APP')
      ON CONFLICT (user_id, work_date) DO NOTHING
      RETURNING ${LOG_COLUMNS}`,
     [
@@ -99,14 +134,17 @@ export async function insertCheckIn(input: CheckInInput): Promise<AttendanceLogR
       input.isOutside,
       input.status,
       input.lateMinutes,
+      input.note ?? null,
     ],
   );
   return (rows[0] as AttendanceLogRow | undefined) ?? null;
 }
 
 export interface CheckOutInput {
-  userId: number;
-  workDate: string;
+  orgId: number;
+  /** The open log being closed. Not "today's log": a check-out after midnight, or after a
+   * cross-day shift ends, closes the log of the previous work date. */
+  logId: number;
   branchId: number;
   lat: number;
   lng: number;
@@ -118,19 +156,20 @@ export interface CheckOutInput {
   earlyLeaveMinutes: number;
 }
 
-/** 0 rows (null) means no open log to close — the route distinguishes "never checked in"
- * (422) from "already checked out" (409) by calling getLogByUserAndDate() first. */
-export async function updateCheckOut(input: CheckOutInput): Promise<AttendanceLogRow | null> {
+/** Closes one open log by id. 0 rows (null) means it was closed in the meantime (a double tap, a
+ * second device): the route answers 409 ALREADY_CHECKED_OUT. Scoped by org_id as well as id
+ * (AGENTS.md domain rule #1). */
+export async function updateCheckOutById(input: CheckOutInput): Promise<AttendanceLogRow | null> {
   const rows = await sql.query(
     `UPDATE attendance_logs
         SET check_out_at = now(), check_out_branch_id = $3, check_out_lat = $4, check_out_lng = $5,
             check_out_accuracy_m = $6, check_out_distance_m = $7, check_out_photo_url = $8,
             check_out_is_outside = $9, work_minutes = $10, early_leave_minutes = $11, updated_at = now()
-      WHERE user_id = $1 AND work_date = $2 AND check_in_at IS NOT NULL AND check_out_at IS NULL
+      WHERE id = $1 AND org_id = $2 AND check_in_at IS NOT NULL AND check_out_at IS NULL
       RETURNING ${LOG_COLUMNS}`,
     [
-      input.userId,
-      input.workDate,
+      input.logId,
+      input.orgId,
       input.branchId,
       input.lat,
       input.lng,
@@ -153,23 +192,9 @@ export interface LogWithOwnerRow extends AttendanceLogRow {
  * plus its owner's manager_id so a MANAGER's own-team check doesn't need a second query. */
 export async function getLogByIdInOrg(orgId: number, id: number): Promise<LogWithOwnerRow | null> {
   const rows = await sql.query(
-    `SELECT a.id, a.org_id as "orgId", a.user_id as "userId", a.shift_id as "shiftId",
-            a.request_id as "requestId", a.work_date as "workDate",
-            a.scheduled_in as "scheduledIn", a.scheduled_out as "scheduledOut",
-            a.check_in_at as "checkInAt", a.check_in_branch_id as "checkInBranchId",
-            a.check_in_lat as "checkInLat", a.check_in_lng as "checkInLng",
-            a.check_in_accuracy_m as "checkInAccuracyM", a.check_in_distance_m as "checkInDistanceM",
-            a.check_in_photo_url as "checkInPhotoUrl", a.check_in_is_outside as "checkInIsOutside",
-            a.check_out_at as "checkOutAt", a.check_out_branch_id as "checkOutBranchId",
-            a.check_out_lat as "checkOutLat", a.check_out_lng as "checkOutLng",
-            a.check_out_accuracy_m as "checkOutAccuracyM", a.check_out_distance_m as "checkOutDistanceM",
-            a.check_out_photo_url as "checkOutPhotoUrl", a.check_out_is_outside as "checkOutIsOutside",
-            a.status, a.late_minutes as "lateMinutes", a.early_leave_minutes as "earlyLeaveMinutes",
-            a.work_minutes as "workMinutes", a.note, a.source,
-            a.created_at as "createdAt", a.updated_at as "updatedAt",
-            u.manager_id as "ownerManagerId"
+    `SELECT ${logColumns('a')}, u.manager_id as "ownerManagerId"
        FROM attendance_logs a
-       JOIN users u ON u.id = a.user_id
+       JOIN users u ON u.id = a.user_id AND u.org_id = a.org_id
       WHERE a.id = $1 AND a.org_id = $2
       LIMIT 1`,
     [id, orgId],
@@ -239,7 +264,7 @@ export async function listAttendanceForOrg(
   let join = '';
   if (filter.managerId !== undefined) {
     params.push(filter.managerId);
-    join = 'JOIN users u ON u.id = a.user_id';
+    join = 'JOIN users u ON u.id = a.user_id AND u.org_id = a.org_id';
     conditions.push(`u.manager_id = $${params.length}`);
   }
   const where = conditions.join(' AND ');
@@ -249,20 +274,7 @@ export async function listAttendanceForOrg(
 
   params.push(pageSize, (page - 1) * pageSize);
   const rows = await sql.query(
-    `SELECT a.id, a.org_id as "orgId", a.user_id as "userId", a.shift_id as "shiftId",
-            a.request_id as "requestId", a.work_date as "workDate",
-            a.scheduled_in as "scheduledIn", a.scheduled_out as "scheduledOut",
-            a.check_in_at as "checkInAt", a.check_in_branch_id as "checkInBranchId",
-            a.check_in_lat as "checkInLat", a.check_in_lng as "checkInLng",
-            a.check_in_accuracy_m as "checkInAccuracyM", a.check_in_distance_m as "checkInDistanceM",
-            a.check_in_photo_url as "checkInPhotoUrl", a.check_in_is_outside as "checkInIsOutside",
-            a.check_out_at as "checkOutAt", a.check_out_branch_id as "checkOutBranchId",
-            a.check_out_lat as "checkOutLat", a.check_out_lng as "checkOutLng",
-            a.check_out_accuracy_m as "checkOutAccuracyM", a.check_out_distance_m as "checkOutDistanceM",
-            a.check_out_photo_url as "checkOutPhotoUrl", a.check_out_is_outside as "checkOutIsOutside",
-            a.status, a.late_minutes as "lateMinutes", a.early_leave_minutes as "earlyLeaveMinutes",
-            a.work_minutes as "workMinutes", a.note, a.source,
-            a.created_at as "createdAt", a.updated_at as "updatedAt"
+    `SELECT ${logColumns('a')}
        FROM attendance_logs a ${join}
       WHERE ${where}
       ORDER BY a.work_date DESC, a.id DESC
@@ -275,6 +287,8 @@ export async function listAttendanceForOrg(
 export interface DashboardRow {
   userId: number;
   name: string;
+  /** The person's manager: lets the route narrow the one cached, unfiltered payload for a MANAGER. */
+  managerId: number | null;
   branchId: number | null;
   branchName: string | null;
   status: AttendanceStatus | 'NOT_YET_IN';
@@ -284,9 +298,13 @@ export interface DashboardRow {
   checkOutIsOutside: boolean;
 }
 
-/** Every tracked, active, scheduled-today user with today's log left-joined in. Rows with
- * status NOT_YET_IN have no log row at all yet. managerId scopes to one manager's direct
- * reports (TRD.md §6 "MANAGER (direct reports only)"); omit it for OWNER/ADMIN. */
+/**
+ * The live-dashboard roster for one work date: every active user who is scheduled that weekday
+ * (tracked, shift works that ISO weekday) UNION every active user who has a log that date, so an
+ * off-day or holiday punch is on the board too. A scheduled person with no log is NOT_YET_IN, or
+ * HOLIDAY when the date is a national or company holiday. managerId, when given, scopes to that
+ * manager's direct reports; the dashboard route caches the unfiltered list and omits it.
+ */
 export async function getDashboardRows(orgId: number, workDate: string, managerId?: number): Promise<DashboardRow[]> {
   const params: unknown[] = [orgId, workDate];
   let managerFilter = '';
@@ -295,22 +313,76 @@ export async function getDashboardRows(orgId: number, workDate: string, managerI
     managerFilter = `AND u.manager_id = $${params.length}`;
   }
   const rows = await sql.query(
-    `SELECT u.id as "userId", u.name, u.branch_id as "branchId", b.name as "branchName",
-            COALESCE(l.status, 'NOT_YET_IN') as status,
+    `SELECT u.id as "userId", u.name, u.manager_id as "managerId", u.branch_id as "branchId", b.name as "branchName",
+            COALESCE(l.status, CASE WHEN h.holiday_date IS NOT NULL THEN 'HOLIDAY' ELSE 'NOT_YET_IN' END) as status,
             l.check_in_at as "checkInAt", l.check_out_at as "checkOutAt",
             COALESCE(l.check_in_is_outside, FALSE) as "checkInIsOutside",
             COALESCE(l.check_out_is_outside, FALSE) as "checkOutIsOutside"
        FROM users u
-       JOIN shifts s ON s.id = u.shift_id
-       LEFT JOIN branches b ON b.id = u.branch_id
-       LEFT JOIN attendance_logs l ON l.user_id = u.id AND l.work_date = $2
-      WHERE u.org_id = $1 AND u.status = 'ACTIVE' AND u.shift_id IS NOT NULL
-        AND extract(isodow from $2::date)::text = ANY(string_to_array(s.work_days, ','))
+       LEFT JOIN shifts s ON s.id = u.shift_id AND s.org_id = u.org_id
+       LEFT JOIN branches b ON b.id = u.branch_id AND b.org_id = u.org_id
+       LEFT JOIN attendance_logs l ON l.user_id = u.id AND l.org_id = u.org_id AND l.work_date = $2::date
+       LEFT JOIN LATERAL (
+         SELECT holiday_date FROM holidays
+          WHERE holiday_date = $2::date AND (org_id = $1 OR org_id IS NULL)
+          LIMIT 1
+       ) h ON TRUE
+      WHERE u.org_id = $1 AND u.status = 'ACTIVE'
+        AND (
+          l.id IS NOT NULL
+          OR (u.shift_id IS NOT NULL AND extract(isodow from $2::date)::text = ANY(string_to_array(s.work_days, ',')))
+        )
         ${managerFilter}
       ORDER BY u.name`,
     params,
   );
   return rows as DashboardRow[];
+}
+
+/** A log that is open (checked in, not out), with the one shift fact needed to know how long it can
+ * still be closed. */
+export interface OpenLogRow extends AttendanceLogRow {
+  shiftIsCrossDay: boolean;
+}
+
+/**
+ * The person's logs with a check-in and no check-out from the last 36 hours, newest first (at most 3).
+ * Check-out closes ONE of them by id, not "today's row": after midnight, or after a cross-day shift
+ * ends, the work date of the row is not today's (lib/punch.ts pickOpenLog decides which is still
+ * closeable, and an older one that no longer is becomes the "belum absen keluar kemarin" banner).
+ * Matches the partial index idx_att_open.
+ */
+export async function listOpenLogsForUser(orgId: number, userId: number): Promise<OpenLogRow[]> {
+  const rows = await sql.query(
+    `SELECT ${logColumns('a')}, COALESCE(s.is_cross_day, FALSE) as "shiftIsCrossDay"
+       FROM attendance_logs a
+       LEFT JOIN shifts s ON s.id = a.shift_id AND s.org_id = a.org_id
+      WHERE a.org_id = $1 AND a.user_id = $2
+        AND a.check_in_at IS NOT NULL AND a.check_out_at IS NULL
+        AND a.check_in_at > now() - interval '36 hours'
+      ORDER BY a.check_in_at DESC
+      LIMIT 3`,
+    [orgId, userId],
+  );
+  return rows as OpenLogRow[];
+}
+
+/** The newest open log (see listOpenLogsForUser). */
+export async function getOpenLogForUser(orgId: number, userId: number): Promise<OpenLogRow | null> {
+  return (await listOpenLogsForUser(orgId, userId))[0] ?? null;
+}
+
+/** The name of the holiday on a date for this org (its own company holiday wins over a national
+ * one on the same date), or null. A holiday never blocks a punch; it only zeroes the late minutes. */
+export async function getHolidayNameForDate(orgId: number, date: string): Promise<string | null> {
+  const rows = await sql.query(
+    `SELECT name FROM holidays
+      WHERE holiday_date = $2::date AND (org_id = $1 OR org_id IS NULL)
+      ORDER BY (org_id IS NULL)
+      LIMIT 1`,
+    [orgId, date],
+  );
+  return (rows[0] as { name: string } | undefined)?.name ?? null;
 }
 
 /** Open logs (checked in, not out) for the "missing check-out" widget and its reminder

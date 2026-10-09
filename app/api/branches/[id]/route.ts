@@ -3,6 +3,7 @@ import { requireActiveSession } from '@/lib/auth';
 import { upsertBranchSchema } from '@/lib/validators/branches';
 import { idParam } from '@/lib/validators/common';
 import { bust, cacheKeys } from '@/lib/redis';
+import { bustTodayDashboard } from '@/lib/dashboard-cache';
 import { getBranchByIdInOrg, updateBranchInOrg, deactivateBranchInOrg } from '@/lib/queries/branches';
 
 // GET /api/branches/[id] — any active role may read (TRD.md §6).
@@ -27,6 +28,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
     const branch = await updateBranchInOrg(orgId, id, body);
     await bust(cacheKeys.orgMaster(orgId));
+    // Branch and shift names are on the live dashboard rows (TRD.md §10).
+    await bustTodayDashboard(orgId);
 
     return apiOk({ branch });
   } catch (error) {
@@ -44,6 +47,8 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
 
     await deactivateBranchInOrg(orgId, id);
     await bust(cacheKeys.orgMaster(orgId));
+    // Branch and shift names are on the live dashboard rows (TRD.md §10).
+    await bustTodayDashboard(orgId);
 
     return apiOk(null);
   } catch (error) {

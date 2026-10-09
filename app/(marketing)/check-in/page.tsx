@@ -36,12 +36,12 @@ export default async function CheckInPage() {
           around it (header 4rem + footer 2.6rem + padding + page title + card header): the
           selfie preview is 100dvh minus that, so the whole screen fits 1024x600 up to 2200x1100
           (the lower floor, --vf-min, is for the same reason: the desktop shell must not scroll). */}
-      <section className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-4 lg:min-h-0 lg:py-[clamp(0.5rem,calc(6vh-2rem),2rem)] lg:[--today-chrome-wide:19rem] lg:[--vf-min:8rem]">
+      <section className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-4 lg:min-h-0 lg:py-[clamp(0.5rem,calc(6vh-2rem),2rem)] lg:[--today-chrome-wide:19.25rem] lg:[--vf-min:8rem]">
         {/* lg:my-auto: like every other marketing page, the screen floats in the middle of a tall
             window instead of hugging the header (an auto margin, not justify-center, so a window
             too short for it scrolls from its top). lg:h-auto! overrides the Page frame's h-full:
             the viewfinder is sized from the viewport (the variables above), not from this box. */}
-        <TodayView className="lg:my-auto lg:h-auto!" />
+        <TodayView host="check-in" className="lg:my-auto lg:h-auto!" />
       </section>
     </ToastProvider>
   );

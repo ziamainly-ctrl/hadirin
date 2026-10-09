@@ -18,11 +18,11 @@ export async function POST(request: Request) {
 
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
     const { success } = await loginRatelimit.limit(`platform:${ip}:${body.email}`);
-    if (!success) return apiError(429, 'RATE_LIMITED', 'Too many login attempts. Try again later.');
+    if (!success) return apiError(429, 'RATE_LIMITED', 'Terlalu banyak percobaan masuk. Coba lagi nanti.');
 
     const admin = await getPlatformAdminByEmail(body.email);
     if (!admin || admin.status !== 'ACTIVE' || !(await verifyPassword(body.password, admin.passwordHash))) {
-      return apiError(401, 'INVALID_CREDENTIALS', 'Invalid email or password.');
+      return apiError(401, 'INVALID_CREDENTIALS', 'Email atau kata sandi tidak cocok.');
     }
 
     await setSessionCookie({ kind: 'platform', sub: admin.id, role: admin.role });

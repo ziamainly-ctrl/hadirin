@@ -3,6 +3,7 @@ import { apiOk, apiCreated, handleApiError } from '@/lib/api-response';
 import { requireActiveSession } from '@/lib/auth';
 import { upsertShiftSchema } from '@/lib/validators/shifts';
 import { bust, cacheKeys } from '@/lib/redis';
+import { bustTodayDashboard } from '@/lib/dashboard-cache';
 import { listShifts, insertShift } from '@/lib/queries/shifts';
 
 // GET /api/shifts?activeOnly=1 — any active role may read (check-in picker etc.,
@@ -40,6 +41,8 @@ export async function POST(request: Request) {
     });
 
     await bust(cacheKeys.orgMaster(orgId));
+    // Branch and shift names are on the live dashboard rows (TRD.md §10).
+    await bustTodayDashboard(orgId);
 
     return apiCreated({ shift });
   } catch (error) {

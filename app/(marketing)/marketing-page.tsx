@@ -42,7 +42,7 @@ export function PageHead({
         <h1 className="text-balance text-2xl font-bold sm:text-3xl tracking-tight text-text lg:text-[clamp(1.75rem,min(2.6vw,5vh),2.25rem)]">
           {title}
         </h1>
-        <p className="mt-2 text-pretty text-muted">{description}</p>
+        <p className="fit-hide-tiny mt-2 text-pretty text-muted">{description}</p>
       </div>
       {actions ? <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row lg:shrink-0">{actions}</div> : null}
     </header>

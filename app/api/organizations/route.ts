@@ -11,7 +11,7 @@ export async function GET() {
     const { orgId } = await requireActiveSession();
 
     const org = await getOrganizationPlanContext(orgId);
-    if (!org) return apiError(500, 'INTERNAL_ERROR', 'Organization not found.');
+    if (!org) return apiError(500, 'INTERNAL_ERROR', 'Organisasi tidak ditemukan.');
 
     return apiOk(org);
   } catch (error) {

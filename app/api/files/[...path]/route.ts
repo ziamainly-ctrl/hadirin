@@ -15,7 +15,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ pat
     const [resource, idStr, which] = (await params).path;
     const id = Number(idStr);
     if (!resource || !Number.isInteger(id) || id <= 0 || !which) {
-      return apiError(404, 'NOT_FOUND', 'File not found');
+      return apiError(404, 'NOT_FOUND', 'Berkas tidak ditemukan');
     }
 
     const isOrgWide = role === 'OWNER' || role === 'ADMIN';
@@ -23,23 +23,23 @@ export async function GET(_request: Request, { params }: { params: Promise<{ pat
 
     if (resource === 'attendance-logs') {
       const log = await getLogByIdInOrg(orgId, id);
-      if (!log) return apiError(404, 'NOT_FOUND', 'File not found');
+      if (!log) return apiError(404, 'NOT_FOUND', 'Berkas tidak ditemukan');
       const isOwner = log.userId === userId;
       const isManager = role === 'MANAGER' && log.ownerManagerId === userId;
-      if (!isOrgWide && !isOwner && !isManager) return apiError(404, 'NOT_FOUND', 'File not found');
+      if (!isOrgWide && !isOwner && !isManager) return apiError(404, 'NOT_FOUND', 'Berkas tidak ditemukan');
       fileUrl = which === 'check-in' ? log.checkInPhotoUrl : which === 'check-out' ? log.checkOutPhotoUrl : null;
     } else if (resource === 'attendance-requests' && which === 'attachment') {
       const reqRow = await getRequestWithRequesterInOrg(orgId, id);
       const isOwner = reqRow.userId === userId;
       const isManager = role === 'MANAGER' && reqRow.requesterManagerId === userId;
-      if (!isOrgWide && !isOwner && !isManager) return apiError(404, 'NOT_FOUND', 'File not found');
+      if (!isOrgWide && !isOwner && !isManager) return apiError(404, 'NOT_FOUND', 'Berkas tidak ditemukan');
       fileUrl = reqRow.attachmentUrl;
     }
 
-    if (!fileUrl) return apiError(404, 'NOT_FOUND', 'File not found');
+    if (!fileUrl) return apiError(404, 'NOT_FOUND', 'Berkas tidak ditemukan');
 
     const upstream = await fetchPrivateBlob(fileUrl);
-    if (!upstream.ok || !upstream.body) return apiError(404, 'NOT_FOUND', 'File not found');
+    if (!upstream.ok || !upstream.body) return apiError(404, 'NOT_FOUND', 'Berkas tidak ditemukan');
 
     return new NextResponse(upstream.body, {
       headers: {

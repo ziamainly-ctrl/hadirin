@@ -21,11 +21,11 @@ export async function POST(request: Request) {
     const body = checkoutSchema.parse(await request.json());
 
     const [org, method] = await Promise.all([getOrganizationById(orgId), getPaymentMethodById(body.paymentMethodId)]);
-    if (!org) return apiError(500, 'INTERNAL_ERROR', 'Organization not found.');
-    if (!method || !method.isActive) return apiError(400, 'VALIDATION_ERROR', 'Payment method is not available.');
+    if (!org) return apiError(500, 'INTERNAL_ERROR', 'Organisasi tidak ditemukan.');
+    if (!method || !method.isActive) return apiError(400, 'VALIDATION_ERROR', 'Metode pembayaran tidak tersedia.');
 
     const plan = await getPlanById(org.planId);
-    if (!plan) return apiError(500, 'INTERNAL_ERROR', 'Plan not found.');
+    if (!plan) return apiError(500, 'INTERNAL_ERROR', 'Paket tidak ditemukan.');
 
     const { year, month } = getLocalParts(new Date(), org.timezone);
     const periodStart = formatDate(year, month, 1);

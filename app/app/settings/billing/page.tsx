@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { FileText } from 'lucide-react';
-import { requireSession } from '@/lib/auth';
+import { requirePageRole } from '@/lib/page-guard';
 import { listInvoicesForOrg } from '@/lib/queries/invoices';
 import type { Invoice } from '@/lib/queries/invoices';
 import { listActivePaymentMethods } from '@/lib/queries/payment-methods';
@@ -64,7 +64,7 @@ function InvoiceStatusBadge({ invoice }: { invoice: Invoice }) {
 
 // Server Component, OWNER only (TRD.md §6 marks billing routes OWNER-only).
 export default async function BillingSettingsPage() {
-  const { orgId } = await requireSession(['OWNER']);
+  const { orgId } = await requirePageRole(['OWNER'], '/app/settings');
 
   const [invoices, methods, org] = await Promise.all([
     listInvoicesForOrg(orgId),

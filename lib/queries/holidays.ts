@@ -101,13 +101,13 @@ export async function insertNationalHoliday(input: InsertNationalHolidayInput): 
 /** Hard delete is fine (small reference rows) but org_id in the WHERE keeps a tenant off national/other-org rows. */
 export async function deleteCompanyHolidayInOrg(orgId: number, id: number): Promise<void> {
   const rows = await sql.query(`DELETE FROM holidays WHERE id = $1 AND org_id = $2 RETURNING id`, [id, orgId]);
-  if (rows.length === 0) throw new NotFoundError('Holiday not found');
+  if (rows.length === 0) throw new NotFoundError('Hari libur tidak ditemukan');
 }
 
 /** Platform CMS delete. `org_id IS NULL` keeps this off a tenant's own company holidays. */
 export async function deleteNationalHoliday(id: number): Promise<void> {
   const rows = await sql.query(`DELETE FROM holidays WHERE id = $1 AND org_id IS NULL RETURNING id`, [id]);
-  if (rows.length === 0) throw new NotFoundError('Holiday not found');
+  if (rows.length === 0) throw new NotFoundError('Hari libur tidak ditemukan');
 }
 
 /**

@@ -8,6 +8,7 @@ import { getOrganizationPlanContext } from '@/lib/queries/organizations';
 import RequestCard from '@/components/shared/RequestCard';
 import EmptyState from '@/components/shared/EmptyState';
 import Page from '@/components/shared/Page';
+import FitPager from '@/components/shared/FitPager';
 import { toCalendarDate } from '../attendance/format';
 import ReviewActions from './review-actions';
 
@@ -100,7 +101,12 @@ export default async function RequestsPage({ searchParams }: RequestsPageProps) 
           // on a wide monitor, and on a short laptop screen it showed one request at a time. The cards
           // in a row stretch to one height (RequestCard keeps its note field and buttons at the bottom),
           // so the Tolak / Setujui buttons line up across the row.
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-3">
+          // Desktop: paginated to the room under the tabs (FitPager) instead of scrolling the page body.
+          <FitPager
+            label="Daftar pengajuan"
+            noun="pengajuan"
+            className="grid grid-cols-1 content-start gap-4 fit-gap lg:grid-cols-2 2xl:grid-cols-3"
+          >
             {requests.map((req) => {
               const requesterName = nameByUserId.get(req.userId) ?? `#${req.userId}`;
               const dateFrom = toCalendarDate(req.dateFrom);
@@ -139,7 +145,7 @@ export default async function RequestsPage({ searchParams }: RequestsPageProps) 
                 />
               );
             })}
-          </div>
+          </FitPager>
         )}
       </Page.Body>
     </Page>

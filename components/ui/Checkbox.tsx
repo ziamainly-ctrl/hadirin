@@ -1,4 +1,3 @@
-import { Check } from 'lucide-react';
 import type { InputHTMLAttributes, ReactNode } from 'react';
 
 export interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
@@ -8,10 +7,10 @@ export interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement
 }
 
 const BOX_CLASSES =
-  'peer h-4 w-4 cursor-[inherit] appearance-none rounded-[5px] border border-field bg-transparent shadow-xs transition-colors checked:border-primary checked:bg-primary focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed dark:bg-input/30 dark:checked:bg-primary';
+  'peer h-4 w-4 cursor-[inherit] appearance-none rounded-[5px] border border-field bg-transparent shadow-xs transition-[background-color,border-color,box-shadow,transform] duration-150 active:scale-90 checked:border-primary checked:bg-primary focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed dark:bg-input/30 dark:checked:bg-primary';
 
 /**
- * Styled native checkbox (appearance-none + a Lucide check on top), so the box looks the
+ * Styled native checkbox (appearance-none + an SVG check on top that draws itself), so the box looks the
  * same in every browser and takes the palette instead of the OS accent. Still a real
  * <input type="checkbox">: keyboard, form state and screen readers are untouched.
  */
@@ -19,11 +18,20 @@ export default function Checkbox({ label, description, className, ...rest }: Che
   const control = (
     <span className="relative mt-0.5 inline-flex h-4 w-4 shrink-0">
       <input type="checkbox" className={BOX_CLASSES} {...rest} />
-      <Check
+      {/* A hand-drawn tick (not the Lucide icon) so it can draw itself: the path has pathLength="1"
+          and app/globals.css (.check-mark) animates its dash offset when the input is checked. */}
+      <svg
         aria-hidden="true"
-        strokeWidth={3}
-        className="pointer-events-none absolute inset-0 m-auto h-3 w-3 text-primary-fg opacity-0 transition-opacity peer-checked:opacity-100"
-      />
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={3.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="check-mark pointer-events-none absolute inset-0 m-auto h-3 w-3 text-primary-fg"
+      >
+        <path d="M5 12.5l4.5 4.5L19 7.5" pathLength="1" />
+      </svg>
     </span>
   );
 

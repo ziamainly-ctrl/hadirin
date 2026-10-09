@@ -10,6 +10,7 @@ import { dateStringSchema, idParam } from '@/lib/validators/common';
 import { ATTENDANCE_STATUSES } from '@/lib/constants/statuses';
 import type { AttendanceStatus } from '@/lib/constants/statuses';
 import Table from '@/components/ui/Table';
+import type { TableProps } from '@/components/ui/Table';
 import Pagination from '@/components/ui/Pagination';
 import StatusBadge from '@/components/shared/StatusBadge';
 import EmptyState from '@/components/shared/EmptyState';
@@ -19,7 +20,8 @@ import { formatMinutes, toCalendarDate } from './format';
 
 export const metadata: Metadata = { title: 'Absensi' };
 
-const PAGE_SIZE = 25;
+// One server chunk; the client fit pager (components/shared/FitPager) splits it into screen-sized pages.
+const PAGE_SIZE = 100;
 
 interface AttendancePageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -161,14 +163,21 @@ export default async function AttendancePage({ searchParams }: AttendancePagePro
         ) : (
           <>
             <AttendanceList rows={rows} names={nameByUserId} timeZone={timeZone} />
-            <AttendanceTable rows={rows} names={nameByUserId} timeZone={timeZone} />
+            <AttendanceTable
+              rows={rows}
+              names={nameByUserId}
+              timeZone={timeZone}
+              serverPager={{ page, pageSize: PAGE_SIZE, total, basePath: '/app/attendance', searchParams: filterSearchParams }}
+            />
+            {/* Desktop pages through the table's own footer (ui/TableFrame serverPager); this plain
+                pager is for the phone list and the short window where the table does not paginate. */}
             <Pagination
               page={page}
               pageSize={PAGE_SIZE}
               total={total}
               basePath="/app/attendance"
               searchParams={filterSearchParams}
-              className="shrink-0"
+              className="fit-hide-desktop shrink-0"
             />
           </>
         )}
@@ -284,12 +293,12 @@ function AttendanceList({ rows, names, timeZone }: AttendanceRowsProps) {
   );
 }
 
-function AttendanceTable({ rows, names, timeZone }: AttendanceRowsProps) {
+function AttendanceTable({ rows, names, timeZone, serverPager }: AttendanceRowsProps & { serverPager: TableProps['serverPager'] }) {
   return (
     // A flex column so ui/Table's frame can shrink to the space Page.Body has left and scroll its
     // rows inside (header pinned); the pager below stays in view.
     <div className="hidden min-h-0 flex-col sm:flex">
-      <Table aria-label="Riwayat absensi karyawan">
+      <Table aria-label="Riwayat absensi karyawan" serverPager={serverPager}>
         <Table.Head>
           <Table.Row>
             <Table.HeadCell>Karyawan</Table.HeadCell>
@@ -297,9 +306,9 @@ function AttendanceTable({ rows, names, timeZone }: AttendanceRowsProps) {
             <Table.HeadCell>Status</Table.HeadCell>
             <Table.HeadCell>Masuk</Table.HeadCell>
             <Table.HeadCell>Keluar</Table.HeadCell>
-            <Table.HeadCell className="text-right">Keterlambatan</Table.HeadCell>
-            <Table.HeadCell className="text-right">Durasi Kerja</Table.HeadCell>
-            <Table.HeadCell>Lokasi</Table.HeadCell>
+            <Table.HeadCell priority={1} className="text-right">Keterlambatan</Table.HeadCell>
+            <Table.HeadCell priority={3} className="text-right">Durasi Kerja</Table.HeadCell>
+            <Table.HeadCell priority={2}>Lokasi</Table.HeadCell>
           </Table.Row>
         </Table.Head>
         <Table.Body>

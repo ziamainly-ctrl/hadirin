@@ -7,6 +7,7 @@ import Card from '@/components/ui/Card';
 import StatusBadge, { STATUS_LABELS, StatusDot } from '@/components/shared/StatusBadge';
 import EmptyState from '@/components/shared/EmptyState';
 import Page from '@/components/shared/Page';
+import FitPager from '@/components/shared/FitPager';
 import type { AttendanceStatus } from '@/lib/constants/statuses';
 import { calendarDateToUtc, formatClock, formatDuration, toCalendarDate, todayInZone } from '../format';
 
@@ -64,8 +65,8 @@ export default async function HistoryPage() {
     <Page>
       <Page.Header title="Riwayat Absensi" description="Catatan absensi Anda selama 30 hari terakhir." />
 
-      {/* The list is the long part: on desktop it scrolls inside the phone column while the title
-          and the tab bar stay put (Page.Body); on a phone the page scrolls as usual. */}
+      {/* The list is the long part: on desktop it is paginated to the room under the week strip
+          (FitPager) while the title and the tab bar stay put; on a phone the page scrolls as usual. */}
       <Page.Body className="gap-5">
         {logs.length === 0 ? (
           <Card>
@@ -76,7 +77,7 @@ export default async function HistoryPage() {
           </Card>
         ) : (
           <>
-            <section aria-labelledby="week-heading" className="flex flex-col gap-2">
+            <section aria-labelledby="week-heading" className="flex shrink-0 flex-col gap-2">
               <h2 id="week-heading" className="text-sm font-semibold text-text">
                 7 hari terakhir
               </h2>
@@ -92,7 +93,7 @@ export default async function HistoryPage() {
                         {/* A neutral tile; the status is the dot inside it (color is only ever a
                             small accent here). A day with no record is a dashed, empty tile. */}
                         <span
-                          className={`flex h-9 w-full items-center justify-center rounded-md border bg-accent ${
+                          className={`flex h-9 w-full items-center justify-center rounded-md border bg-accent [@media(min-width:1024px)_and_(max-height:700px)]:h-6 ${
                             log ? 'border-border' : 'border-dashed border-border'
                           } ${isToday ? 'ring-2 ring-ring' : ''}`}
                         >
@@ -106,7 +107,7 @@ export default async function HistoryPage() {
                   })}
                 </ol>
                 {weekStatuses.length > 0 ? (
-                  <ul aria-hidden="true" className="flex flex-wrap gap-x-4 gap-y-1 border-t border-border pt-3 text-xs text-muted">
+                  <ul aria-hidden="true" className="fit-hide-short flex flex-wrap gap-x-4 gap-y-1 border-t border-border pt-3 text-xs text-muted">
                     {weekStatuses.map((status) => (
                       <li key={status} className="flex items-center gap-1.5">
                         <StatusDot status={status} />
@@ -122,11 +123,11 @@ export default async function HistoryPage() {
               </div>
             </section>
 
-            <section aria-labelledby="list-heading" className="flex flex-col gap-2">
-              <h2 id="list-heading" className="text-sm font-semibold text-text">
+            <section aria-labelledby="list-heading" className="flex flex-col gap-2 lg:min-h-0 lg:flex-1">
+              <h2 id="list-heading" className="shrink-0 text-sm font-semibold text-text">
                 Semua catatan
               </h2>
-              <ul className="flex flex-col gap-3">
+              <FitPager as="ul" label="Semua catatan absensi" noun="catatan" className="flex flex-col gap-3 fit-gap">
                 {logs.map((log) => {
                   const notes = [
                     log.lateMinutes > 0 ? `Terlambat ${formatDuration(log.lateMinutes)}` : null,
@@ -177,7 +178,7 @@ export default async function HistoryPage() {
                     </li>
                   );
                 })}
-              </ul>
+              </FitPager>
             </section>
           </>
         )}

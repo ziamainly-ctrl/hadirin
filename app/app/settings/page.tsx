@@ -4,7 +4,7 @@ import type { LucideIcon } from 'lucide-react';
 import { Building2, CreditCard, Bell, ChevronRight } from 'lucide-react';
 import Card from '@/components/ui/Card';
 import Page from '@/components/shared/Page';
-import { requireSession } from '@/lib/auth';
+import { requirePageRole } from '@/lib/page-guard';
 import type { UserRole } from '@/lib/constants/roles';
 
 export const metadata: Metadata = { title: 'Pengaturan' };
@@ -26,7 +26,7 @@ const LINKS: SettingsLink[] = [
     roles: ['OWNER', 'ADMIN'],
   },
   {
-    // The sub-page enforces OWNER-only itself (requireSession(['OWNER']), TRD.md §6).
+    // The sub-page enforces OWNER-only itself (requirePageRole(['OWNER']), TRD.md §6).
     // Hiding the card from ADMIN is cosmetic — it only spares them a link that can
     // never open — and never a substitute for that check (AGENTS.md domain rule #2).
     href: '/app/settings/billing',
@@ -47,7 +47,7 @@ const LINKS: SettingsLink[] = [
 // Server Component hub (TRD.md §5): nothing to load, just role-gated navigation
 // into the settings sub-pages.
 export default async function SettingsPage() {
-  const { role } = await requireSession(['OWNER', 'ADMIN']);
+  const { role } = await requirePageRole(['OWNER', 'ADMIN']);
   const links = LINKS.filter((link) => link.roles.includes(role));
 
   return (

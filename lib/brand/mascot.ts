@@ -26,6 +26,9 @@ export interface MascotOptions {
    * icon). A light outline around the character keeps the dark hair readable on a dark
    * page, which is why no tile is needed. */
   background?: 'none' | 'neutral';
+  /** Wraps each eye in `<g class="mascot-eye">` so app/globals.css can blink it (an idle blink every
+   * few seconds, CSS only). Off for the generated icon files and the share image, which stay still. */
+  animated?: boolean;
 }
 
 const FRAMING_TRANSFORM: Record<MascotFraming, string> = {
@@ -34,8 +37,10 @@ const FRAMING_TRANSFORM: Record<MascotFraming, string> = {
 };
 
 /** Markup for everything inside the <svg> element (defs + artwork). */
-export function mascotInner({ idPrefix = 'hm', framing = 'full', background = 'none' }: MascotOptions = {}): string {
+export function mascotInner({ idPrefix = 'hm', framing = 'full', background = 'none', animated = false }: MascotOptions = {}): string {
   const p = idPrefix;
+  const eyeOpen = animated ? '<g class="mascot-eye">' : '';
+  const eyeClose = animated ? '</g>' : '';
   return `
 <defs>
   <linearGradient id="${p}-bg" x1="0" y1="0" x2="1" y2="1">
@@ -76,18 +81,18 @@ export function mascotInner({ idPrefix = 'hm', framing = 'full', background = 'n
     <path d="M194 120c6 24 6 50-4 74-8-10-10-26-8-44 1-12 4-22 12-30z" fill="#232658"/>
     <path d="M78 74c14-16 36-24 58-22" fill="none" stroke="#7d86d6" stroke-opacity=".7" stroke-width="7" stroke-linecap="round"/>
     <path d="M150 54c12 2 22 8 30 16" fill="none" stroke="#7d86d6" stroke-opacity=".45" stroke-width="5" stroke-linecap="round"/>
-    <ellipse cx="96" cy="152" rx="17" ry="22" fill="#fff"/>
+    ${eyeOpen}<ellipse cx="96" cy="152" rx="17" ry="22" fill="#fff"/>
     <ellipse cx="96" cy="154" rx="14" ry="19" fill="url(#${p}-iris)"/>
     <ellipse cx="96" cy="156" rx="7" ry="10" fill="#14163a"/>
     <circle cx="90" cy="145" r="6" fill="#fff"/>
-    <circle cx="102" cy="164" r="3" fill="#fff"/>
+    <circle cx="102" cy="164" r="3" fill="#fff"/>${eyeClose}
     <path d="M77 142c3-11 14-16 24-13" fill="none" stroke="#14163a" stroke-width="5.5" stroke-linecap="round"/>
     <path d="M77 142l-6 4" stroke="#14163a" stroke-width="3.5" stroke-linecap="round"/>
-    <ellipse cx="160" cy="152" rx="17" ry="22" fill="#fff"/>
+    ${eyeOpen}<ellipse cx="160" cy="152" rx="17" ry="22" fill="#fff"/>
     <ellipse cx="160" cy="154" rx="14" ry="19" fill="url(#${p}-iris)"/>
     <ellipse cx="160" cy="156" rx="7" ry="10" fill="#14163a"/>
     <circle cx="154" cy="145" r="6" fill="#fff"/>
-    <circle cx="166" cy="164" r="3" fill="#fff"/>
+    <circle cx="166" cy="164" r="3" fill="#fff"/>${eyeClose}
     <path d="M179 142c-3-11-14-16-24-13" fill="none" stroke="#14163a" stroke-width="5.5" stroke-linecap="round"/>
     <path d="M179 142l6 4" stroke="#14163a" stroke-width="3.5" stroke-linecap="round"/>
     <ellipse cx="82" cy="180" rx="10" ry="5.5" fill="#ff8fa6" opacity=".55"/>

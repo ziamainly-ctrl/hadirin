@@ -46,7 +46,7 @@ export default async function EmployeesPage() {
       <Page.Header
         title="Karyawan"
         description="Kelola data karyawan, peran, cabang, dan shift."
-        actions={isOrgWide ? <EmployeeFormDialog branches={branchOptions} shifts={shiftOptions} /> : null}
+        actions={isOrgWide ? <EmployeeFormDialog branches={branchOptions} shifts={shiftOptions} actorRole={role} /> : null}
       />
 
       <Page.Body>
@@ -97,10 +97,10 @@ export default async function EmployeesPage() {
                 <Table.Head>
                   <Table.Row>
                     <Table.HeadCell>Nama</Table.HeadCell>
-                    <Table.HeadCell>Kode</Table.HeadCell>
+                    <Table.HeadCell priority={3}>Kode</Table.HeadCell>
                     <Table.HeadCell>Peran</Table.HeadCell>
-                    <Table.HeadCell>Cabang</Table.HeadCell>
-                    <Table.HeadCell>Shift</Table.HeadCell>
+                    <Table.HeadCell priority={1}>Cabang</Table.HeadCell>
+                    <Table.HeadCell priority={2}>Shift</Table.HeadCell>
                     <Table.HeadCell>Status</Table.HeadCell>
                   </Table.Row>
                 </Table.Head>

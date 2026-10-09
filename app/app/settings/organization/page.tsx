@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { ArrowRight } from 'lucide-react';
-import { requireSession } from '@/lib/auth';
+import { requirePageRole } from '@/lib/page-guard';
 import { getOrganizationPlanContext } from '@/lib/queries/organizations';
 import ButtonLink from '@/components/ui/ButtonLink';
 import Card from '@/components/ui/Card';
@@ -14,7 +14,7 @@ const COUNT_FORMATTER = new Intl.NumberFormat('id-ID');
 // Server Component (TRD.md §5): reads getOrganizationPlanContext() directly, no
 // self-fetch over /api/organizations. OWNER/ADMIN only (AGENTS.md domain rule #2).
 export default async function OrganizationSettingsPage() {
-  const { orgId, role } = await requireSession(['OWNER', 'ADMIN']);
+  const { orgId, role } = await requirePageRole(['OWNER', 'ADMIN']);
 
   const org = await getOrganizationPlanContext(orgId);
   if (!org) throw new Error('Organization not found');
