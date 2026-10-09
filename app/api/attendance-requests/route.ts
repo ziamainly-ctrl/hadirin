@@ -1,6 +1,6 @@
 import { after } from 'next/server';
 import { z } from 'zod';
-import { apiOk, apiCreated, handleApiError } from '@/lib/api-response';
+import { apiOk, apiCreated, apiError, handleApiError } from '@/lib/api-response';
 import { requireActiveSession } from '@/lib/auth';
 import { createRequestSchema } from '@/lib/validators/attendance-requests';
 import { REQUEST_STATUSES, REQUEST_TYPES } from '@/lib/constants/statuses';
@@ -8,6 +8,7 @@ import { insertRequest, listRequestsForOrg } from '@/lib/queries/attendance-requ
 import { getOrganizationPlanContext } from '@/lib/queries/organizations';
 import { getUserByIdInOrg } from '@/lib/queries/users';
 import { notifyManagerOrOrgAdmins } from '@/lib/notify-recipients';
+import { isOwnRequestAttachment } from '@/lib/request-attachment';
 
 // GET /api/attendance-requests — TRD.md §6: review is MANAGER (own reports)/ADMIN/OWNER,
 // submit is self. `mine=1` lets any role (including a manager) fetch only their own
@@ -41,6 +42,17 @@ export async function POST(request: Request) {
   try {
     const { userId, orgId, context } = await requireActiveSession();
     const body = createRequestSchema.parse(await request.json());
+
+    // blobUrlSchema only checked that the URL's host is a Vercel Blob store — any path, any
+    // org's file. Without this, a request could name a stranger's private upload (another
+    // org's selfie, another employee's attachment), and whoever is allowed to review THIS
+    // request would then be served that stranger's file (GET /api/files only checks who may
+    // see this request row, not whose blob the URL points at).
+    if (body.attachmentUrl && !isOwnRequestAttachment(body.attachmentUrl, orgId, userId)) {
+      return apiError(400, 'VALIDATION_ERROR', 'Lampiran tidak valid. Unggah ulang berkasnya.', {
+        attachmentUrl: 'Lampiran tidak valid. Unggah ulang berkasnya.',
+      });
+    }
 
     const created = await insertRequest({
       orgId,
