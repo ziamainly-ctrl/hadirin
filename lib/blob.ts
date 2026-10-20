@@ -1,5 +1,6 @@
 import 'server-only';
 import { put } from '@vercel/blob';
+import { isTokenSafeBlobUrl } from './stored-file';
 
 // @vercel/blob@2.8.1's client-token upload flow (handleUpload) cannot mint a private
 // token (vercel/storage#1079 — onBeforeGenerateToken has no `access` field, so client
@@ -18,8 +19,13 @@ export async function putPrivateFile(pathname: string, body: Blob, contentType: 
   return { url: blob.url };
 }
 
-/** Our server always mediates reads — no signed/presigned URLs needed (TRD.md §15). */
+/** Our server always mediates reads — no signed/presigned URLs needed (TRD.md §15).
+ * The token is attached only after `isTokenSafeBlobUrl`. A stored string that is not
+ * our Blob host never leaves this process with the credential on it. */
 export async function fetchPrivateBlob(url: string): Promise<Response> {
+  if (!isTokenSafeBlobUrl(url)) {
+    return new Response(null, { status: 404 });
+  }
   if (!process.env.BLOB_READ_WRITE_TOKEN) {
     throw new Error('BLOB_READ_WRITE_TOKEN is not set. See .env.example.');
   }
