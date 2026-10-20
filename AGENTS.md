@@ -46,7 +46,7 @@ Before adding a table or column, classify it (ERD §1): **static** (code constan
 ## Working conventions
 
 - Language: code, comments, docs and commit messages in English. UI copy in Bahasa Indonesia.
-- AI attribution: when Codex materially assists a committed change, append `Co-authored-by: Codex <noreply@openai.com>` to the commit message so GitHub can attribute the contribution to the official Codex account.
+- AI attribution: when Codex materially assists a committed change, append `Co-authored-by: Codex <noreply@openai.com>` to the commit message so GitHub can attribute the contribution to the official Codex account. When Grok materially assists, append `Co-authored-by: Grok <noreply@x.ai>`. That address is not registered on a GitHub account, so the commit records Grok but the contributors list does not show a linked avatar the way `noreply@anthropic.com`, `cursoragent@cursor.com`, and `noreply@openai.com` do. Do not invent a stand-in account.
 - Validation: a zod schema per input in `lib/validators/{model}.ts`. Length caps match the column sizes.
 - Errors: `{ error: { code, message, fields? } }` with the status codes in TRD §6.
 - `updated_at = now()` in every UPDATE (there is no trigger).
